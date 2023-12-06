@@ -81,7 +81,7 @@ msun2g = 1.98892e33 #(1*u.Msun).to('g').value       # solar mass to grams
 
 
 class C2Ray:
-    def __init__(self, paramfile, Nmesh, use_gpu, use_mpi):
+    def __init__(self, paramfile, Nmesh, use_gpu, use_mpi=False):
         """Basis class for a C2Ray Simulation
 
         Parameters

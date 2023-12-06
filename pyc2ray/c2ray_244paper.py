@@ -27,7 +27,7 @@ m_p = 1.672661e-24
 # ======================================================================
 
 class C2Ray_244Test(C2Ray):
-    def __init__(self,paramfile,Nmesh,use_gpu):
+    def __init__(self,paramfile,Nmesh,use_gpu,use_mpi):
         """Basis class for a C2Ray Simulation
 
         Parameters
@@ -40,7 +40,7 @@ class C2Ray_244Test(C2Ray):
             Whether to use the GPU-accelerated ASORA library for raytracing
 
         """
-        super().__init__(paramfile, Nmesh, use_gpu)
+        super().__init__(paramfile, Nmesh, use_gpu, use_mpi)
         self.printlog('Running: "C2Ray for 244 Mpc/h test"')
 
     # =====================================================================================================
