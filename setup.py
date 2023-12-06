@@ -1,6 +1,10 @@
 # from setuptools import setup
 from numpy.distutils.core import Extension, setup
 
+# Read dependencies from requirements.txt
+with open('requirements.txt') as f:
+    install_requires = f.read().splitlines()
+
 # List of Fortran source files
 fortran_sources = [
     'src/c2ray/photorates.f90',
