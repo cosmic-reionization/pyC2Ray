@@ -1,0 +1,5 @@
+pyc2ray/__pycache__/
+pyc2ray/*/__pycache__/
+pyc2ray/lib/*.so
+src/*/*.so
+src/*/*.o
