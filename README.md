@@ -3,7 +3,7 @@
 </div>
 
 # pyc2ray: A flexible and GPU-accelerated radiative transfer framework
-`pyc2ray` is the updated version of [C2Ray](https://github.com/garrelt/C2-Ray3Dm/tree/factorization) [(G. Mellema, I.T. Illiev, A. Alvarez and P.R. Shapiro)](https://ui.adsabs.harvard.edu/link_gateway/2006NewA...11..374M/doi:10.48550/arXiv.astro-ph/0508416), an astrophysical radiative transfer code widely used to simulate the Epoch of Reionization (EoR). `pyc2ray` features a new raytracing method developed for GPUs, named <b>A</b>ccelerated <b>S</b>hort-characteristics <b>O</b>cthaedral <b>RA</b>ytracing (<b>ASORA</b>). `pyc2ray` has a modern python interface that allows easy and customizable use of the code without compromising computational efficiency. A full description of the update and new ray-tracing method can be found online: [arXiv:2311.01492](https://arxiv.org/abs/2311.01492).
+`pyc2ray` is the updated version of [C2Ray](https://github.com/garrelt/C2-Ray3Dm/tree/factorization) [(G. Mellema, I.T. Illiev, A. Alvarez and P.R. Shapiro)](https://ui.adsabs.harvard.edu/link_gateway/2006NewA...11..374M/doi:10.48550/arXiv.astro-ph/0508416), an astrophysical radiative transfer code widely used to simulate the Epoch of Reionization (EoR). `pyc2ray` features a new raytracing method developed for GPUs, named <b>A</b>ccelerated <b>S</b>hort-characteristics <b>O</b>cthaedral <b>RA</b>ytracing (<b>ASORA</b>). `pyc2ray` has a modern python interface that allows easy and customizable use of the code without compromising computational efficiency. A full description of the update and new ray-tracing method can be found at [Hirling, Bianco, Giri, Iliev, Mellema & Kneib (2024)](https://arxiv.org/abs/2311.01492).
 
 The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as a python extension module, while the new raytracing library, _ASORA_, is implemented in C++ using CUDA. Both are native python C-extensions and can be directly accessed from any python script.
 
@@ -83,3 +83,7 @@ Here we list a series of numerical and astrophysical implementations we would li
 - Sources X-ray heating
 - GPU implementation of the chemistry solver
 - multi-frequency UV radiation
+
+## CONTRIBUTING
+
+If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues). The issue page is also good if you seek help or have suggestions for us.
