@@ -1,0 +1,2 @@
+# This option is used to target the CUDA architecture of the GPU that will be used. Default is sm_60 for Tesla P100 (CSCS Piz-Daint)
+option('gpu-architecture', type : 'string', value : 'sm_60', description : 'Target Architecture for CUDA extension module')

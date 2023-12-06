@@ -1,0 +1,5 @@
+numpy==1.27.0
+PyYAML==6.0
+scipy==1.10.1
+astropy==5.2.2
+h5py==3.8.0

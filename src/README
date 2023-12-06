@@ -1,0 +1,3 @@
+This directory contains the Fortran / C++ sources for the two extension modules
+used by pyc2ray. Once compiled (see main README), the binary modules must be
+placed at pyc2ray/lib/

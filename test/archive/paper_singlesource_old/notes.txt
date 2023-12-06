@@ -1,0 +1,10 @@
+This single source test is used to determine where the top-down asymetry observed
+before september 14th comes from. To compare with c2ray thouroughly, you need to set
+cgs constants to exact same values, this includes pc, YEAR, h_over_k, two_pi_over_c
+
+Findings:
+- Asymetry remains when moving the source around
+- Asymetry remains with and without shadow
+- Using tables or not doesn't remove the asymetry
+- The asymetry appears to be along the x axis
+  (positive error at positive x, negative error at negative x)
