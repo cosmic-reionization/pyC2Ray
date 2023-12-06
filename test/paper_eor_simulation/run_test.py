@@ -15,10 +15,11 @@ N = 250                             # Mesh size
 use_asora = True                    # Determines which raytracing algorithm to use
 
 # Create C2Ray object
-sim = pc2r.C2Ray_244Test(paramfile=paramfile, Nmesh=N, use_gpu=use_asora)
+sim = pc2r.C2Ray_244Test(paramfile=paramfile, Nmesh=N, use_gpu=use_asora, use_mpi=False)
 
 # Get redshift list (test case)
-zred_array = np.loadtxt(sim.inputs_basename+'redshifts_checkpoints.txt', dtype=float)
+# zred_array = np.loadtxt(sim.inputs_basename+'redshifts_checkpoints.txt', dtype=float)
+zred_array = np.loadtxt('/users/sgiri/work_pyc2ray/redshifts_checkpoints_small.txt', dtype=float)
 
 i_start = 0
 
