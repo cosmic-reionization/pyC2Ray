@@ -7,3 +7,4 @@ from .utils import *                # Utility methods: read source files, parame
 from .c2ray_test import *
 from .c2ray_cubep3m import *
 from .c2ray_244paper import *
+from .c2ray_fstar import *
