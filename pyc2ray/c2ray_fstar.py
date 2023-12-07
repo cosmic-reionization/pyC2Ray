@@ -192,6 +192,12 @@ class C2Ray_244_fstar(C2Ray):
     # =====================================================================================================
     # USER DEFINED METHODS
     # =====================================================================================================
+
+    def fstar_model(self, mhalo, kind='fgamma'):
+        if kind.lower() in ['fgamma', 'f_gamma']:
+            f_gamma = self.fgamma_hm  
+            fstar = f_gamma * (self.cosmology.Ob0/self.cosmology.Om0)
+        return fstar
       
     def read_sources(self, file, mass, ts): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
@@ -218,21 +224,23 @@ class C2Ray_244_fstar(C2Ray):
         #mass2phot = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value * self.ts * self.cosmology.Om0)    
         # TODO: for some reason the difference with the orginal Fortran run is of the molecular weight
         #self.printlog('%f' %self.mean_molecular )
-        mass2phot = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (m_p * ts * self.cosmology.Om0)    
         
         if file.endswith('.hdf5'):
             f = h5py.File(file, 'r')
             srcpos = f['sources_positions'][:].T
             assert srcpos.shape[0] == 3
-            normflux = f['sources_mass'][:] 
+            mhalo = f['sources_mass'][:] 
             f.close()
         else:
             # use original C2Ray source file
             src = t2c.SourceFile(filename=file, mass=mass)
             srcpos = src.sources_list[:, :3].T
-            normflux = src.sources_list[:, -1] 
+            mhalo = src.sources_list[:, -1] 
 
-        normflux = normflux * mass2phot / S_star_ref
+        fstar = self.fstar_model(mhalo)
+        mstar = mhalo * fstar
+        mass2phot = msun2g / (m_p * ts)  
+        normflux = mstar * mass2phot / S_star_ref
 
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
