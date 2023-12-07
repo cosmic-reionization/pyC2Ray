@@ -4,17 +4,19 @@ from scipy.stats import binned_statistic_dd
 import h5py
 import tools21cm as t2c
 
+from .c2ray_base import YEAR, Mpc, msun2g, ev2fr, ev2k
+
 # Conversion Factors.
 # When doing direct comparisons with C2Ray, the difference between astropy.constants and the C2Ray values
 # may be visible, thus we use the same exact value for the constants. This can be changed to the
 # astropy values once consistency between the two codes has been established
-pc = 3.086e18           #(1*u.pc).to('cm').value            # C2Ray value: 3.086e18
-YEAR = 3.15576E+07      #(1*u.yr).to('s').value           # C2Ray value: 3.15576E+07
-ev2fr = 0.241838e15                     # eV to Frequency (Hz)
-ev2k = 1.0/8.617e-05                    # eV to Kelvin
-kpc = 1e3*pc                            # kiloparsec in cm
-Mpc = 1e6*pc                            # megaparsec in cm
-msun2g = 1.98892e33 #(1*u.Msun).to('g').value       # solar mass to grams
+# pc = 3.086e18           #(1*u.pc).to('cm').value            # C2Ray value: 3.086e18
+# YEAR = 3.15576E+07      #(1*u.yr).to('s').value           # C2Ray value: 3.15576E+07
+# ev2fr = 0.241838e15                     # eV to Frequency (Hz)
+# ev2k = 1.0/8.617e-05                    # eV to Kelvin
+# kpc = 1e3*pc                            # kiloparsec in cm
+# Mpc = 1e6*pc                            # megaparsec in cm
+# msun2g = 1.98892e33 #(1*u.Msun).to('g').value       # solar mass to grams
 m_p = 1.672661e-24
 
 def stellar_to_halo_fraction(Mhalo, f0=0.3, Mt=1e8, Mp=3e11,

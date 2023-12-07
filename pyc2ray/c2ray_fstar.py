@@ -2,24 +2,26 @@ import yaml
 import atexit
 import re
 import numpy as np
-try:
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader
+from astropy.cosmology import FlatLambdaCDM
+import tools21cm as t2c
+import h5py, os
+try: from yaml import CSafeLoader as SafeLoader
+except ImportError: from yaml import SafeLoader
+
 from .utils.logutils import printlog
 from .evolve import evolve3D
-from astropy.cosmology import FlatLambdaCDM
 from .asora_core import device_init, device_close, photo_table_to_device
 from .radiation import BlackBodySource, make_tau_table
 from .utils.other_utils import get_redshifts_from_output, find_bins
-import tools21cm as t2c
+
 from .utils import get_source_redshifts
-import h5py
 from .c2ray_base import C2Ray, YEAR, Mpc, msun2g, ev2fr, ev2k
+
+from .source_model import *
 
 __all__ = ['C2Ray_244_fstar']
 
-m_p = 1.672661e-24
+# m_p = 1.672661e-24
 
 # ======================================================================
 # This file contains the C2Ray_CubeP3M subclass of C2Ray, which is a
@@ -193,13 +195,12 @@ class C2Ray_244_fstar(C2Ray):
     # USER DEFINED METHODS
     # =====================================================================================================
 
-    def fstar_model(self, mhalo, kind='fgamma'):
-        if kind.lower() in ['fgamma', 'f_gamma']:
-            f_gamma = self.fgamma_hm  
-            fstar = f_gamma * (self.cosmology.Ob0/self.cosmology.Om0)
+    def fstar_model(self, mhalo, kind='mass_independent'):
+        if kind.lower() in ['fgamma', 'f_gamma', 'mass_independent']: 
+            fstar = (self.cosmology.Ob0/self.cosmology.Om0)
         return fstar
       
-    def read_sources(self, file, mass, ts): # >:( trgeoip
+    def read_sources(self, file, mass, ts, kind='fgamma'): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
 
         Parameters
@@ -237,9 +238,11 @@ class C2Ray_244_fstar(C2Ray):
             srcpos = src.sources_list[:, :3].T
             mhalo = src.sources_list[:, -1] 
 
-        fstar = self.fstar_model(mhalo)
+        fstar = self.fstar_model(mhalo, kind=kind)
         mstar = mhalo * fstar
-        mass2phot = msun2g / (m_p * ts)  
+
+        f_gamma = self.fgamma_hm 
+        mass2phot = msun2g / (m_p * ts)  * f_gamma
         normflux = mstar * mass2phot / S_star_ref
 
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
@@ -247,6 +250,109 @@ class C2Ray_244_fstar(C2Ray):
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
         self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         return srcpos, normflux
+    
+    def ionizing_flux(self, file, ts, z, box_len, n_grid, kind='fgamma', save_Mstar=False): # >:( trgeoip
+        """Read sources from a C2Ray-formatted file
+
+        Parameters
+        ----------
+        file : str
+            Filename to read.
+        ts : float
+            time-step in Myrs.
+        box_len : float
+            Simulation box length in Mpc/h.
+        n_grid : int
+            Number of cells/grids along each simulation volume.
+        kind: str
+            The kind of source model to use.
+        
+        Returns
+        -------
+        srcpos : array
+            Grid positions of the sources formatted in a suitable way for the chosen raytracing algorithm
+        normflux : array
+            Normalization of the flux of each source (relative to S_star)
+        """
+        srcpos_mpc, srcmass_msun = self.read_haloes(file, box_len)
+        fstar = self.fstar_model(srcmass_msun, kind=kind)
+        mstar_msun = fstar*srcmass_msun
+
+        h = 0.7 
+        hg = Halo2Grid(box_len=box_len, n_grid=n_grid)
+        hg.set_halo_pos(srcpos_mpc, unit='mpc')
+        hg.set_halo_mass(mstar_msun, unit='Msun')
+
+        binned_mstar, bin_edges, bin_num = hg.value_on_grid(hg.pos_grid, mstar_msun)
+        srcpos, srcmstar = hg.halo_value_on_grid(mstar_msun, binned_value=binned_mstar)
+
+        if save_Mstar:
+            folder_path = save_Mstar
+            fname_hdf5 = folder_path+f'/{z:.3f}-Mstar_sources.hdf5'
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+                print(f"Folder '{folder_path}' created successfully.")
+            else:
+                pass
+                # print(f"Folder '{folder_path}' already exists.")
+
+            # Create HDF5 file from the data
+            with h5py.File(fname_hdf5,"w") as f:
+                # Store Data
+                dset_pos = f.create_dataset("sources_positions", data=srcpos)
+                dset_mass = f.create_dataset("sources_mass", data=srcmstar)
+
+                # Store Metadata
+                f.attrs['z'] = z
+                f.attrs['h'] = 0.7
+                f.attrs['numhalo'] = srcmstar.shape[0]
+                f.attrs['units'] = 'cMpc   Msun'
+
+        S_star_ref = 1e48
+        f_gamma = self.fgamma_hm 
+        mass2phot = msun2g / (m_p * ts)  * f_gamma
+        normflux = srcmstar * mass2phot / S_star_ref
+
+        self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
+        self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
+        self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
+        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+        return srcpos, normflux
+
+    def read_haloes(self, halo_file, box_len): # >:( trgeoip
+        """Read haloes from a file.
+
+        Parameters
+        ----------
+        halo_file : str
+            Filename to read
+        
+        Returns
+        -------
+        srcpos_mpc : array
+            Positions of the haloes in Mpc.
+        srcmass_msun : array
+            Masses of the haloes in Msun.
+        """
+
+        print(f'Reading {halo_file}')
+        try:
+            f = h5py.File(halo_file)
+            h = f.attrs['h']
+            srcmass_msun = f['mass'][:]/h #Msun
+            srcpos_mpc = f['pos'][:]/h   #Mpc
+            f.close()
+        except:
+            # Read haloes from a CUBEP3M file format.
+            hl = t2c.HaloCubeP3MFull(filename=halo_file, box_len=box_len)
+            h  = self.h
+            srcmass_msun = hl.get(var='m')/h   #Msun
+            srcpos_mpc  = hl.get(var='pos')/h #Mpc
+            print(f'Mass and positions are converted to Msun and Mpc respectively assuming h={h}.')
+        print(f'...done')
+        return srcpos_mpc, srcmass_msun
+    
+
     
     def read_density(self, z):
         """ Read coarser density field from C2Ray-formatted file
