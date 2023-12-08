@@ -7,7 +7,8 @@ module load gcc/9.3.0
 module load nvidia
 
 # activate python environment
-source ../pyc2ray-env/bin/activate
+source /store/ska/sk015/pyc2ray-env/bin/activate
+python -m pip install requirements.txt
 
 # get python and numpy include paths
 PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path(name='include'))")
@@ -24,7 +25,7 @@ cp libc2ray.*.so ../../pyc2ray/lib
 cd ../asora/
 
 # copy Makefile
-cp Makefile_copy Makefile
+cp Makefile Makefile_copy
 
 # sostitute include path in Makefile
 sed -i 's,/insert_here_path_to_python_include,'"$PYTHON_INCLUDE"',' Makefile
