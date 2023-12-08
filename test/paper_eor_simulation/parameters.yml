@@ -13,7 +13,7 @@ Grid:
   # Box size in comoving Mpc/h
   boxsize: 244 # Mpc/h
   # boolean variable to indicate if resuming a simulation (no need to change zred_0)
-  resume: 0
+  resume: 1
 
 # --------------------------------------------------------------------
 # (Initial) properties of physical quantities in the simulation volume
