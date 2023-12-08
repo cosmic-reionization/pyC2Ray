@@ -194,9 +194,23 @@ class C2Ray_fstar(C2Ray):
     # USER DEFINED METHODS
     # =====================================================================================================
 
-    def fstar_model(self, mhalo, kind='mass_independent'):
+    def fstar_model(self, mhalo):
+        kind = self.fstar_kind
         if kind.lower() in ['fgamma', 'f_gamma', 'mass_independent']: 
             fstar = (self.cosmology.Ob0/self.cosmology.Om0)
+        elif kind.lower() in ['dpl', 'mass_dependent']:
+            model = StellarToHaloRelation(
+                        f0=self.fstar_dpl['f0'], 
+                        Mt=self.fstar_dpl['Mt'], 
+                        Mp=self.fstar_dpl['Mp'],
+                        g1=self.fstar_dpl['g1'], 
+                        g2=self.fstar_dpl['g2'], 
+                        g3=self.fstar_dpl['g3'], 
+                        g4=self.fstar_dpl['g4'])
+            star = model.deterministic(Ms)
+            fstar = star['fstar']
+        else:
+            print(f'{kind} fstar model is not implemented.')
         return fstar
       
     def read_sources(self, file, mass, ts, kind='fgamma'): # >:( trgeoip
@@ -249,7 +263,7 @@ class C2Ray_fstar(C2Ray):
         self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         return srcpos, normflux
     
-    def ionizing_flux(self, file, ts, z, kind='fgamma', save_Mstar=False): # >:( trgeoip
+    def ionizing_flux(self, file, ts, z, save_Mstar=False): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
 
         Parameters
@@ -271,7 +285,7 @@ class C2Ray_fstar(C2Ray):
         box_len, n_grid = self.boxsize, self.N
         
         srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, box_len)
-        fstar = self.fstar_model(srcmass_msun, kind=kind)
+        fstar = self.fstar_model(srcmass_msun)
         mstar_msun = fstar*srcmass_msun
 
         h = 0.7 
@@ -457,3 +471,14 @@ class C2Ray_fstar(C2Ray):
         self.fgamma_lm = self._ld['Sources']['fgamma_lm']
         self.ts = self._ld['Sources']['ts'] * YEAR * 1e6
         self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
+        self.fstar_kind = self._ld['Sources']['fstar_kind']
+        self.fstar_dpl = {
+                        'f0': self._ld['Sources']['f0'],
+                        'Mt': self._ld['Sources']['Mt'], 
+                        'Mp': self._ld['Sources']['Mp'], 
+                        'g1': self._ld['Sources']['g1'], 
+                        'g2': self._ld['Sources']['g2'], 
+                        'g3': self._ld['Sources']['g3'], 
+                        'g4': self._ld['Sources']['g4'], 
+                        }
+        self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")

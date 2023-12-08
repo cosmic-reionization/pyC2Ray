@@ -49,7 +49,7 @@ for k in range(i_start, len(zred_array)-1):
 
     # Read source files
     # srcpos, normflux = sim.read_sources(file=f'{sim.sources_basename:}{zi:.3f}-coarsest_wsubgrid_sources.hdf5', mass='hm', ts=num_steps_between_slices*dt)
-    srcpos, normflux = sim.ionizing_flux(file=f'{zi:.3f}halo.hdf5', ts=num_steps_between_slices*dt, z=zi, kind='fgamma', save_Mstar=f'{sim.results_basename:}/sources')
+    srcpos, normflux = sim.ionizing_flux(file=f'{zi:.3f}halo.hdf5', ts=num_steps_between_slices*dt, z=zi, save_Mstar=f'{sim.results_basename:}/sources')
     
     # Set redshift to current slice redshift
     sim.zred = zi
