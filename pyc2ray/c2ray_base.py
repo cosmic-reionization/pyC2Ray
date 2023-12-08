@@ -453,18 +453,19 @@ class C2Ray:
         """ Set up grid properties
         """
         # Comoving quantities
-        self.boxsize_c = self._ld['Grid']['boxsize'] * Mpc
+        self.boxsize = self._ld['Grid']['boxsize']
+        self.boxsize_c = self.boxsize * Mpc
         self.dr_c = self.boxsize_c / self.N
 
         if(self.rank == 0):
             self.printlog(f"Welcome! Mesh size is N = {self.N:n}.")
-            self.printlog(f"Simulation Box size (comoving Mpc): {self.boxsize_c/Mpc:.3e}")
+            self.printlog(f"Simulation Box size (comoving Mpc): {self.boxsize:.3e}")
 
         # Initialize cell size to comoving size (if cosmological run, it will be scaled in cosmology_init)
         self.dr = self.dr_c
 
         # Set R_max (LLS 3) in cell units
-        self.R_max_LLS = self._ld['Photo']['R_max_cMpc'] * self.N / self._ld['Grid']['boxsize']
+        self.R_max_LLS = self._ld['Photo']['R_max_cMpc'] * self.N / self.boxsize
         self.printlog(f"Maximum comoving distance for photons from source (type 3 LLS): {self._ld['Photo']['R_max_cMpc'] : .3e} comoving Mpc")
         self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
 

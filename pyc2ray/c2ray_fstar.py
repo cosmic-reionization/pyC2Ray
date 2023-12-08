@@ -249,7 +249,7 @@ class C2Ray_fstar(C2Ray):
         self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         return srcpos, normflux
     
-    def ionizing_flux(self, file, ts, z, box_len, n_grid, kind='fgamma', save_Mstar=False): # >:( trgeoip
+    def ionizing_flux(self, file, ts, z, kind='fgamma', save_Mstar=False): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
 
         Parameters
@@ -258,10 +258,6 @@ class C2Ray_fstar(C2Ray):
             Filename to read.
         ts : float
             time-step in Myrs.
-        box_len : float
-            Simulation box length in Mpc/h.
-        n_grid : int
-            Number of cells/grids along each simulation volume.
         kind: str
             The kind of source model to use.
         
@@ -272,6 +268,8 @@ class C2Ray_fstar(C2Ray):
         normflux : array
             Normalization of the flux of each source (relative to S_star)
         """
+        box_len, n_grid = self.boxsize, self.N
+        
         srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, box_len)
         fstar = self.fstar_model(srcmass_msun, kind=kind)
         mstar_msun = fstar*srcmass_msun
