@@ -1,0 +1,8 @@
+# Ignore test/benchmark folders for language statistics
+archive/** linguist-documentation
+paper_tests/** linguist-documentation
+paper_eor_simulation/** linguist-documentation
+unit_tests_hackathon/** linguist-documentation
+
+# Ignore Jupyter Notebooks
+*.ipynb linguist-documentation
