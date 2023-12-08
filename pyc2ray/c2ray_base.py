@@ -182,7 +182,7 @@ class C2Ray:
         src_pos : 2D-array of shape (3,numsrc)
             Array containing the 3D grid position of each source, in Fortran indexing (from 1)
         """
-        if(src_pos.shape[0] != 3 and src_pos.shape[0] == 3):
+        if(src_pos.shape[0] != 3 and src_pos.shape[1] == 3):
             src_pos = src_pos.T
         elif(src_pos.shape[0] == 3):
             pass
