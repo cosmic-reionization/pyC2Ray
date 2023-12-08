@@ -207,7 +207,7 @@ class C2Ray_fstar(C2Ray):
                         g2=self.fstar_dpl['g2'], 
                         g3=self.fstar_dpl['g3'], 
                         g4=self.fstar_dpl['g4'])
-            star = model.deterministic(Ms)
+            star = model.deterministic(mhalo)
             fstar = star['fstar']
         else:
             print(f'{kind} fstar model is not implemented.')
@@ -288,7 +288,7 @@ class C2Ray_fstar(C2Ray):
         fstar = self.fstar_model(srcmass_msun)
         mstar_msun = fstar*srcmass_msun
 
-        h = 0.7 
+        h = self.cosmology.h
         hg = Halo2Grid(box_len=box_len/h, n_grid=n_grid)
         hg.set_halo_pos(srcpos_mpc, unit='mpc')
         hg.set_halo_mass(mstar_msun, unit='Msun')
@@ -314,7 +314,7 @@ class C2Ray_fstar(C2Ray):
 
                 # Store Metadata
                 f.attrs['z'] = z
-                f.attrs['h'] = 0.7
+                f.attrs['h'] = self.cosmology.h
                 f.attrs['numhalo'] = srcmstar.shape[0]
                 f.attrs['units'] = 'cMpc   Msun'
 
