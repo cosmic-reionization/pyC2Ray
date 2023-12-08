@@ -1,7 +1,7 @@
 import yaml
 import atexit
 import re
-import numpy as np
+import numpy as np, os
 from astropy import units as u
 from astropy import constants as c
 from astropy.cosmology import FlatLambdaCDM, z_at_value
@@ -466,15 +466,36 @@ class C2Ray:
         # Set R_max (LLS 3) in cell units
         self.R_max_LLS = self._ld['Photo']['R_max_cMpc'] * self.N / self._ld['Grid']['boxsize']
         self.printlog(f"Maximum comoving distance for photons from source (type 3 LLS): {self._ld['Photo']['R_max_cMpc'] : .3e} comoving Mpc")
-        self.printlog(f"This corresponds to                                             {self.R_max_LLS : .3f} grid cells.")
+        self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
 
-    # The following initialization methods are simulation kind-dependent and need to be
-    # overridden in the subclasses
+        self.resume = self._ld['Grid']['resume']
+
     def _output_init(self):
         """ Set up output & log file
         """
-        pass
+        self.results_basename = self._ld['Output']['results_basename']
+        if not os.path.exists(self.results_basename):
+            os.mkdir(self.results_basename)
+        self.inputs_basename = self._ld['Output']['inputs_basename']
+        self.sources_basename = self._ld['Output']['sources_basename']
+        self.density_basename = self._ld['Output']['density_basename']
 
+        self.logfile = self.results_basename + self._ld['Output']['logfile']
+        title = '                 _________   ____            \n    ____  __  __/ ____/__ \ / __ \____ ___  __\n   / __ \/ / / / /    __/ // /_/ / __ `/ / / /\n  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / \n / .___/\__, /\____//____/_/ |_|\__,_/\__, /  \n/_/    /____/                        /____/   \n'
+        if(self._ld['Grid']['resume']):
+            title = "\n\nResuming"+title[8:]+"\n\n"
+            with open(self.logfile,"r") as f: 
+                log = f.readlines()
+            with open(self.logfile,"w") as f: 
+                log.append(title)
+                f.write(''.join(log))
+        else:
+            with open(self.logfile,"w") as f: 
+                # Clear file and write header line
+                f.write(title+"\nLog file for pyC2Ray.\n\n") 
+        print(title)
+
+    # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):
         """Initialize time and redshift counter
         """

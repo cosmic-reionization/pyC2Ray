@@ -128,9 +128,13 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/results_pyc2ray/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/244Mpc_fstar_250/
   # Directory where inputs files are stored (set to None for test case)
-  inputs_basename: /store/ska/sk015/244Mpc_RT/244Mpc_f2_0_250/
+  inputs_basename: /store/ska/sk015/244Mpc_RT/
+  # Directory where inputs files are stored (set to None for test case)
+  sources_basename: /store/ska/sk015/244Mpc_RT/converted_halo/
+  # Directory where inputs files are stored (set to None for test case)
+  density_basename: /store/ska/sk015/244Mpc_RT/coarser_densities/
   # Name of the log file to write
   logfile: pyC2Ray.log
 

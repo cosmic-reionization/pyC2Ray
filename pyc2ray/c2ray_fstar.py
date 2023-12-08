@@ -19,7 +19,7 @@ from .c2ray_base import C2Ray, YEAR, Mpc, msun2g, ev2fr, ev2k
 
 from .source_model import *
 
-__all__ = ['C2Ray_244_fstar']
+__all__ = ['C2Ray_fstar']
 
 # m_p = 1.672661e-24
 
@@ -28,7 +28,7 @@ __all__ = ['C2Ray_244_fstar']
 # version used for simulations that read in N-Body data from CubeP3M
 # ======================================================================
 
-class C2Ray_244_fstar(C2Ray):
+class C2Ray_fstar(C2Ray):
     def __init__(self,paramfile,Nmesh,use_gpu,use_mpi):
         """Basis class for a C2Ray Simulation
 
@@ -152,7 +152,6 @@ class C2Ray_244_fstar(C2Ray):
         #return self.age_0*(((1.0+self.zred_0)/(1.0+z))**1.5 - 1.0) # C2Ray version, time is 0 at sim begin
         return self.age_0*(((1.0+self.zred_0)/(1.0+z))**1.5) # <- Here, we want time to be actual age (age0 + t)
         
-
     # =====================================================================================================
     # INITIALIZATION METHODS (PRIVATE)
     # =====================================================================================================
@@ -177,7 +176,7 @@ class C2Ray_244_fstar(C2Ray):
         self.age_0 = 2.*(1.+self.zred_0)**(-1.5)/(3.*H0 * 1e5/Mpc *np.sqrt(Om0))
         
         # TODO: here I force z0 to equal restart slice to test
-        zred_0 = self.zred_0 #20.134
+        zred_0 = self.zred_0
 
         # Scale quantities to the initial redshift
         if self.cosmological:
@@ -219,12 +218,11 @@ class C2Ray_244_fstar(C2Ray):
         numsrc : int
             Number of sources read from the file
         """
+        # TODO: automatic selection of low mass or high mass. For the moment only high mass
         S_star_ref = 1e48
         
-        # TODO: automatic selection of low mass or high mass. For the moment only high mass
         #mass2phot = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value * self.ts * self.cosmology.Om0)    
         # TODO: for some reason the difference with the orginal Fortran run is of the molecular weight
-        #self.printlog('%f' %self.mean_molecular )
         
         if file.endswith('.hdf5'):
             f = h5py.File(file, 'r')
@@ -274,7 +272,7 @@ class C2Ray_244_fstar(C2Ray):
         normflux : array
             Normalization of the flux of each source (relative to S_star)
         """
-        srcpos_mpc, srcmass_msun = self.read_haloes(file, box_len)
+        srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, box_len)
         fstar = self.fstar_model(srcmass_msun, kind=kind)
         mstar_msun = fstar*srcmass_msun
 
@@ -381,7 +379,7 @@ class C2Ray_244_fstar(C2Ray):
         high_z = self.zred_density[np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift))]
 
         if(high_z != self.prev_zdens):
-            file = '%scoarser_densities/%.3fn_all.dat' %(self.inputs_basename, high_z)
+            file = '%s%.3fn_all.dat' %(self.density_basename, high_z)
             self.printlog(f'\n---- Reading density file:\n '+file)
             self.ndens = t2c.DensityFile(filename=file).cgs_density / (self.mean_molecular * m_p) * (1+redshift)**3
             self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
@@ -416,10 +414,8 @@ class C2Ray_244_fstar(C2Ray):
     def _redshift_init(self):
         """Initialize time and redshift counter
         """
-        self.zred_density = t2c.get_dens_redshifts(self.inputs_basename+'coarser_densities/')[::-1]
-        #self.zred_sources = get_source_redshifts(self.inputs_basename+'sources/')[::-1]
-        # TODO: waiting for next tools21cm release
-        self.zred_sources = get_source_redshifts(self.inputs_basename+'sources/')[::-1]
+        self.zred_density = np.loadtxt(self.density_basename+'redshift_density.txt')
+        self.zred_sources = np.loadtxt(self.sources_basename+'redshift_sources.txt')
         if(self.resume):
             # get the resuming redshift
             self.zred = np.min(get_redshifts_from_output(self.results_basename)) 
@@ -455,25 +451,6 @@ class C2Ray_244_fstar(C2Ray):
             self.xh = xh0 * np.ones(self.shape, order='F')
             self.temp = temp0 * np.ones(self.shape, order='F')
             self.phi_ion = np.zeros(self.shape, order='F')
-    
-    def _output_init(self):
-        """ Set up output & log file
-        """
-        self.results_basename = self._ld['Output']['results_basename']
-        self.inputs_basename = self._ld['Output']['inputs_basename']
-
-        self.logfile = self.results_basename + self._ld['Output']['logfile']
-        title = '                 _________   ____            \n    ____  __  __/ ____/__ \ / __ \____ ___  __\n   / __ \/ / / / /    __/ // /_/ / __ `/ / / /\n  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / \n / .___/\__, /\____//____/_/ |_|\__,_/\__, /  \n/_/    /____/                        /____/   \n'
-        if(self._ld['Grid']['resume']):
-            with open(self.logfile,"r") as f: 
-                log = f.readlines()
-            with open(self.logfile,"w") as f: 
-                log.append("\n\nResuming"+title[8:]+"\n\n")
-                f.write(''.join(log))
-        else:
-            with open(self.logfile,"w") as f: 
-                # Clear file and write header line
-                f.write(title+"\nLog file for pyC2Ray.\n\n") 
 
     def _sources_init(self):
         """Initialize settings to read source files
@@ -482,23 +459,3 @@ class C2Ray_244_fstar(C2Ray):
         self.fgamma_lm = self._ld['Sources']['fgamma_lm']
         self.ts = self._ld['Sources']['ts'] * YEAR * 1e6
         self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
-
-    def _grid_init(self):
-        """ Set up grid properties
-        """
-        # Comoving quantities
-        self.boxsize_c = self._ld['Grid']['boxsize'] * Mpc / self._ld['Cosmology']['h']
-        self.dr_c = self.boxsize_c / self.N
-
-        self.printlog(f"Welcome! Mesh size is N = {self.N:n}.")
-        self.printlog(f"Simulation Box size (comoving Mpc): {self.boxsize_c/Mpc:.3e}")
-
-        # Initialize cell size to comoving size (if cosmological run, it will be scaled in cosmology_init)
-        self.dr = self.dr_c
-
-        # Set R_max (LLS 3) in cell units
-        self.R_max_LLS = self._ld['Photo']['R_max_cMpc'] * self.N * self._ld['Cosmology']['h']/ self._ld['Grid']['boxsize']
-        self.printlog(f"Maximum comoving distance for photons from source (type 3 LLS): {self._ld['Photo']['R_max_cMpc'] : .3e} comoving Mpc")
-        self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
-
-        self.resume = self._ld['Grid']['resume']
