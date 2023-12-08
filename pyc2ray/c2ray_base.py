@@ -182,6 +182,13 @@ class C2Ray:
         src_pos : 2D-array of shape (3,numsrc)
             Array containing the 3D grid position of each source, in Fortran indexing (from 1)
         """
+        if(src_pos.shape[0] != 3 and src_pos.shape[0] == 3):
+            src_pos = src_pos.T
+        elif(src_pos.shape[0] == 3):
+            pass
+        else:
+            ValueError('ASORA requires the shape of the src_pos array to be (3, N_src). Here, it does not appear that you are providing an array with this shape.')
+        
         if self.mpi:
             NumSrc = src_flux.shape[0]
             # TODO: this is a bit ugly but it works: 

@@ -279,7 +279,7 @@ class C2Ray_244_fstar(C2Ray):
         mstar_msun = fstar*srcmass_msun
 
         h = 0.7 
-        hg = Halo2Grid(box_len=box_len, n_grid=n_grid)
+        hg = Halo2Grid(box_len=box_len/h, n_grid=n_grid)
         hg.set_halo_pos(srcpos_mpc, unit='mpc')
         hg.set_halo_mass(mstar_msun, unit='Msun')
 
@@ -312,7 +312,7 @@ class C2Ray_244_fstar(C2Ray):
         f_gamma = self.fgamma_hm 
         mass2phot = msun2g / (m_p * ts)  * f_gamma
         normflux = srcmstar * mass2phot / S_star_ref
-
+        
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))

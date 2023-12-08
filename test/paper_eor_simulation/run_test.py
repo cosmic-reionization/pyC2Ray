@@ -18,8 +18,8 @@ use_asora = True                    # Determines which raytracing algorithm to u
 sim = pc2r.C2Ray_244Test(paramfile=paramfile, Nmesh=N, use_gpu=use_asora, use_mpi=False)
 
 # Get redshift list (test case)
-# zred_array = np.loadtxt(sim.inputs_basename+'redshifts_checkpoints.txt', dtype=float)
-zred_array = np.loadtxt('/users/sgiri/work_pyc2ray/redshifts_checkpoints_small.txt', dtype=float)
+zred_array = np.loadtxt(sim.inputs_basename+'redshifts_checkpoints.txt', dtype=float)
+#zred_array = np.loadtxt('/users/sgiri/work_pyc2ray/redshifts_checkpoints_small.txt', dtype=float)
 
 i_start = 0
 
@@ -48,7 +48,7 @@ for k in range(i_start, len(zred_array)-1):
 
     # Read source files
     srcpos, normflux = sim.read_sources(file='%ssources_hdf5/%.3f-coarsest_wsubgrid_sources.hdf5' %(sim.inputs_basename, zi), mass='hm', ts=num_steps_between_slices*dt)
-    
+    print(srcpos.shape)
     # Set redshift to current slice redshift
     sim.zred = zi
 

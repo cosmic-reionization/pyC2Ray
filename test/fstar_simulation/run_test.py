@@ -18,8 +18,7 @@ use_asora = True                    # Determines which raytracing algorithm to u
 sim = pc2r.C2Ray_244_fstar(paramfile=paramfile, Nmesh=N, use_gpu=use_asora, use_mpi=False)
 
 # Get redshift list (test case)
-# zred_array = np.loadtxt(sim.inputs_basename+'redshifts_checkpoints.txt', dtype=float)
-zred_array = np.loadtxt('/users/sgiri/work_pyc2ray/redshifts_checkpoints_small.txt', dtype=float)
+zred_array = np.loadtxt(sim.inputs_basename+'redshifts_checkpoints.txt', dtype=float)
 
 i_start = 0
 

@@ -5,15 +5,14 @@ module purge
 module load daint-gpu
 module load gcc/9.3.0
 module load nvidia
-module load cray-python/3.9.4.1
 
 # activate python environment
-source ../pyc2ray-env/bin/activate
-python3.9 -m pip install -r requirements.txt
+source /store/ska/sk015/pyc2ray-env/bin/activate
+python -m pip install requirements.txt
 
 # get python and numpy include paths
-PYTHON_INCLUDE=$(python3.9 -c "import sysconfig; print(sysconfig.get_path(name='include'))")
-NUMPY_INCLUDE=$(python3.9 -c "import numpy as np; print(np.get_include())")
+PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path(name='include'))")
+NUMPY_INCLUDE=$(python -c "import numpy as np; print(np.get_include())")
 
 # compile Fortran extension module
 cd src/c2ray/

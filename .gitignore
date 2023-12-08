@@ -6,3 +6,4 @@ src/*/*.o
 src/*.egg-info
 *.egg-info
 build
+.ipynb_checkpoints/
