@@ -87,3 +87,7 @@ Here we list a series of numerical and astrophysical implementations we would li
 ## CONTRIBUTING
 
 If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues). The issue page is also good if you seek help or have suggestions for us.
+
+## AKNOWLEDGMENT
+
+This project was developed by [Patrick Hirling](https://github.com/phirling) as part of a practical workshop during his master's degree in astrophysics at EPFL. You can find the original version of the code, employed in his paper ([Hirling+ (2024)](https://arxiv.org/abs/2311.01492)), on his GitHub page: [pyc2ray](https://github.com/phirling/pyc2ray).
