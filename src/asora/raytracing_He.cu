@@ -1,5 +1,5 @@
-#include "raytracing.cuh"
-#include "memory.cuh"
+#include "raytracing_He.cuh"
+#include "memory_He.cuh"
 #include "rates.cuh"
 #include <exception>
 #include <string>
@@ -90,7 +90,7 @@ void do_all_sources_gpu(
     double* phi_ion_HeII,
     const int & NumSrc,
     const int & m1,
-    const double & minlogtau, //TODO: probably need to include the same but for HeI and HeII
+    const double & minlogtau,
     const double & dlogtau,
     const int & NumTau)
     {   
@@ -113,10 +113,14 @@ void do_all_sources_gpu(
         dim3 bs(CUDA_BLOCK_SIZE);
 
         // Here we fill the ionization rate array with zero before raytracing all sources. The LOCALRATES flag is for debugging purposes and will be removed later on
-        cudaMemset(phi_dev, 0, meshsize);
+        cudaMemset(phi_HI_dev, 0, meshsize);
+        cudaMemset(phi_HeI_dev, 0, meshsize);
+        cudaMemset(phi_HeII_dev, 0, meshsize);
 
         // Copy current ionization fraction to the device
-        cudaMemcpy(x_dev, xHI_av, meshsize, cudaMemcpyHostToDevice);
+        cudaMemcpy(xHI_dev, xHI_av, meshsize, cudaMemcpyHostToDevice);
+        cudaMemcpy(xHeI_dev, xHeI_av, meshsize, cudaMemcpyHostToDevice);
+        cudaMemcpy(xHeII_dev, xHeII_av, meshsize, cudaMemcpyHostToDevice);
 
         // Since the grid is periodic, we limit the maximum size of the raytraced region to a cube as large as the mesh around the source.
         // See line 93 of evolve_source in C2Ray, this size will depend on if the mesh is even or odd.
@@ -129,7 +133,7 @@ void do_all_sources_gpu(
         {   
             // Raytrace the current batch of sources in parallel
             // TODO: need to add varible for HeI and HeII (see header of the "evolve0D_gpu")
-            evolve0D_gpu<<<gs,bs>>>(R, max_q, ns,NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, sig, dr, n_dev, x_dev, phi_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
+            evolve0D_gpu<<<gs,bs>>>(R, max_q, ns,NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, sig, dr, n_dev, xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev, phi_HeI_dev, phi_HeII_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
  
             // Check for errors
             auto error = cudaGetLastError();
@@ -144,7 +148,9 @@ void do_all_sources_gpu(
         }
 
         // Copy the accumulated ionization fraction back to the host
-        auto error = cudaMemcpy(phi_ion_HI,phi_dev,meshsize,cudaMemcpyDeviceToHost);
+        auto error1 = cudaMemcpy(phi_ion_HI, phi_HI_dev, meshsize, cudaMemcpyDeviceToHost);
+        auto error2 = cudaMemcpy(phi_ion_HeI, phi_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
+        auto error3 = cudaMemcpy(phi_ion_HeII, phi_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
 
     }
 

@@ -8,7 +8,7 @@ module load nvidia
 
 # activate python environment
 source /store/ska/sk015/pyc2ray-env/bin/activate
-python -m pip install requirements.txt
+python -m pip install -r requirements.txt
 
 # get python and numpy include paths
 PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path(name='include'))")

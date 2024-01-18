@@ -43,7 +43,7 @@ def evolve3D(dt,dr,
         minlogtau, dlogtau,
         R_max_LLS, convergence_fraction,
         sig, bh00, albpow, colh0, temph0, abu_c,
-        logfile="pyC2R  ay.log", quiet=False):
+        logfile="pyC2Ray.log", quiet=False):
 
     """Evolves the ionization fraction over one timestep for the whole grid
 
