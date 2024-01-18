@@ -37,13 +37,13 @@ __all__ = ['evolve3D']
 
 def evolve3D(dt,dr,
         src_flux,src_pos,
-        use_gpu,max_subbox,subboxsize,loss_fraction,
-        temp,ndens,xh,
-        photo_thin_table,photo_thick_table,
-        minlogtau,dlogtau,
+        use_gpu, max_subbox, subboxsize, loss_fraction,
+        temp, ndens, xh,
+        photo_thin_table, photo_thick_table,
+        minlogtau, dlogtau,
         R_max_LLS, convergence_fraction,
-        sig,bh00,albpow,colh0,temph0,abu_c,
-        logfile="pyC2Ray.log",quiet=False):
+        sig, bh00, albpow, colh0, temph0, abu_c,
+        logfile="pyC2R  ay.log", quiet=False):
 
     """Evolves the ionization fraction over one timestep for the whole grid
 

@@ -10,7 +10,7 @@ c = 2.997925e+10
 __all__ = ['make_tau_table']
 
     
-def make_tau_table(minlogtau,maxlogtau,NumTau):
+def make_tau_table(minlogtau, maxlogtau, NumTau):
     """Utility function to create optical depth array for C2Ray
 
     Parameters

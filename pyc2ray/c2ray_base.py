@@ -13,7 +13,7 @@ from .utils.logutils import printlog
 from .evolve import evolve3D, evolve3D_MPI
 from .raytracing import do_raytracing
 from .asora_core import device_init, device_close, photo_table_to_device
-from .radiation import BlackBodySource, make_tau_table
+from .radiation import BlackBodySource, PowerLawSource, make_tau_table
 
 # ======================================================================
 # This file defines the abstract C2Ray object class, which is the basis
@@ -73,7 +73,7 @@ from .radiation import BlackBodySource, make_tau_table
 # astropy values once consistency between the two codes has been established
 pc = 3.086e18           #(1*u.pc).to('cm').value            # C2Ray value: 3.086e18
 YEAR = 3.15576E+07      #(1*u.yr).to('s').value           # C2Ray value: 3.15576E+07
-ev2fr = 0.241838e15                     # eV to Frequency (Hz)
+ev2fr = 0.241838e15                     # eV to Frequency (Hz)  # 1./cst.h.to('eV/Hz') (?)
 ev2k = 1.0/8.617e-05                    # eV to Kelvin
 kpc = 1e3*pc                            # kiloparsec in cm
 Mpc = 1e6*pc                            # megaparsec in cm
@@ -191,7 +191,7 @@ class C2Ray:
         
         if self.mpi:
             NumSrc = src_flux.shape[0]
-            # TODO: this is a bit ugly but it works: 
+            # TODO: MB this is a bit ugly but it works for now: 
             # if the number of sources exceed the number of MPI processors then call the evolve designed for the MPI source splitting.
             # otherwise: all ranks are calling (independently) the evolve with no source splitting until the condition above is meet.
             if(NumSrc >= self.nprocs):
@@ -396,57 +396,67 @@ class C2Ray:
             else:
                 self.printlog(f"Using power-law opacity with {self.NumTau:n} table points between tau=10^({self.minlogtau:n}) and tau=10^({self.maxlogtau:n})")
         
-        # The actual table has NumTau + 1 points: the 0-th position is tau=0 and the
-        # remaining NumTau points are log-spaced from minlogtau to maxlogtau (same as in C2Ray)
+        # The actual table has NumTau + 1 points: the 0-th position is tau=0 and the remaining NumTau points are log-spaced from minlogtau to maxlogtau (same as in C2Ray)
         self.tau, self.dlogtau = make_tau_table(self.minlogtau,self.maxlogtau,self.NumTau)
 
         ion_freq_HI = ev2fr * self.eth0
         ion_freq_HeII = ev2fr * self.ethe1
 
-        # Black-Body source type
+        freq_min = ion_freq_HI
+        freq_max = 10*ion_freq_HeII
+
+        self.cs_pl_idx_h = self._ld['Photo']['cross_section_pl_index']
+
         if self.SourceType == 'blackbody':
-            freq_min = ion_freq_HI
-            freq_max = 10*ion_freq_HeII
 
             # Initialize spectrum parameters
             self.bb_Teff = self._ld['BlackBodySource']['Teff']
-            self.cs_pl_idx_h = self._ld['BlackBodySource']['cross_section_pl_index']
-            radsource = BlackBodySource(self.bb_Teff, self.grey, ion_freq_HI, self.cs_pl_idx_h)
+            radsource = BlackBodySource(self.bb_Teff, self.grey, ion_freq_HI, self.cs_pl_idx_h, 1e48)
 
             # Print info
             if(self.rank == 0):
                 self.printlog(f"Using Black-Body sources with effective temperature T = {radsource.temp :.1e} K and Radius {(radsource.R_star/c.R_sun.to('cm')).value : .3e} rsun")
                 self.printlog(f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz")
                 self.printlog(f"This is Energy:           {freq_min/ev2fr:.3e} to {freq_max/ev2fr:.3e} eV")
+        
+        elif self.SourceType == 'powerlaw':
+            # Initialize spectrum parameters
+            self.EddLum = self._ld['PowerLaw']['eddlum']
+            self.Edd_Efficiency = self._ld['PowerLaw']['eddeff']
+            self.index = self._ld['PowerLaw']['index']
+            radsource = PowerLawSource(self.EddLum, self.Edd_Efficiency, self.index, self.grey, ion_freq_HI, self.cs_pl_idx_h)
 
-            # Integrate table
-            self.printlog("Integrating photoionization rates tables...")
-            self.photo_thin_table, self.photo_thick_table = radsource.make_photo_table(self.tau,freq_min,freq_max,1e48)
-            
-            # WIP: Heating rates
-            # 30.11.23 P.Hirling: The heating tables can be calculated, and used
-            # with the standalone CPU raytracing method to calculate photo-heating rates
-            # for the whole grid. However, at this time, the chemistry solver doesn't
-            # use these rates.
-            # TODO:
-            # 1. Add heating rate computation to ASORA (GPU raytracing)
-            # 2. Add heating (thermal) to chemistry module
-            if self.compute_heating_rates:
-                self.printlog("Integrating photoheating rates tables...")
-                self.heat_thin_table, self.heat_thick_table = radsource.make_heat_table(self.tau,freq_min,freq_max,1e48) # nb integration bounds are given in log10(freq/freq_HI)
-            else:
-                self.printlog("INFO: No heating rates")
-                self.heat_thin_table = np.zeros(self.NumTau+1)
-                self.heat_thick_table = np.zeros(self.NumTau+1)
-
-        # Here you could add another source type, e.g. a monochromatic, power-law,...
-        # Define a class in the radiation submodule and initialize it here
+            # Print info
+            if(self.rank == 0):
+                self.printlog(f"Using Power-Law sources with Eddington luminosity L = {radsource.EddLum :.2e} erg/s and efficiency {radsource.Edd_Efficiency: .3e}")
+                self.printlog(f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz")
+                self.printlog(f"This is Energy:           {freq_min/ev2fr:.3e} to {freq_max/ev2fr:.3e} eV")
         else:
             raise NameError("Unknown source type : ",self.SourceType)
         
+        # Integrate table
+        self.printlog("Integrating photoionization rates tables...")
+        self.photo_thin_table, self.photo_thick_table = radsource.make_photo_table(self.tau, freq_min, freq_max)
+        
+        # WIP: Heating rates
+        # 30.11.23 P.Hirling: The heating tables can be calculated, and used
+        # with the standalone CPU raytracing method to calculate photo-heating rates
+        # for the whole grid. However, at this time, the chemistry solver doesn't
+        # use these rates.
+        # TODO:
+        # 1. Add heating rate computation to ASORA (GPU raytracing)
+        # 2. Add heating (thermal) to chemistry module
+        if self.compute_heating_rates:
+            self.printlog("Integrating photoheating rates tables...")
+            self.heat_thin_table, self.heat_thick_table = radsource.make_heat_table(self.tau, freq_min, freq_max) # nb integration bounds are given in log10(freq/freq_HI)
+        else:
+            self.printlog("INFO: No heating rates")
+            self.heat_thin_table = np.zeros(self.NumTau+1)
+            self.heat_thick_table = np.zeros(self.NumTau+1)
+        
         # Copy radiation table to GPU
         if self.gpu:
-            photo_table_to_device(self.photo_thin_table,self.photo_thick_table)
+            photo_table_to_device(self.photo_thin_table, self.photo_thick_table)
             if(self.rank == 0): self.printlog("Successfully copied radiation tables to GPU memory.")
 
     def _grid_init(self):

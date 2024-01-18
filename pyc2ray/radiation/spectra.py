@@ -14,35 +14,32 @@ hplanck = hplanck_ac.cgs.value
 ion_freq_HI = (Ryd_ac * c_ac).cgs.value
 sigma_0 = 6.3e-18
 
-__all__ = ['BlackBodySource_old']
+__all__ = ['Source', 'BlackBodySource', 'PowerLawSource']
 
-class BlackBodySource_old:
-    """A point source emitting a Black-body spectrum
-    """
-    def __init__(self, temp, grey, freq0, pl_index) -> None:
-        self.temp = temp
+class Source:
+    """ radiation sources """
+    def __init__(self, grey=None, freq0=None, pl_index=None, S_star_ref=None):
         self.grey = grey
         self.freq0 = freq0
         self.pl_index = pl_index
         self.R_star = 1.0
+        self.S_star_ref = S_star_ref
 
-    def SED(self,freq):
-        if (freq*h_over_k/self.temp < 700.0):
-            sed = 4*np.pi*self.R_star**2*two_pi_over_c_square*freq**2/(np.exp(freq*h_over_k/self.temp)-1.0)
-        else:
-            sed = 0.0
-        return sed
+
+    def SED(self, freq):
+        """ Initialize the Spectral Energy Density (SED) """
+        return 0
     
     def integrate_SED(self, f1, f2):
         res = quad(self.SED, f1, f2)
         return res[0]
     
-    def normalize_SED(self, f1, f2, S_star_ref):
-        S_unscaled = self.integrate_SED(f1,f2)
-        S_scaling = S_star_ref / S_unscaled
+    def normalize_SED(self, f1, f2):
+        S_unscaled = self.integrate_SED(f1, f2)
+        S_scaling = self.S_star_ref / S_unscaled
         self.R_star = np.sqrt(S_scaling) * self.R_star
 
-    def cross_section_freq_dependence(self,freq):
+    def cross_section_freq_dependence(self, freq):
         if self.grey:
             return 1.0
         else:
@@ -50,7 +47,7 @@ class BlackBodySource_old:
     
     # C2Ray distinguishes between optically thin and thick cells, and calculates the rates differently for those two cases. See radiation_tables.F90, lines 345 -
     def _photo_thick_integrand_vec(self, freq, tau):
-        itg = self.SED(freq) * np.exp(-tau*self.cross_section_freq_dependence(freq))
+        itg = self.SED(freq) * np.exp(-tau*self.cross_section_freq_dependence(freq)) # same as L611 in radiation_tables.f90 (C2Ray with helium)
         # To avoid overflow in the exponential, check
         return np.where(tau*self.cross_section_freq_dependence(freq) < 700.0,itg,0.0)
     
@@ -66,18 +63,46 @@ class BlackBodySource_old:
         photo_thin = self._photo_thin_integrand_vec(freq,tau)
         return hplanck * (freq - ion_freq_HI) * photo_thin
     
-    def make_photo_table(self, tau, freq_min, freq_max, S_star_ref):
-        self.normalize_SED(freq_min, freq_max, S_star_ref)
-        integrand_thin = lambda f : self._photo_thin_integrand_vec(f,tau)
-        integrand_thick = lambda f : self._photo_thick_integrand_vec(f,tau)
-        table_thin = quad_vec(integrand_thin,freq_min,freq_max,epsrel=1e-12)[0]
-        table_thick = quad_vec(integrand_thick,freq_min,freq_max,epsrel=1e-12)[0]
+    def make_photo_table(self, tau, freq_min, freq_max):
+        self.normalize_SED(freq_min, freq_max)
+        integrand_thin = lambda f : self._photo_thin_integrand_vec(f, tau)
+        integrand_thick = lambda f : self._photo_thick_integrand_vec(f, tau)
+        table_thin = quad_vec(integrand_thin, freq_min, freq_max, epsrel=1e-12)[0]
+        table_thick = quad_vec(integrand_thick, freq_min, freq_max, epsrel=1e-12)[0]
         return table_thin, table_thick
     
-    def make_heat_table(self, tau, freq_min, freq_max, S_star_ref): # soubroutine at L825 in radiation_tables.f90 (C2Ray with helium)
-        self.normalize_SED(freq_min,freq_max,S_star_ref)
+    def make_heat_table(self, tau, freq_min, freq_max): # soubroutine at L825 in radiation_tables.f90 (C2Ray with helium)
+        self.normalize_SED(freq_min, freq_max)
         integrand_thin = lambda f : self._heat_thin_integrand_vec(f,tau)
         integrand_thick = lambda f : self._heat_thick_integrand_vec(f,tau)
         table_thin = quad_vec(integrand_thin,freq_min,freq_max,epsrel=1e-12)[0]
         table_thick = quad_vec(integrand_thick,freq_min,freq_max,epsrel=1e-12)[0]
         return table_thin, table_thick
+        
+
+
+class BlackBodySource(Source):
+    """ A point source emitting a Black-body spectrum """
+    def __init__(self, temp, grey, freq0, pl_index, S_star_ref):
+        super().__init__(grey=grey, freq0=freq0, pl_index=pl_index, S_star_ref=S_star_ref)
+        self.temp = temp
+
+    def SED(self,freq):
+        if (freq*h_over_k/self.temp < 700.0):
+            sed = 4*np.pi*self.R_star**2*two_pi_over_c_square*freq**2/(np.exp(freq*h_over_k/self.temp)-1.0)
+        else:
+            sed = 0.0
+        return sed
+
+
+class PowerLawSource(Source):
+    """ A point source emitting a Power Law spectrum """
+    def __init__(self, EddLum, Edd_Efficiency, index, grey, freq0, pl_index):
+        self.EddLum = EddLum
+        self.Edd_Efficiency = Edd_Efficiency
+        self.index = index
+        super().__init__(grey=grey, freq0=freq0, pl_index=pl_index, S_star_ref=self.EddLum*self.Edd_Efficiency)
+
+    def SED(self, freq):
+        sed = hplanck * freq**(1-self.index)
+        return sed

@@ -81,9 +81,7 @@ void do_all_sources_gpu(
     double* coldensh_out_hi,
     const double & sig,
     const double & dr,
-    double* ndens_HI,
-    double* ndens_HeI,
-    double* ndens_HeII,
+    double* ndens,
     double* xHI_av,
     double* xHeI_av,
     double* xHeII_av,
@@ -114,13 +112,11 @@ void do_all_sources_gpu(
         // CUDA Block size: more of a tuning parameter (see above), in practice anything ~128 is fine
         dim3 bs(CUDA_BLOCK_SIZE);
 
-        // Here we fill the ionization rate array with zero before raytracing all sources. The LOCALRATES flag
-        // is for debugging purposes and will be removed later on
-        cudaMemset(phi_dev,0,meshsize);
+        // Here we fill the ionization rate array with zero before raytracing all sources. The LOCALRATES flag is for debugging purposes and will be removed later on
+        cudaMemset(phi_dev, 0, meshsize);
 
         // Copy current ionization fraction to the device
-        // cudaMemcpy(n_dev,ndens_HI,meshsize,cudaMemcpyHostToDevice);  < --- !! density array is not modified, asora assumes that it has been copied to the device before
-        cudaMemcpy(x_dev,xHI_av,meshsize,cudaMemcpyHostToDevice);
+        cudaMemcpy(x_dev, xHI_av, meshsize, cudaMemcpyHostToDevice);
 
         // Since the grid is periodic, we limit the maximum size of the raytraced region to a cube as large as the mesh around the source.
         // See line 93 of evolve_source in C2Ray, this size will depend on if the mesh is even or odd.
@@ -132,7 +128,6 @@ void do_all_sources_gpu(
         for (int ns = 0; ns < NumSrc; ns += NUM_SRC_PAR)
         {   
             // Raytrace the current batch of sources in parallel
-            //evolve0D_gpu<<<gs,bs>>>(R, max_q, ns,NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, sig, dr, n_dev, x_dev, phi_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
             // TODO: need to add varible for HeI and HeII (see header of the "evolve0D_gpu")
             evolve0D_gpu<<<gs,bs>>>(R, max_q, ns,NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, sig, dr, n_dev, x_dev, phi_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
  
@@ -169,9 +164,7 @@ __global__ void evolve0D_gpu(
     double* coldensh_out_hi,
     const double sig,
     const double dr,
-    const double* ndens_HI,
-    const double* ndens_HeI,
-    const double* ndens_HeII,
+    const double* ndens,
     const double* xHI_av,
     const double* xHeI_av,
     const double* xHeII_av,
@@ -288,15 +281,15 @@ __global__ void evolve0D_gpu(
 
                             // Get local ionization fraction & Hydrogen density
                             xh_av_p = xHI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-                            nHI_p = ndens_HI[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xh_av_p);
+                            nHI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xh_av_p);
 
                             // Get local ionization fraction & Helium I density
                             xhei_av_p = xHI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-                            nHeII_p = ndens_HeI[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xhei_av_p);
+                            nHeII_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xhei_av_p);
 
                             // Get local ionization fraction & Helium II density
                             xheii_av_p = xHI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-                            nHeI_p = ndens_HeII[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xheii_av_p);
+                            nHeI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xheii_av_p);
 
                             // If its the source cell, just find path (no incoming column density)
                             if (i == i0 &&
