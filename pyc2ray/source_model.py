@@ -110,6 +110,29 @@ class StellarToHaloRelation:
 		Mstar = Mhalo*fstar
 		return {'fstar': fstar, 'Mstar': Mstar}
 
+class EscapeFraction:
+	"""Modelling the escape of photons from the stars/galaxies inside dark matter haloes."""
+	def __init__(self, f0_esc=0.1, Mp_esc=1e10, al_esc=0, **kwargs):
+
+		self.h  = kwargs.get('h', kwargs.get('hlittle', 0.7))
+		self.Ob = kwargs.get('Ob', kwargs.get('Omega_b', kwargs.get('OmegaB', 0.044)))
+		self.Om = kwargs.get('Om', kwargs.get('Omega_m', kwargs.get('Omega0', 0.270)))
+
+		self.f0_esc = f0_esc
+		self.Mp_esc = Mp_esc
+		self.al_esc = al_esc
+		
+	def set_params(self, **kwargs):
+		self.f0_esc = kwargs.get('f0_esc', self.f0_esc)
+		self.Mp_esc = kwargs.get('Mp_esc', self.Mp_esc) 
+		self.al_esc = kwargs.get('al_esc', self.al_esc)
+
+	def deterministic(self, Mhalo, **kwargs):
+		self.set_params(**kwargs)
+		fesc_mean = lambda M: self.f0_esc*(M/self.Mp_esc)**self.al_esc
+		self.fesc_mean = fesc_mean
+		fesc = fesc_mean(Mhalo) 
+		return {'fesc': fesc}
 
 class Halo2Grid:
 	def __init__(self, box_len, n_grid, method='nearest'):
@@ -197,31 +220,37 @@ class Halo2Grid:
 		binned_value_list = binned_value[binned_value>0]
 		return binned_pos_list, binned_value_list
 
-class SourceModel(StellarToHaloRelation, Halo2Grid):
+class SourceModel(Halo2Grid):
 	"""Combines StellarToHaloRelation and Halo2Grid to model the source properties."""
 
 	def __init__(self, f0=0.3, Mt=1e8, Mp=3e11,
 					g1=0.49, g2=-0.61, g3=3, g4=-3,
+					f0_esc=1, Mp_esc=1e10, al_esc=0,
 					box_len=None, n_grid=None, method='nearest', **kwargs):
 		"""
 		Initialize the SourceModel.
 
 		Parameters:
-			f0 (float): Default fraction parameter.
-			Mt (float): Mass parameter.
-			Mp (float): Mass parameter.
-			g1 (float): Power-law index.
-			g2 (float): Power-law index.
-			g3 (float): Power-law index.
-			g4 (float): Power-law index.
+			f0 (float): Normalisation parameter for f_star.
+			Mt (float): Truncation mass for f_star.
+			Mp (float): Peak mass postion in f_star.
+			g1 (float): Slope at low mass end.
+			g2 (float): Slope at high mass end.
+			g3 (float): Power-law index for the masses below Mt.
+			g4 (float): Power-law index for the masses below Mt.
+			f0_esc (float): Normalisation parameter for f_esc.
+			Mp_esc (float): Normalisation for the masses in f_esc relation.
+			al_esc (float): Power-law index for f_esc relation.
 			box_len (float): Size of the simulation box.
 			n_grid (int): Number of grid cells.
 			method (str): Interpolation method for Halo2Grid.
 			kwargs (dict): Additional parameters for parent classes.
 		"""
-		StellarToHaloRelation.__init__(self, f0=f0, Mt=Mt, Mp=Mp, g1=g1, g2=g2, g3=g3, g4=g4, **kwargs)
 		Halo2Grid.__init__(self, box_len=box_len, n_grid=n_grid, method=method)
-	
+
+		self.f_star = StellarToHaloRelation(f0=f0, Mt=Mt, Mp=Mp, g1=g1, g2=g2, g3=g3, g4=g4, **kwargs)
+		self.f_esc  = EscapeFraction(f0_esc=f0_esc, Mp_esc=Mp_esc, al_esc=al_esc)
+
 	def ionizing_flux(self, ts=10, mstar_model='deterministic', **kwargs):
 		pos = kwargs.get('pos', self.pos_grid)
 		if pos is None:
@@ -240,12 +269,16 @@ class SourceModel(StellarToHaloRelation, Halo2Grid):
 		#self.printlog('%f' %self.mean_molecular )
 		fgamma_hm = 1  # Set to 1 as we can absorb this into f0 in stellar-to-halo relation.
 
+		# Mstar modelling
 		if mstar_model.lower()=='deterministic':
-			star  = self.deterministic(mass)
-			mass_star = star['Mstar']
+			fstar  = self.f_star.deterministic(mass)
+			mass_star = fstar['Mstar']
+
+		# UV Escape fraction modelling
+		fesc = self.f_esc.deterministic(mass)
 
 		mass2phot = msun2g * fgamma_hm *  1/ (m_p * ts)    
-		normflux = mass_star * mass2phot / S_star_ref
+		normflux = fesc['fesc']*mass_star * mass2phot / S_star_ref
 		print(normflux)
 
 		binned_flux, bin_edges, bin_num = self.value_on_grid(pos, normflux)
