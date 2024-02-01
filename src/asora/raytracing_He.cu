@@ -99,9 +99,7 @@ void do_all_sources_gpu(
         int meshsize = m1*m1*m1*sizeof(double);
 
         //std::cout << "R: " << R << std::endl;
-        // Determine how large the octahedron should be, based on the raytracing radius. Currently,
-        // this is set s.t. the radius equals the distance from the source to the middle of the faces
-        // of the octahedron. To raytrace the whole box, the octahedron bust be 1.5*N in size
+        // Determine how large the octahedron should be, based on the raytracing radius. Currently, this is set s.t. the radius equals the distance from the source to the middle of the faces of the octahedron. To raytrace the whole box, the octahedron bust be 1.5*N in size
         int max_q = std::ceil(SQRT3 * min(R,SQRT3*m1/2.0));
         //int max_q = std::ceil(SQRT3 * R); //std::ceil(1.5 * m1);
         //std::cout << "max_q: " << max_q << std::endl;
@@ -133,7 +131,7 @@ void do_all_sources_gpu(
         {   
             // Raytrace the current batch of sources in parallel
             // TODO: need to add varible for HeI and HeII (see header of the "evolve0D_gpu")
-            evolve0D_gpu<<<gs,bs>>>(R, max_q, ns,NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, sig, dr, n_dev, xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev, phi_HeI_dev, phi_HeII_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
+            evolve0D_gpu<<<gs,bs>>>(R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, sig, dr, n_dev, xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev, phi_HeI_dev, phi_HeII_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
  
             // Check for errors
             auto error = cudaGetLastError();
@@ -190,10 +188,12 @@ __global__ void evolve0D_gpu(
     /* The raytracing kernel proceeds as follows:
     1. Select the source based on the block number (within the batch = the grid)
     2. Loop over the asora q-cells around the source, up to q_max (loop "A")
-    3. Inside each shell, threads independently do all cells, possibly requiring multiple iterations
-    if the block size is smaller than the number of cells in the shell (loop "B")
+    3. Inside each shell, threads independently do all cells, possibly requiring multiple iterations if the block size is smaller than the number of cells in the shell (loop "B")
     4. After each shell, the threads are synchronized to ensure that causality is respected
     */
+
+    //TODO: later need to import this from parameter.yalm
+    double abu_he_mass = 0.2486;
 
     // Source number = Start of batch + block number (each block does one source)
     int ns = ns_start + blockIdx.x;
@@ -211,11 +211,7 @@ __global__ void evolve0D_gpu(
             int num_cells = 4*q*q + 2;
             int Npass = num_cells / blockDim.x + 1;
 
-            /* The threads have 1D indices 0,...,blocksize-1. We map these 1D indices to
-            the 3D positions of the cells inside the shell via the mapping described in the
-            paper. Since in general there are more cells than threads, there is an
-            additional loop here (B) so that all cells are treated. 
-            */
+            /* The threads have 1D indices 0,...,blocksize-1. We map these 1D indices to the 3D positions of the cells inside the shell via the mapping described in the paper. Since in general there are more cells than threads, there is an additional loop here (B) so that all cells are treated. */
             int s_end;
             if (q == 0) {s_end = 1;}
             else {s_end = 4*q*q + 2;}
@@ -261,15 +257,15 @@ __global__ void evolve0D_gpu(
 
                         int pos[3];
                         double path;
-                        double coldens_in_hi;                                // HI Column density to the cell
-                        double coldens_in_hei;                                // HeI Column density to the cell
-                        double coldens_in_heii;                                // HeII Column density to the cell
-                        double nHI_p;                                      // Local density of HI in the cell
-                        double nHeI_p;                                      // Local density of HeI in the cell
-                        double nHeII_p;                                      // Local density of HeII in the cell
-                        double xh_av_p;                                    // Local hydrogen ionization fraction of cell
-                        double xhei_av_p;                                    // Local helium first ionization fraction of cell
-                        double xheii_av_p;                                    // Local helium second ionization fraction of cell
+                        double coldens_in_hi;            // HI Column density to the cell
+                        double coldens_in_hei;           // HeI Column density to the cell
+                        double coldens_in_heii;          // HeII Column density to the cell
+                        double nHI_p;                    // Local density of HI in the cell
+                        double nHeI_p;                   // Local density of HeI in the cell
+                        double nHeII_p;                  // Local density of HeII in the cell
+                        double xh_av_p;                  // Local hydrogen ionization fraction of cell
+                        double xhei_av_p;                // Local helium first ionization fraction of cell
+                        double xheii_av_p;               // Local helium second ionization fraction of cell
 
                         double xs, ys, zs;
                         double dist2;
@@ -287,15 +283,15 @@ __global__ void evolve0D_gpu(
 
                             // Get local ionization fraction & Hydrogen density
                             xh_av_p = xHI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-                            nHI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xh_av_p);
+                            nHI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - abu_he_mass) * (1.0 - xh_av_p);
 
                             // Get local ionization fraction & Helium I density
-                            xhei_av_p = xHI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-                            nHeII_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xhei_av_p);
+                            xhei_av_p = xHeI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
+                            nHeI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * abu_he_mass * xhei_av_p;
 
                             // Get local ionization fraction & Helium II density
-                            xheii_av_p = xHI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-                            nHeI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - xheii_av_p);
+                            xheii_av_p = xHeII_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
+                            nHeII_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * abu_he_mass * xheii_av_p;
 
                             // If its the source cell, just find path (no incoming column density)
                             if (i == i0 &&
@@ -331,22 +327,37 @@ __global__ void evolve0D_gpu(
                             double cdo_hei = coldens_in_hei + nHeI_p * path;
                             double cdo_heii = coldens_in_heii + nHeII_p * path;
 
-                            coldensh_out_hi[cdh_offset + mem_offst_gpu(pos[0],pos[1],pos[2],m1)] = cdo_hi;
+                            // total column density in and out
+                            double coldens_out_tot = cdo_hi + cdo_hei + cdo_heii;
+                            double coldens_in_tot = coldens_in_hi + coldens_in_hei + coldens_in_heii;
+
+                            // Compute optical depth
+                            double tau_out_hi = cdo_hi * sig;
+                            double tau_out_hei = cdo_hei * sig;
+                            double tau_out_heii = cdo_heii * sig;
+
+                            // total optical depth
+                            double tau_out_tot = tau_out_hi + tau_out_hei + tau_out_heii;
+
+                            //coldensh_out_hi[cdh_offset + mem_offst_gpu(pos[0],pos[1],pos[2],m1)] = cdo_hi;
                             
                             // Compute photoionization rates from column density. WARNING: for now this is limited to the grey-opacity test case source
                             if ((coldens_in_hi <= MAX_COLDENSH) && (dist2/(dr*dr) <= Rmax_LLS*Rmax_LLS))
                             {
                                 #if defined(GREY_NOTABLES)
-                                double phi = photoion_rates_test_gpu(strength,coldens_in_hi,coldensh_out_hi[mem_offst_gpu(pos[0],pos[1],pos[2],m1)],vol_ph,sig);
+                                double phi = photoion_rates_test_gpu(strength, coldens_in_hi, coldensh_out_hi[mem_offst_gpu(pos[0],pos[1],pos[2],m1)],vol_ph, sig);
                                 #else
-                                // TODO: probabl I need to completely change the "photoion_rates_gpu" function accondigly to Martina He implementation (look at old C2Ray with He)
-                                double phi = photoion_rates_gpu(strength, coldens_in_hi, cdo_hi, vol_ph, sig, photo_thin_table, photo_thick_table, minlogtau, dlogtau, NumTau);
+                                double phi = photoion_rates_gpu(strength, coldens_in_tot, coldens_out_tot, vol_ph, sig, photo_thin_table, photo_thick_table, minlogtau, dlogtau, NumTau);
                                 #endif
-                                // Divide the photo-ionization rates by the appropriate neutral density (part of the photon-conserving rate prescription)
-                                phi /= nHI_p;
-
+                                // Divide the photo-ionization rates by the appropriate neutral density (part of the photon-conserving rate prescription) and the fraction        
+                                double phi_HI = phi * tau_out_hi / tau_out_tot / nHI_p;
+                                double phi_HeI = phi * tau_out_hei / tau_out_tot / nHeI_p;
+                                double phi_HeII = phi * tau_out_heii / tau_out_tot / nHeII_p;
+                        
                                 // Add the computed ionization rate to the array ATOMICALLY since multiple blocks could be writing to the same cell at the same time!
-                                atomicAdd(phi_ion_HI + mem_offst_gpu(pos[0],pos[1],pos[2],m1), phi);
+                                atomicAdd(phi_ion_HI + mem_offst_gpu(pos[0],pos[1],pos[2], m1), phi_HI);
+                                atomicAdd(phi_ion_HeI + mem_offst_gpu(pos[0],pos[1],pos[2], m1), phi_HeI);
+                                atomicAdd(phi_ion_HeII + mem_offst_gpu(pos[0],pos[1],pos[2], m1), phi_HeII);
                             }                          
                         }
                     }

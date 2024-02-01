@@ -1,5 +1,4 @@
 import sys
-sys.path.append("../../../")
 import numpy as np
 import time
 import pyc2ray as pc2r

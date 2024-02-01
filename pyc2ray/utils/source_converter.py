@@ -16,7 +16,7 @@ import os
 #args = parser.parse_args()
 
 sort = False
-path_in = '/store/ska/sk015/244Mpc_RT/244Mpc_f2_0_250/sources/'
+path_in = '/store/ska/sk015/244Mpc_RT/sources/'
 path_out = '/scratch/snx3000/mibianco/results_c2ray/convert_sources/'
 
 os.chdir(path_in)

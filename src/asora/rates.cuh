@@ -5,6 +5,10 @@
 __device__ double photoion_rates_gpu(const double & strength,const double & coldens_in,const double & coldens_out,
     const double & Vfact,const double & sig,const double* thin_table,const double* thick_table,const double & minlogtau,const double & dlogtau,const int& NumTau);
 
+// Photoionization rate from tables with Helium weighting
+__device__ double photoion_rates_He_gpu(const double & strength,const double & coldens_in,const double & coldens_out,
+    const double & Vfact,const double & sig,const double* thin_table,const double* thick_table,const double & minlogtau,const double & dlogtau,const int& NumTau);
+
 // Table interpolation lookup function
 __device__ double photo_lookuptable(const double*,const double &,const double &,const double &,const int &);
 

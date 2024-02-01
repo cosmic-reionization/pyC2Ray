@@ -24,7 +24,7 @@ __device__ double photoion_rates_gpu(const double & strength,const double & cold
 
     // PH (08.10.23) I'm confused about the way the rates are calculated differently for thin/thick
     // cells. The following is taken verbatim from radiation_photoionrates.F90 lines 276 - 303
-    // but without true understanding... Names are slightly different to simpify notatio
+    // but without true understanding... Names are slightly different to simpify notation
     double phi_photo_in = prefact * photo_lookuptable(photo_thick_table,tau_in,minlogtau,dlogtau,NumTau);
 
     if (abs(tau_out-tau_in) > TAU_PHOTO_LIMIT )
@@ -75,7 +75,7 @@ __device__ double photo_lookuptable(const double* table,const double & tau,const
     // Find table index and do linear interpolation
     // Recall that tau(0) = 0 and tau(1:NumTau) ~ logspace(minlogtau,maxlogtau) (so in reality the table has size NumTau+1)
     logtau = log10(max(1.0e-20,tau));
-    real_i = min(float(NumTau),max(0.0,1.0+(logtau-minlogtau)/dlogtau));
+    real_i = min(float(NumTau), max(0.0,1.0+(logtau-minlogtau)/dlogtau));
     i0 = int( real_i );
     i1 = min(NumTau, i0+1);
     residual = real_i - double(i0);

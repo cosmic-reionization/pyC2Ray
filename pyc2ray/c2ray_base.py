@@ -114,7 +114,7 @@ class C2Ray:
             self.gpu = True
             # Allocate GPU memory
             src_batch_size = self._ld["Raytracing"]["source_batch_size"]
-            device_init(Nmesh,src_batch_size)
+            device_init(Nmesh, src_batch_size)
             # Register deallocation function (automatically calls this on program termination)
             atexit.register(self._gpu_close)
         else:
