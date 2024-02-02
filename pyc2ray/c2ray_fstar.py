@@ -1,8 +1,6 @@
-import yaml
-import atexit
-import re
 import numpy as np
 from astropy.cosmology import FlatLambdaCDM
+import astropy.constants as cst
 import tools21cm as t2c
 import h5py, os
 try: from yaml import CSafeLoader as SafeLoader
@@ -362,6 +360,9 @@ class C2Ray_fstar(C2Ray):
         print(f'...done')
         return srcpos_mpc, srcmass_msun
     
+    def mean_free_path(self, A_mfp, n_mfp):
+        
+        cH = (cst.c / self.cosmology.H(self.zred)).to('Mpc').value
 
     
     def read_density(self, z):

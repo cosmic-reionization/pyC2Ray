@@ -29,7 +29,7 @@ cp libc2ray.*.so $PYTHON_PATH/pyc2ray/lib
 cd $PYTHON_PATH/src/asora/
 
 # copy Makefile
-cp Makefile Makefile_copy
+cp Makefile_copy Makefile
 
 # sostitute include path in Makefile
 sed -i 's,/insert_here_path_to_python_include,'"$PYTHON_INCLUDE"',' Makefile

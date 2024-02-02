@@ -79,9 +79,20 @@ Photo:
   SourceType: blackbody
   # Whether to compute heating rates arrays (NOT USED BY CHEMISTRY SO FAR)
   compute_heating_rates: 0
+
+Sinks:
+  # define the mean-free-path model to use (can be 'constant', 'Choudhury09')
+  mfp_type: 'z dependent'
   # Value of maximum comoving distance for photons from source (Type 3 LLS in original C2Ray)
   # (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
+  # free parameter for the mean-free-path in cMpc units
+  A_mfp: 175.0
+  # spectral index of the mean-free-path redshift evolution
+  eta_mfp: -4.4
+  # define clumping model to use
+  clumping: 'constant'
+
 
 # --------------------------------
 # Parameters for Black Body source

@@ -465,9 +465,13 @@ class C2Ray:
         self.dr = self.dr_c
 
         # Set R_max (LLS 3) in cell units
-        self.R_max_LLS = self._ld['Photo']['R_max_cMpc'] * self.N / self.boxsize
-        self.printlog(f"Maximum comoving distance for photons from source (type 3 LLS): {self._ld['Photo']['R_max_cMpc'] : .3e} comoving Mpc")
-        self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
+        mfp_model = self._ld['Sinks']['mfp_type']
+        if(mfp_model == 'constant'):
+            self.R_max_LLS = self._ld['Photo']['R_max_cMpc'] * self.N / self.boxsize
+            self.printlog(f"Maximum comoving distance for photons from source (type 3 LLS): {self._ld['Photo']['R_max_cMpc'] : .3e} comoving Mpc")
+            self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
+        elif(mfp_model == 'z dependent'):
+            
 
         self.resume = self._ld['Grid']['resume']
 
