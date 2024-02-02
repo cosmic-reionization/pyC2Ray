@@ -1,28 +1,21 @@
 #!/bin/bash
-
-# load the necessary modules
-module purge
-module load daint-gpu
-module load gcc/9.3.0
-module load nvidia
-
-# activate python environment
-source /store/ska/sk015/pyc2ray-env/bin/activate
-python -m pip install requirements.txt
+## general installation sript for local machine with GPU driver
+cd ../
+PYC2RAY_PATH=$(pwd)
 
 # get python and numpy include paths
 PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path(name='include'))")
 NUMPY_INCLUDE=$(python -c "import numpy as np; print(np.get_include())")
 
 # compile Fortran extension module
-cd src/c2ray/
+cd $PYC2RAY_PATH/src/c2ray/
 make
 
-mkdir ../../pyc2ray/lib
-cp libc2ray.*.so ../../pyc2ray/lib
+mkdir $PYC2RAY_PATH/pyc2ray/lib
+cp libc2ray.*.so $PYC2RAY_PATH/pyc2ray/lib
 
 # compile CUDA extension module
-cd ../asora/
+cd $PYC2RAY_PATH/src/asora/
 
 # copy Makefile
 cp Makefile Makefile_copy
@@ -32,14 +25,12 @@ sed -i 's,/insert_here_path_to_python_include,'"$PYTHON_INCLUDE"',' Makefile
 sed -i 's,/insert_here_path_to_numpy_include,'"$NUMPY_INCLUDE"',' Makefile
 
 make
-cp libasora.so ../../pyc2ray/lib
+cp libasora.so $PYC2RAY_PATH/pyc2ray/lib
 
 # add pyc2ray path to python paths
-cd ../..
-PYC2RAY_PATH=$(pwd)
 export PYTHONPATH="$PYC2RAY_PATH:$PYTHONPATH"
 
-# test installation
+# go to home to test installation and export
 cd
 python -c "import pyc2ray as pc2r"
-echo "Installation of pyc2ray successful"
+echo "...done."
