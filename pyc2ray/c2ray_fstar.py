@@ -318,9 +318,13 @@ class C2Ray_fstar(C2Ray):
 
         S_star_ref = 1e48
         f_gamma = self.fgamma_hm 
-        mass2phot = msun2g / (m_p * ts)  * f_gamma
+        if(self.acc_model == 'constant'):
+            mass2phot = msun2g / (m_p * ts)  * f_gamma
+        elif(self.acc_model == 'Schneider21'):
+            mass2phot = msun2g / m_p * f_gamma * self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value
         normflux = srcmstar * mass2phot / S_star_ref
-        
+            
+
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
@@ -483,3 +487,6 @@ class C2Ray_fstar(C2Ray):
                         'g4': self._ld['Sources']['g4'], 
                         }
         self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
+
+        self.acc_model = self._ld['Sources']['accreation_model']
+        self.alph_h = self._ld['Sources']['alpha_h']
