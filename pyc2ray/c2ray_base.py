@@ -14,6 +14,7 @@ from .evolve import evolve3D, evolve3D_MPI
 from .raytracing import do_raytracing
 from .asora_core import device_init, device_close, photo_table_to_device
 from .radiation import BlackBodySource, make_tau_table
+from .sinks_model import SinksPhysics
 
 # ======================================================================
 # This file defines the abstract C2Ray object class, which is the basis
@@ -129,6 +130,7 @@ class C2Ray:
         self._material_init()
         self._sources_init()
         self._radiation_init()
+        self._sinks_init()
         if(self.rank == 0):
             if self.gpu:
                 # Print maximum shell size for info, based on LLS (qmax is s.t. Rmax fits inside of it)
@@ -263,6 +265,13 @@ class C2Ray:
         self.zred = z_half
         self.time = t_after
 
+        # Set new mean-free-path if it is redshift dependent
+        if(self.mfp_model == 'constant'):
+            pass
+        elif(self.mfp_model == 'Choudhury09'):
+            self.R_max_LLS = self.mfp.mfp_Choudhury09(z=self.zred)
+            self.printlog(f"Mean-free-path for photons at z ={self.zred : .3f} (Choudhury+ 2009): {self.R_max_LLS : .3e} cMpc")
+            self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
 
     def printlog(self,s,quiet=False):
         """Print to log file and standard output
@@ -464,15 +473,8 @@ class C2Ray:
         # Initialize cell size to comoving size (if cosmological run, it will be scaled in cosmology_init)
         self.dr = self.dr_c
 
-        # Set R_max (LLS 3) in cell units
-        mfp_model = self._ld['Sinks']['mfp_type']
-        if(mfp_model == 'constant'):
-            self.R_max_LLS = self._ld['Photo']['R_max_cMpc'] * self.N / self.boxsize
-            self.printlog(f"Maximum comoving distance for photons from source (type 3 LLS): {self._ld['Photo']['R_max_cMpc'] : .3e} comoving Mpc")
-            self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
-        elif(mfp_model == 'z dependent'):
-            
-
+        # flag to set the resume
+        # TODO: need to give the index of start for the redshift loop in the main
         self.resume = self._ld['Grid']['resume']
 
     def _output_init(self):
@@ -499,6 +501,27 @@ class C2Ray:
                 # Clear file and write header line
                 f.write(title+"\nLog file for pyC2Ray.\n\n") 
         print(title)
+
+    def _sinks_init(self):
+        # for clumping factor
+        self.clumping_model = self._ld['Sinks']['mfp_model']
+
+        # for mean-free path
+        self.mfp_model = self._ld['Sinks']['mfp_model']
+
+        if(self.mfp_model == 'constant'):
+            # Set R_max (LLS 3) in cell units
+            self.R_max_LLS = self._ld['Sinks']['R_max_cMpc'] * self.N / self.boxsize
+            self.printlog(f"Maximum (constant) comoving distance for photons from source (type 3 LLS): {self._ld['Sinks']['R_max_cMpc'] : .3e} comoving Mpc")
+        elif(self.mfp_model == 'Choudhury09'):
+            # call class for the mean-free-path (TODO: in the future we should add more models)
+            self.mfp = SinksPhysics(A_mfp=self._ld['Sinks']['A_mfp'], etha_mfp= self._ld['Sinks']['eta_mfp'])
+
+            # set mean-free-path to the initial redshift
+            self.R_max_LLS = self.mfp.mfp_Choudhury09(z=self._ld['Cosmology']['zred_0'])
+            self.printlog(f"Maximum comoving distance for photons from source defined by Choudhury+ (2009) model (redshift dependendt): A ={self._ld['Sinks']['R_max_cMpc'] : .2f} Mpc, eta ={self._ld['Sinks']['eta_mfp'] : .2f}")
+        
+        self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
 
     # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):

@@ -10,11 +10,8 @@
 # Parameters to set up the simulation volume
 # ------------------------------------------
 Grid:
-  # Box size in comoving Mpc !! Here we don't use 1/h units
-  # !! As in C2Ray, when cosmological = false, this box size is
-  # used "as is". When cosmological = true, it is first scaled to zred_0
-  # Maybe this should be changed, as it can induce some confusion ?
-  boxsize: 1.62022035 # 5e24 cm
+  # Box size in Mpc
+  boxsize: 128
   resume: 0
 
 # --------------------------------------------------------------------
@@ -27,7 +24,7 @@ Material:
   xh0: 1.2e-3
   # Constant average density, comoving value. Used only by the test case
   # this value is scaled to zred_0 (even in non-cosmological mode)
-  avg_dens: 1.87e-7
+  avg_dens: 1.0e-6
 
 # --------------------------------
 # Miscellaneous physical constants
@@ -41,7 +38,7 @@ CGS:
   alcpow: -0.672
   # Hydrogen ionization energy (in eV)
   eth0: 13.598
-  #Helium I ionization energy (in eV)
+  # Helium I ionization energy (in eV)
   ethe0: 24.587
   # Helium II ionization energy (in eV)
   ethe1: 54.416
@@ -67,25 +64,31 @@ Abundances:
 # Parameters governing photoionization
 # ------------------------------------
 Photo:
-  # HI cross section at its ionzing frequency (weighted by freq_factor)
+  # HI cross section at its ionzing frequency
   sigma_HI_at_ion_freq: 6.30e-18
-    # Minimum optical depth for tables
+  # Minimum optical depth for tables
   minlogtau: -20
   # Maximum optical depth for tables
   maxlogtau: 4
   # Number of table points
-  NumTau: 20000
+  NumTau: 10000 #200000
   # Whether or not to use grey opacity (i.e. cross-section is frequency-independent)
-  grey: 1
+  grey: 0
   # Type of source to use
   SourceType: blackbody
   # Whether to compute heating rates arrays (NOT USED BY CHEMISTRY SO FAR)
   compute_heating_rates: 0
+  # Value of maximum comoving distance for photons from source (Type 3 LLS in original C2Ray)
+  # (to not use this, set to a value >> boxsize)
 
-MFP:
-  # define the mean-free-path model to use (can be 'constant', 'Choudhury09')
-  mfp_model: 'Choudhury09'
-  # Value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
+Sinks:
+  # define the clumping model to use (can be 'constant', 'redshift', 'density' or 'stochastic')
+  clumping_model: 'constant'
+  # define clumping factor for the constant model
+  clumping: 1.0
+  # define the mean-free-path model to use (can be 'constant' or 'Choudhury09')
+  mfp_model: 'constant' #'Choudhury09'
+  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
   # free parameter for the Choudhury09 mean-free-path model in cMpc units
   A_mfp: 175.0
@@ -106,9 +109,9 @@ BlackBodySource:
 # -----------------------
 Cosmology:
   # Global flag to use cosmology
-  cosmological: 0
+  cosmological: 1
   # Reduced Hubble constant
-  h: 1.0 #0.7
+  h: 0.7
   # Omega matter t=0
   Omega0: 0.27
   # Omega baryon t=0
@@ -118,12 +121,18 @@ Cosmology:
   # Initial redshift of the simulation
   zred_0: 9.0
 
+  # N.B. : Planck 18
+  #  h: 0.6766
+  #  Omega0: 0.30966
+  #  Omega_B: 0.04897
+  #  cmbtemp: 2.7255
+
 # ------------
 # Output setup
 # ------------
 Output:
-  # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
+  # Directory where results and log files are stored
+  results_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/multiple_sources/
   # Name of the log file to write
   logfile: pyC2Ray.log
 
@@ -131,10 +140,10 @@ Output:
 # Parameters for raytracing
 # -------------------------
 Raytracing:
-  # Photon loss fraction for the subbox algorithm (not used if using ASORA)
+  # Photon loss fraction for the subbox algorithm
   loss_fraction: 1e-2
   # Size increase of subboxes around sources (not used if using ASORA)
-  subboxsize: 128
+  subboxsize: 64
   # Maximum subbox size for the subbox algorithm (not used if using ASORA)
   max_subbox: 1000
   # Source batch size, i.e. number of sources handled in parallel on the GPU.

@@ -82,12 +82,15 @@ class C2Ray_Test(C2Ray):
         z : float
             Redshift (used to name the file)
         """
+        np.save("%sxfrac_%.3f.npy" %(self.results_basename, z), self.xh)
+        np.save("%sIonRates_%.3f.npy" %(self.results_basename, z), self.phi_ion)
+        """
         suffix = f"_{z:.3f}.pkl"
         with open(self.results_basename + "xfrac" + suffix,"wb") as f:
             pkl.dump(self.xh,f)
         with open(self.results_basename + "IonRates" + suffix,"wb") as f:
             pkl.dump(self.phi_ion,f)
-
+        """
     def write_output_numbered(self,n):
         """Write ionization fraction & ionization rates as pickle files with number rather than redshift
 

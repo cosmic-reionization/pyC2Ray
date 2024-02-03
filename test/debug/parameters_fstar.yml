@@ -10,11 +10,9 @@
 # Parameters to set up the simulation volume
 # ------------------------------------------
 Grid:
-  # Box size in comoving Mpc !! Here we don't use 1/h units
-  # !! As in C2Ray, when cosmological = false, this box size is
-  # used "as is". When cosmological = true, it is first scaled to zred_0
-  # Maybe this should be changed, as it can induce some confusion ?
-  boxsize: 1.62022035 # 5e24 cm
+  # Box size in comoving Mpc/h
+  boxsize: 244 # Mpc/h
+  # boolean variable to indicate if resuming a simulation (no need to change zred_0)
   resume: 0
 
 # --------------------------------------------------------------------
@@ -24,10 +22,10 @@ Material:
   # Initial Temperature of the grid
   temp0: 1e4
   # Initial Ionized fraction of the grid
-  xh0: 1.2e-3
+  xh0: 2.0e-4
   # Constant average density, comoving value. Used only by the test case
   # this value is scaled to zred_0 (even in non-cosmological mode)
-  avg_dens: 1.87e-7
+  avg_dens: 1.981e-07
 
 # --------------------------------
 # Miscellaneous physical constants
@@ -67,48 +65,70 @@ Abundances:
 # Parameters governing photoionization
 # ------------------------------------
 Photo:
-  # HI cross section at its ionzing frequency (weighted by freq_factor)
+  # HI cross section at its ionzing frequency
   sigma_HI_at_ion_freq: 6.30e-18
-    # Minimum optical depth for tables
+  # Minimum optical depth for tables
   minlogtau: -20
   # Maximum optical depth for tables
   maxlogtau: 4
   # Number of table points
-  NumTau: 20000
+  NumTau: 2000
   # Whether or not to use grey opacity (i.e. cross-section is frequency-independent)
-  grey: 1
+  grey: 0
   # Type of source to use
   SourceType: blackbody
   # Whether to compute heating rates arrays (NOT USED BY CHEMISTRY SO FAR)
   compute_heating_rates: 0
 
-MFP:
+Sinks:
   # define the mean-free-path model to use (can be 'constant', 'Choudhury09')
-  mfp_model: 'Choudhury09'
-  # Value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
+  mfp_type: 'z dependent'
+  # Value of maximum comoving distance for photons from source (Type 3 LLS in original C2Ray)
+  # (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
-  # free parameter for the Choudhury09 mean-free-path model in cMpc units
+  # free parameter for the mean-free-path in cMpc units
   A_mfp: 175.0
-  # spectral index of the Choudhury09 mean-free-path model redshift evolution
+  # spectral index of the mean-free-path redshift evolution
   eta_mfp: -4.4
+  # define clumping model to use
+  clumping: 'constant'
 
-# -------------------------------------
-# Parameters for Black Body source type
-# -------------------------------------
+
+# --------------------------------
+# Parameters for Black Body source
+# --------------------------------
 BlackBodySource:
   # Effective temperature of Black Body source
   Teff: 5e4
   # Power-law index for the frequency dependence of the photoionization cross section
   cross_section_pl_index: 2.8
 
+Sources:
+  # efficiency High-Mass Atomically Cooling Halo (HMACH)
+  fgamma_hm: 30
+  # efficiency Low-Mass Atomically Cooling Halo (LMACH)
+  fgamma_lm: 0.
+  # source lifetime in Myr units
+  ts: 20.0
+  # stellar-to-halo
+  fstar_kind: 'dpl' # 'fgamma' - Classical mass independent model, 'dpl' - Double power law (Schneider, Giri, Mirocha 2021).
+  # Double power law parameter - these are used only when fstar_kind: 'dpl'
+  f0: 1.0 
+  Mt: 1e8 
+  Mp: 3e11
+  g1: 0.0 
+  g2: -0.0
+  g3: 5
+  g4: -5
+
 # -----------------------
 # Cosmological Parameters
 # -----------------------
 Cosmology:
   # Global flag to use cosmology
-  cosmological: 0
+  cosmological: 1
   # Reduced Hubble constant
-  h: 1.0 #0.7
+  h: 0.7
   # Omega matter t=0
   Omega0: 0.27
   # Omega baryon t=0
@@ -116,7 +136,13 @@ Cosmology:
   # Temperature of CMB in Kelvins
   cmbtemp: 2.726
   # Initial redshift of the simulation
-  zred_0: 9.0
+  zred_0: 21.062
+
+  # N.B. : Planck 18
+  #  h: 0.6766
+  #  Omega0: 0.30966
+  #  Omega_B: 0.04897
+  #  cmbtemp: 2.7255
 
 # ------------
 # Output setup
@@ -124,6 +150,12 @@ Cosmology:
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
   results_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
+  # Directory where inputs files are stored (set to None for test case)
+  inputs_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
+  # Directory where inputs files are stored (set to None for test case)
+  sources_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
+  # Directory where inputs files are stored (set to None for test case)
+  density_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
   # Name of the log file to write
   logfile: pyC2Ray.log
 
@@ -134,11 +166,11 @@ Raytracing:
   # Photon loss fraction for the subbox algorithm (not used if using ASORA)
   loss_fraction: 1e-2
   # Size increase of subboxes around sources (not used if using ASORA)
-  subboxsize: 128
+  subboxsize: 5
   # Maximum subbox size for the subbox algorithm (not used if using ASORA)
   max_subbox: 1000
   # Source batch size, i.e. number of sources handled in parallel on the GPU.
   # Speeds up computation but increases memory usage
-  source_batch_size: 1
+  source_batch_size: 96
   # Which fraction of the cells can be left unconverged
   convergence_fraction: 1e-4
