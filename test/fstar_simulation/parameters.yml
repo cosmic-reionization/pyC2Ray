@@ -122,10 +122,10 @@ Sources:
   g3: 5
   g4: -5
   # define the accreation model (can be 'constant' or 'Schneider21')
-  accreation_model: 'constant'
+  accreation_model: 'Schneider21'
   # accreation rate parameter (see Schneider+ 2021)
   alpha_h: 0.79
-  
+
 # -----------------------
 # Cosmological Parameters
 # -----------------------
