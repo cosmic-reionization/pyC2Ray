@@ -154,7 +154,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/sgiri/244Mpc_fstar_250/244Mpc_f30_0_250_Mt_1e8_Mp_3e11_g1_0.49_g2_m0.61_g3_5_g5_m5/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/244Mpc_fstar_250/244Mpc_f30_0_250_Mt_1e8_Mp_3e11_g1_0.49_g2_m0.61_g3_5_g5_m5/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk015/244Mpc_RT/
   # Directory where inputs files are stored (set to None for test case)
