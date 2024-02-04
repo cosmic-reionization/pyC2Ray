@@ -15,7 +15,7 @@ paramfile = sys.argv[1]             # Name of the parameter file
 sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=False)
 
 # Get redshift list (test case)
-zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float)
+idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float)
 
 # check for resume simulation
 if(sim.resume):
@@ -46,7 +46,7 @@ for k in range(i_start, len(zred_array)-1):
     sim.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0', z=zi)
 
     # Read source files
-    srcpos, normflux = sim.ionizing_flux(file=f'{zi:.3f}halo.hdf5', ts=num_steps_between_slices*dt, z=zi, save_Mstar=f'{sim.results_basename:}/sources')
+    srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], ts=num_steps_between_slices*dt, z=zi, save_Mstar=f'{sim.results_basename:}/sources')
     
     # Set redshift to current slice redshift
     sim.zred = zi
