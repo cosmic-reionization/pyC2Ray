@@ -280,6 +280,7 @@ class C2Ray_fstar(C2Ray):
         """Initialize material properties of the grid
         """
         if(self.resume):
+            #TODO: generalise the resuming of the simulation
             # get fields at the resuming redshift
             self.ndens = t2c.DensityFile(filename='%scoarser_densities/%.3fn_all.dat' %(self.inputs_basename, self.prev_zdens)).cgs_density / (self.mean_molecular * m_p) * (1+self.zred)**3
             #self.ndens = self.read_density(z=self.zred)

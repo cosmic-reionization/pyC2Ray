@@ -15,7 +15,7 @@ paramfile = sys.argv[1]             # Name of the parameter file
 sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=False)
 
 # Get redshift list (test case)
-zred_array = np.loadtxt(sim.inputs_basename+'redshifts.txt', dtype=float, usecols=1)
+zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float)
 
 # check for resume simulation
 if(sim.resume):
