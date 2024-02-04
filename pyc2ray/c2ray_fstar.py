@@ -247,7 +247,7 @@ class C2Ray_fstar(C2Ray):
 
         with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
             if not (summary_exist):
-                header = '#reshift\ttot number of ions\ttot ionizing photons\tR_mfp\tmean ionization fraction (by volume and mass)\n'
+                header = '# z\ttot N_ions\ttot N_photons\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
                 f.write(header)                
 
             tot_ions = np.sum(self.ndens*(1.-self.xh)) * self.boxsize**3
