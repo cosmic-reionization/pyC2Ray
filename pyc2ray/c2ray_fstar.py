@@ -252,7 +252,7 @@ class C2Ray_fstar(C2Ray):
             tot_phot = np.sum(self.phi_ion)*self.boxsize/self.N*self.set_timestep(z1=self.prev_zdens, z2=z, num_timesteps=1) # this is wrong if we as to write output in between time-steps
             massavrg_ion_frac = np.sum((1-self.xh)*self.ndens)/np.sum(self.ndens)
 
-            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_ions, tot_phot, 1.-np.mean(self.xh), massavrg_ion_frac)
+            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_ions, tot_phot, 1.-np.mean(self.xh), massavrg_ion_frac)
             f.write(text)
 
     # =====================================================================================================
