@@ -39,7 +39,6 @@ for k in range(i_start, len(zred_array)-1):
     # Compute timestep of current redshift slice
     dt = sim.set_timestep(zi, zf, num_steps_between_slices)
 
-
     # Read input files
     sim.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0', z=zi)
 

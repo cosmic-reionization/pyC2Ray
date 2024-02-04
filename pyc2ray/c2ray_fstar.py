@@ -243,16 +243,18 @@ class C2Ray_fstar(C2Ray):
         self.printlog(' min, mean, max density : %.5e  %.5e  %.5e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
 
         # write summary output file
+        summary_exist = os.path.exists(self.results_basename+'PhotonCounts2.txt')
+
         with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
-            if not os.path.exists(self.results_basename+'PhotonCounts2.txt'):
-                header = 'reshift\ttot number of ions\ttot ionizing photons\tmean ionization fraction (by volume and mass)\n'
+            if not (summary_exist):
+                header = '#reshift\ttot number of ions\ttot ionizing photons\tR_mfp\tmean ionization fraction (by volume and mass)\n'
                 f.write(header)                
 
-            tot_ions = np.sum(self.ndens*(1.-self.xh))*self.mean_molecular*m_p*self.boxsize/self.N
-            tot_phot = np.sum(self.phi_ion)*self.boxsize/self.N*self.set_timestep(z1=self.prev_zdens, z2=z, num_timesteps=1) # this is wrong if we as to write output in between time-steps
+            tot_ions = np.sum(self.ndens*(1.-self.xh)) * self.boxsize**3
+            tot_phot = np.sum(self.phi_ion)*self.boxsize**3 *self.set_timestep(z1=self.prev_zdens, z2=z, num_timesteps=1) # this is wrong if we as to write output in between time-steps
             massavrg_ion_frac = np.sum((1-self.xh)*self.ndens)/np.sum(self.ndens)
 
-            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_ions, tot_phot, 1.-np.mean(self.xh), massavrg_ion_frac)
+            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_ions, tot_phot, self.R_max_LLS, 1.-np.mean(self.xh), massavrg_ion_frac)
             f.write(text)
 
     # =====================================================================================================
