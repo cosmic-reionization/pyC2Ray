@@ -39,8 +39,6 @@ for k in range(i_start, len(zred_array)-1):
     # Compute timestep of current redshift slice
     dt = sim.set_timestep(zi, zf, num_steps_between_slices)
 
-    # Write output
-    sim.write_output(zi)
 
     # Read input files
     sim.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0', z=zi)
@@ -48,6 +46,9 @@ for k in range(i_start, len(zred_array)-1):
     # Read source files
     srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], ts=num_steps_between_slices*dt, z=zi, save_Mstar=f'{sim.results_basename:}/sources')
     
+    # Write output
+    sim.write_output(zi)
+
     # Set redshift to current slice redshift
     sim.zred = zi
 
