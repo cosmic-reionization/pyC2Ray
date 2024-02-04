@@ -199,20 +199,20 @@ class C2Ray_fstar(C2Ray):
         else:
             redshift = self.zred_0
 
+        idx_high_z = np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift))
+        high_z = self.zred_density[idx_high_z]
+
         # condition if need to read new file or use the one from the previous time-step
         if(high_z != self.prev_zdens):
             if(fbase.endswith('.dat')):
-                # get the redshift of the file
-                high_z = self.zred_density[np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift))]
+                # get file name
                 file = self.density_basename+fbase %high_z
 
                 # use tools21cm to read density file and get baryonic number density
                 self.ndens = t2c.DensityFile(filename=file).cgs_density / (self.mean_molecular * m_p) * (1+redshift)**3
             elif(fbase.endswith('.0')):
-                # get the redshift of the file
-                idx_high_z = np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift)) + 1
-                file = self.density_basename+fbase %idx_high_z
-                high_z = self.zred_density[idx_high_z]
+                # get file name
+                file = self.density_basename+fbase %(idx_high_z+1)
                 
                 rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
                 self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+redshift)**3
