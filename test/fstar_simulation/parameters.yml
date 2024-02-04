@@ -135,15 +135,15 @@ Cosmology:
   # Global flag to use cosmology
   cosmological: 1
   # Reduced Hubble constant
-  h: 0.7
+  h: 0.67
   # Omega matter t=0
-  Omega0: 0.27
+  Omega0: 0.32
   # Omega baryon t=0
   Omega_B: 0.044
   # Temperature of CMB in Kelvins
   cmbtemp: 2.726
   # Initial redshift of the simulation
-  zred_0: 21.062
+  zred_0: 21.481530
 
   # N.B. : Planck 18
   #  h: 0.6766
@@ -162,7 +162,7 @@ Output:
   # Directory where inputs files are stored (set to None for test case)
   sources_basename: /store/ska/sk015/CDM_200Mpc_2048/haloes/
   # Directory where inputs files are stored (set to None for test case)
-  density_basename: /store/ska/sk015/CDM_200Mpc_2048/grids/
+  density_basename: /store/ska/sk015/CDM_200Mpc_2048/grids/nc256/
   # Name of the log file to write
   logfile: pyC2Ray.log
 

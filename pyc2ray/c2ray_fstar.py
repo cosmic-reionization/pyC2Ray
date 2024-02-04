@@ -128,7 +128,6 @@ class C2Ray_fstar(C2Ray):
         elif(self.acc_model == 'Schneider21'):
             mass2phot = msun2g / m_p * f_gamma * self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value
         normflux = srcmstar * mass2phot / S_star_ref
-            
 
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
@@ -152,24 +151,33 @@ class C2Ray_fstar(C2Ray):
             Masses of the haloes in Msun.
         """
 
-        print(f'Reading {halo_file}')
-        try:
+        if(halo_file.endswith('.hdf5')):
+            # Read haloes from a CUBEP3M file format converted in hdf5.
             f = h5py.File(halo_file)
             h = f.attrs['h']
             srcmass_msun = f['mass'][:]/h #Msun
             srcpos_mpc = f['pos'][:]/h   #Mpc
             f.close()
-        except:
+        elif(halo_file.endswith('.dat')):
             # Read haloes from a CUBEP3M file format.
             hl = t2c.HaloCubeP3MFull(filename=halo_file, box_len=box_len)
             h  = self.h
             srcmass_msun = hl.get(var='m')/h   #Msun
             srcpos_mpc  = hl.get(var='pos')/h #Mpc
-            print(f'Mass and positions are converted to Msun and Mpc respectively assuming h={h}.')
-        print(f'...done')
+        elif(halo_file.endswith('.txt')):
+            # Read haloes from a PKDGrav converted in txt.
+            hl = np.loadtxt(halo_file)
+            srcmass_msun = hl[:,0]/self.cosmology.h # Msun
+            srcpos_mpc = (hl[:,1:]+self.boxsize/2) # Mpc/h
+
+            # apply periodic boundary condition shift
+            srcpos_mpc[srcpos_mpc > self.boxsize] = self.boxsize - srcpos_mpc[srcpos_mpc > self.boxsize]
+            srcpos_mpc[srcpos_mpc < 0.] = self.boxsize + srcpos_mpc[srcpos_mpc < 0.]
+            srcpos_mpc /= self.cosmology.h # Mpc
+
         return srcpos_mpc, srcmass_msun
         
-    def read_density(self, z):
+    def read_density(self, fbase='%.3fn_all.dat', z=None):
         """ Read coarser density field from C2Ray-formatted file
 
         This method is meant for reading density field run with either N-body or hydro-dynamical simulations. The field is then smoothed on a coarse mesh grid.
@@ -191,19 +199,29 @@ class C2Ray_fstar(C2Ray):
         else:
             redshift = self.zred_0
 
-        # redshift bin for the current redshift based on the density redshift
-        #low_z, high_z = find_bins(redshift, self.zred_density)
-        high_z = self.zred_density[np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift))]
-
+        # condition if need to read new file or use the one from the previous time-step
         if(high_z != self.prev_zdens):
-            file = '%s%.3fn_all.dat' %(self.density_basename, high_z)
-            self.printlog(f'\n---- Reading density file:\n '+file)
-            self.ndens = t2c.DensityFile(filename=file).cgs_density / (self.mean_molecular * m_p) * (1+redshift)**3
+            if(fbase.endswith('.dat')):
+                # get the redshift of the file
+                high_z = self.zred_density[np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift))]
+                file = self.density_basename+fbase %high_z
+
+                # use tools21cm to read density file and get baryonic number density
+                self.ndens = t2c.DensityFile(filename=file).cgs_density / (self.mean_molecular * m_p) * (1+redshift)**3
+            elif(fbase.endswith('.0')):
+                # get the redshift of the file
+                idx_high_z = np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift)) + 1
+                file = self.density_basename+fbase %idx_high_z
+                high_z = self.zred_density[idx_high_z]
+                
+                rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
+                self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+redshift)**3
+            
+            self.printlog('\n---- Reading density file:\n  %s' %file)
             self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
             self.prev_zdens = high_z
         else:
             # no need to re-read the same file again
-            # TODO: in the future use this values for a 3D interpolation for the density (can be extended to sources too)
             pass
 
     def write_output(self, z):
@@ -233,7 +251,7 @@ class C2Ray_fstar(C2Ray):
             tot_ions = np.sum(self.ndens*(1.-self.xh))*self.mean_molecular*m_p*self.boxsize/self.N
             tot_phot = np.sum(self.phi_ion)*self.boxsize/self.N*self.set_timestep(z1=self.prev_zdens, z2=z, num_timesteps=1) # this is wrong if we as to write output in between time-steps
             massavrg_ion_frac = np.sum((1-self.xh)*self.ndens)/np.sum(self.ndens)
-            
+
             text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_ions, tot_phot, 1.-np.mean(self.xh), massavrg_ion_frac)
             f.write(text)
 
