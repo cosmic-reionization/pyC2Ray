@@ -146,7 +146,7 @@ class C2Ray:
     # =====================================================================================================
     # TIME-EVOLUTION METHODS
     # =====================================================================================================
-    def set_timestep(self,z1,z2,num_timesteps):
+    def set_timestep(self, z1, z2, num_timesteps):
         """Compute timestep to use between redshift slices
 
         Parameters
@@ -163,12 +163,33 @@ class C2Ray:
         dt : float
             Timestep to use in seconds
         """
-        t1 = self.cosmology.lookback_time(z1).to('s').value
-        t2 = self.cosmology.lookback_time(z2).to('s').value
-        # we do t1-t2 since ti are lookback times (not ages)
-        dt = (t1-t2)/num_timesteps
+        t2 = self.zred2time(z2)
+        t1 = self.zred2time(z1)
+        dt = (t2-t1)/num_timesteps
         return dt
     
+    def cosmo_evolve_to_now(self):
+        """Evolve cosmology over a timestep
+        """
+        # Time step
+        t_now = self.time
+
+        # Increment redshift by half a time step
+        z_now = self.time2zred(t_now)
+
+        # Scale quantities if cosmological run
+        if self.cosmological:
+            # Scale density according to expansion
+            dilution_factor = (1+z_now) / (1+self.zred)
+            #dilution_factor = ( (1+z_half) / (1+self.zred) )**3
+            self.ndens *= dilution_factor**3
+
+            # Set cell size to current proper size
+            # self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
+            self.dr /= dilution_factor
+            self.printlog(f"zfactor = {1./dilution_factor : .10f}")
+        # Set new time and redshift (after timestep)
+        self.zred = z_now
     def evolve3D(self, dt, src_flux, src_pos):
         """Evolve the grid over one timestep
 
@@ -248,6 +269,7 @@ class C2Ray:
         t_now = self.time
         t_half = t_now + 0.5*dt
         t_after = t_now + dt
+        #self.printlog(' This is time : %f\t %f' %(t_now/YEAR, t_after/YEAR))
 
         # Increment redshift by half a time step
         z_half = self.time2zred(t_half)
@@ -255,11 +277,14 @@ class C2Ray:
         # Scale quantities if cosmological run
         if self.cosmological:
             # Scale density according to expansion
-            dilution_factor = ( (1+z_half) / (1+self.zred) )**3
+            dilution_factor = ((1+z_half) / (1+self.zred))**3
             self.ndens *= dilution_factor
 
             # Set cell size to current proper size
             self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
+
+        # TODO: add the clumping factor to the density, something like:
+        # self.ndens *= np.sqrt(clum) # square root to double check, as I think that the self.ndens is squared in the doric method when calculating the solution. But probably not because it assumes constant electron density.
 
         # Set new time and redshift (after timestep)
         self.zred = z_half
@@ -383,7 +408,11 @@ class C2Ray:
 
         # Scale quantities to the initial redshift
         if self.cosmological:
-            if(self.rank == 0): self.printlog(f"Cosmology is on, scaling comoving quantities to the initial redshift, which is z0 = {self.zred_0:.3f}...")
+            if(self.rank == 0): 
+                self.printlog(f"Cosmology is on, scaling comoving quantities to the initial redshift, which is z0 = {self.zred_0:.3f}...")
+                self.printlog(f"Cosmological parameters used:")
+                self.printlog(f"h   = {h:.4f}, Tcmb0 = {Tcmb0:.3e}")
+                self.printlog(f"Om0 = {Om0:.4f}, Ob0   = {Ob0:.4f}")
             self.dr = self.cosmology.scale_factor(self.zred_0) * self.dr_c
         else:
             if(self.rank == 0): self.printlog("Cosmology is off.")

@@ -11,7 +11,7 @@
 # ------------------------------------------
 Grid:
   # Box size in comoving Mpc/h
-  boxsize: 244 # Mpc/h
+  boxsize: 200 # Mpc/h
   # boolean variable to indicate if resuming a simulation (no need to change zred_0)
   resume: 0
 
@@ -80,6 +80,9 @@ Photo:
   # Whether to compute heating rates arrays (NOT USED BY CHEMISTRY SO FAR)
   compute_heating_rates: 0
 
+# ------------------------------------
+# Parameters of the radiation sinks
+# ------------------------------------
 Sinks:
   # define the clumping model to use (can be 'constant', 'redshift', 'density' or 'stochastic')
   clumping_model: 'constant'
@@ -93,7 +96,6 @@ Sinks:
   A_mfp: 175.0
   # spectral index of the Choudhury09 mean-free-path model redshift evolution
   eta_mfp: -4.4
-
 
 # --------------------------------
 # Parameters for Black Body source
@@ -156,11 +158,11 @@ Output:
   # Directory where results and log files are stored (don't forget slash at end)
   results_basename: /scratch/snx3000/mibianco/results_c2ray/244Mpc_fstar_250/244Mpc_f30_0_250_Mt_1e8_Mp_3e11_g1_0.49_g2_m0.61_g3_5_g5_m5/
   # Directory where inputs files are stored (set to None for test case)
-  inputs_basename: /store/ska/sk015/244Mpc_RT/
+  inputs_basename: /store/ska/sk015/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)
-  sources_basename: /store/ska/sk015/244Mpc_RT/converted_halo/
+  sources_basename: /store/ska/sk015/CDM_200Mpc_2048/haloes/
   # Directory where inputs files are stored (set to None for test case)
-  density_basename: /store/ska/sk015/244Mpc_RT/coarser_densities/
+  density_basename: /store/ska/sk015/CDM_200Mpc_2048/grids/
   # Name of the log file to write
   logfile: pyC2Ray.log
 

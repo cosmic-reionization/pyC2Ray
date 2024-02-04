@@ -91,6 +91,7 @@ def get_source_redshifts(source_dir, z_low = None, z_high = None, bracket=False)
 
         return _get_redshifts_in_range(redshifts, z_low, z_high, bracket)
 
+
 def get_same_values_in_array(arr1, arr2):
     """ return values in common between two arrays in decreasing order"""
     arr1 = np.array(arr1)
@@ -100,21 +101,21 @@ def get_same_values_in_array(arr1, arr2):
 
 
 def _get_redshifts_in_range(redshifts, z_low, z_high, bracket):
-        '''
-        Filter out redshifts outside of range. For internal use.
-        '''
-        redshifts = np.array(redshifts)
-        redshifts.sort()
-        if bracket:
-                if z_low < redshifts.min() or z_high > redshifts.max():
-                        raise Exception('No redshifts to bracket range.')
-                z_low = redshifts[redshifts <= z_low][-1]
-                z_high = redshifts[redshifts >= z_high][0]
-        if z_low == None:
-                z_low = redshifts.min()-1
-        if z_high == None:
-                z_high = redshifts.max()+1
-        idx = (redshifts >= z_low)*(redshifts <= z_high)
-        redshifts = redshifts[idx]
+    '''
+    Filter out redshifts outside of range. For internal use.
+    '''
+    redshifts = np.array(redshifts)
+    redshifts.sort()
+    if bracket:
+            if z_low < redshifts.min() or z_high > redshifts.max():
+                    raise Exception('No redshifts to bracket range.')
+            z_low = redshifts[redshifts <= z_low][-1]
+            z_high = redshifts[redshifts >= z_high][0]
+    if z_low == None:
+            z_low = redshifts.min()-1
+    if z_high == None:
+            z_high = redshifts.max()+1
+    idx = (redshifts >= z_low)*(redshifts <= z_high)
+    redshifts = redshifts[idx]
 
-        return np.array(redshifts)
+    return np.array(redshifts)

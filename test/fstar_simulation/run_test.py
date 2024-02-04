@@ -10,14 +10,12 @@ import pyc2ray as pc2r
 # Global parameters
 num_steps_between_slices = 2        # Number of timesteps between redshift slices
 paramfile = sys.argv[1]             # Name of the parameter file
-N = 250                             # Mesh size
-use_asora = True                    # Determines which raytracing algorithm to use
 
 # Create C2Ray object
-sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=N, use_gpu=use_asora, use_mpi=False)
+sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=False)
 
 # Get redshift list (test case)
-zred_array = np.loadtxt(sim.inputs_basename+'redshifts_checkpoints.txt', dtype=float)
+zred_array = np.loadtxt(sim.inputs_basename+'redshifts.txt', dtype=float, usecols=1)
 
 # check for resume simulation
 if(sim.resume):
@@ -48,7 +46,6 @@ for k in range(i_start, len(zred_array)-1):
     sim.read_density(z=zi)
 
     # Read source files
-    # srcpos, normflux = sim.read_sources(file=f'{sim.sources_basename:}{zi:.3f}-coarsest_wsubgrid_sources.hdf5', mass='hm', ts=num_steps_between_slices*dt)
     srcpos, normflux = sim.ionizing_flux(file=f'{zi:.3f}halo.hdf5', ts=num_steps_between_slices*dt, z=zi, save_Mstar=f'{sim.results_basename:}/sources')
     
     # Set redshift to current slice redshift
