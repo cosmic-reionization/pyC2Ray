@@ -1,0 +1,15 @@
+                 _________   ____            
+    ____  __  __/ ____/__ \ / __ \____ ___  __
+   / __ \/ / / / /    __/ // /_/ / __ `/ / / /
+  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / 
+ / .___/\__, /\____//____/_/ |_|\__,_/\__, /  
+/_/    /____/                        /____/   
+
+Log file for pyC2Ray.
+
+Welcome! Mesh size is N = 128.
+Simulation Box size (comoving Mpc): 2.000e+02
+Cosmology is on, scaling comoving quantities to the initial redshift, which is z0 = 21.482...
+Cosmological parameters used:
+h   = 0.6700, Tcmb0 = 2.726e+00
+Om0 = 0.3200, Ob0   = 0.0440

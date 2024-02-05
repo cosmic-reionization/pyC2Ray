@@ -11,7 +11,7 @@
 # ------------------------------------------
 Grid:
   # Box size in comoving Mpc/h
-  boxsize: 244 # Mpc/h
+  boxsize: 200 # Mpc/h
   # boolean variable to indicate if resuming a simulation (no need to change zred_0)
   resume: 0
 
@@ -80,19 +80,22 @@ Photo:
   # Whether to compute heating rates arrays (NOT USED BY CHEMISTRY SO FAR)
   compute_heating_rates: 0
 
+# ------------------------------------
+# Parameters of the radiation sinks
+# ------------------------------------
 Sinks:
-  # define the mean-free-path model to use (can be 'constant', 'Choudhury09')
-  mfp_type: 'z dependent'
-  # Value of maximum comoving distance for photons from source (Type 3 LLS in original C2Ray)
-  # (to not use this, set to a value >> boxsize)
+  # define the clumping model to use (can be 'constant', 'redshift', 'density' or 'stochastic')
+  clumping_model: 'constant'
+  # define clumping factor for the constant model
+  clumping: 1.0
+  # define the mean-free-path model to use (can be 'constant' or 'Choudhury09')
+  mfp_model: 'Choudhury09'
+  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
-  # free parameter for the mean-free-path in cMpc units
+  # free parameter for the Choudhury09 mean-free-path model in cMpc units
   A_mfp: 175.0
-  # spectral index of the mean-free-path redshift evolution
+  # spectral index of the Choudhury09 mean-free-path model redshift evolution
   eta_mfp: -4.4
-  # define clumping model to use
-  clumping: 'constant'
-
 
 # --------------------------------
 # Parameters for Black Body source
@@ -120,6 +123,10 @@ Sources:
   g2: -0.0
   g3: 5
   g4: -5
+  # define the accreation model (can be 'constant' or 'Schneider21')
+  accreation_model: 'Schneider21'
+  # accreation rate parameter (see Schneider+ 2021)
+  alpha_h: 0.79
 
 # -----------------------
 # Cosmological Parameters
@@ -128,15 +135,15 @@ Cosmology:
   # Global flag to use cosmology
   cosmological: 1
   # Reduced Hubble constant
-  h: 0.7
+  h: 0.67
   # Omega matter t=0
-  Omega0: 0.27
+  Omega0: 0.32
   # Omega baryon t=0
   Omega_B: 0.044
   # Temperature of CMB in Kelvins
   cmbtemp: 2.726
   # Initial redshift of the simulation
-  zred_0: 21.062
+  zred_0: 21.481530
 
   # N.B. : Planck 18
   #  h: 0.6766
