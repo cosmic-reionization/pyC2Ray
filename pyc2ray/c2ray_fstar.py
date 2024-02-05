@@ -146,7 +146,7 @@ class C2Ray_fstar(C2Ray):
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmass_msun.min(), srcmass_msun.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         return srcpos, normflux
 
     def read_haloes(self, halo_file, box_len): # >:( trgeoip
