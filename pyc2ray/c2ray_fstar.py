@@ -112,7 +112,7 @@ class C2Ray_fstar(C2Ray):
             fstar = self.fstar_model(srcmass_msun) # Ob0/Om0 is already in here
             
             # define lifetime
-            ts = 1. / self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value
+            ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
 
             # convert from mass to number of photons
             mhalo2phot = self.fgamma_hm * fstar * srcmass_msun / (m_p * ts * S_star_ref) 
