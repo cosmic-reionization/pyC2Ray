@@ -68,7 +68,6 @@ class C2Ray_fstar(C2Ray):
 
     def ionizing_flux(self, file, ts, z, save_Mstar=False): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
-
         Parameters
         ----------
         file : str
@@ -88,38 +87,17 @@ class C2Ray_fstar(C2Ray):
         box_len, n_grid = self.boxsize, self.N
         
         srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, box_len)
+        fstar = self.fstar_model(srcmass_msun)
+        mstar_msun = fstar*srcmass_msun
 
         h = self.cosmology.h
         hg = Halo2Grid(box_len=box_len/h, n_grid=n_grid)
         hg.set_halo_pos(srcpos_mpc, unit='mpc')
-        hg.set_halo_mass(srcmass_msun, unit='Msun')
+        hg.set_halo_mass(mstar_msun, unit='Msun')
 
-        #TODO: NEED TO IMPLEMENT THE HALO MODEL BEFORE GRIDDING
-        S_star_ref = 1e48
-        if(self.acc_model == 'constant'):
-            # locate LMACHs and HMACHs
-            low_mask = srcmass_msun <= 1e8
-            high_mask = srcmass_msun > 1e8
-
-            # consider low mass and high mass halos efficiency            
-            mhalo2phot = srcmass_msun * high_mask * self.fgamma_hm 
-            mhalo2phot += srcmass_msun * low_mask * self.fgamma_lm 
-
-            # convert from mass to number of photons
-            mhalo2phot *= msun2g * self.cosmology.Ob0 / (self.cosmology.Om0 * m_p * ts * S_star_ref) 
-        elif(self.acc_model == 'Schneider21'):
-            # define star efficiency
-            fstar = self.fstar_model(srcmass_msun) # Ob0/Om0 is already in here
-            
-            # define lifetime
-            ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
-
-            # convert from mass to number of photons
-            mhalo2phot = self.fgamma_hm * fstar * srcmass_msun / (m_p * ts * S_star_ref) 
-
-        binned_mstar, bin_edges, bin_num = hg.value_on_grid(hg.pos_grid, mhalo2phot)
-        srcpos, normflux = hg.halo_value_on_grid(mhalo2phot, binned_value=binned_mstar)
-
+        binned_mstar, bin_edges, bin_num = hg.value_on_grid(hg.pos_grid, mstar_msun)
+        srcpos, srcmstar = hg.halo_value_on_grid(mstar_msun, binned_value=binned_mstar)
+        
         if save_Mstar:
             folder_path = save_Mstar
             fname_hdf5 = folder_path+f'/{z:.3f}-Mstar_sources.hdf5'
@@ -129,26 +107,31 @@ class C2Ray_fstar(C2Ray):
             else:
                 pass
                 # print(f"Folder '{folder_path}' already exists.")
-
             # Create HDF5 file from the data
             with h5py.File(fname_hdf5,"w") as f:
                 # Store Data
                 dset_pos = f.create_dataset("sources_positions", data=srcpos)
-                dset_mass = f.create_dataset("sources_mass", data=normflux)
-
+                dset_mass = f.create_dataset("sources_mass", data=srcmstar)
                 # Store Metadata
                 f.attrs['z'] = z
                 f.attrs['h'] = self.cosmology.h
-                f.attrs['numhalo'] = normflux.shape[0]
+                f.attrs['numhalo'] = srcmstar.shape[0]
                 f.attrs['units'] = 'cMpc   Msun'
-
-
+        
+        S_star_ref = 1e48
+        f_gamma = self.fgamma_hm 
+        if(self.acc_model == 'constant'):
+            mass2phot = msun2g / (m_p * ts)  * f_gamma
+        elif(self.acc_model == 'Schneider21'):
+            mass2phot = msun2g / m_p * f_gamma * self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value
+        normflux = srcmstar * mass2phot / S_star_ref
+        
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmass_msun.min(), srcmass_msun.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         return srcpos, normflux
-
+    
     def read_haloes(self, halo_file, box_len): # >:( trgeoip
         """Read haloes from a file.
 
