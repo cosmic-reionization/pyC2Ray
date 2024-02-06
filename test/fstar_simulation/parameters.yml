@@ -93,9 +93,9 @@ Sinks:
   # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
   # free parameter for the Choudhury09 mean-free-path model in cMpc units
-  A_mfp: 175.0
+  A_mfp: 225.0
   # spectral index of the Choudhury09 mean-free-path model redshift evolution
-  eta_mfp: -4.4
+  eta_mfp: -8.8
 
 # --------------------------------
 # Parameters for Black Body source
@@ -116,6 +116,7 @@ Sources:
   # stellar-to-halo
   fstar_kind: 'dpl' # 'fgamma' - Classical mass independent model, 'dpl' - Double power law (Schneider, Giri, Mirocha 2021).
   # Double power law parameter - these are used only when fstar_kind: 'dpl'
+  Nion: 1.0
   f0: 1.0 
   Mt: 1e8 
   Mp: 3e11
@@ -123,6 +124,9 @@ Sources:
   g2: -0.0
   g3: 5
   g4: -5
+  f0_esc: 1.0
+  Mp_esc: 1e10
+  al_esc: 0.0
   # define the accreation model (can be 'constant' or 'Schneider21')
   accreation_model: 'Schneider21'
   # accreation rate parameter (see Schneider+ 2021)

@@ -223,7 +223,7 @@ class Halo2Grid:
 class SourceModel(Halo2Grid):
 	"""Combines StellarToHaloRelation and Halo2Grid to model the source properties."""
 
-	def __init__(self, f0=0.3, Mt=1e8, Mp=3e11,
+	def __init__(self, Nion=1, f0=0.3, Mt=1e8, Mp=3e11,
 					g1=0.49, g2=-0.61, g3=3, g4=-3,
 					f0_esc=1, Mp_esc=1e10, al_esc=0,
 					box_len=None, n_grid=None, method='nearest', **kwargs):

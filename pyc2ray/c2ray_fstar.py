@@ -52,21 +52,25 @@ class C2Ray_fstar(C2Ray):
         if kind.lower() in ['fgamma', 'f_gamma', 'mass_independent']: 
             fstar = (self.cosmology.Ob0/self.cosmology.Om0)
         elif kind.lower() in ['dpl', 'mass_dependent']:
-            model = StellarToHaloRelation(
+            model = SourceModel(
+                        Nion=self.fstar_dpl['Nion'],
                         f0=self.fstar_dpl['f0'], 
                         Mt=self.fstar_dpl['Mt'], 
                         Mp=self.fstar_dpl['Mp'],
                         g1=self.fstar_dpl['g1'], 
                         g2=self.fstar_dpl['g2'], 
                         g3=self.fstar_dpl['g3'], 
-                        g4=self.fstar_dpl['g4'])
-            star = model.deterministic(mhalo)
-            fstar = star['fstar']
+                        g4=self.fstar_dpl['g4'],
+                        f0_esc=self.fstar_dpl['f0_esc'],
+                        Mp_esc=self.fstar_dpl['Mp_esc'],
+                        al_esc=self.fstar_dpl['al_esc'])
+            fstar = model.f_star.deterministic(mhalo)['fstar']
+            fesc = model.f_esc.deterministic(mhalo)['fesc']
         else:
             print(f'{kind} fstar model is not implemented.')
-        return fstar
+        return fstar, fesc
 
-    def ionizing_flux(self, file, ts, z, save_Mstar=False): # >:( trgeoip
+    def ionizing_flux(self, file, z, save_Mstar=False): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
         Parameters
         ----------
@@ -87,8 +91,8 @@ class C2Ray_fstar(C2Ray):
         box_len, n_grid = self.boxsize, self.N
         
         srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, box_len)
-        fstar = self.fstar_model(srcmass_msun)
-        mstar_msun = fstar*srcmass_msun
+        fstar, fesc = self.fstar_model(srcmass_msun)
+        mstar_msun = fesc*fstar*srcmass_msun
 
         h = self.cosmology.h
         hg = Halo2Grid(box_len=box_len/h, n_grid=n_grid)
@@ -119,17 +123,16 @@ class C2Ray_fstar(C2Ray):
                 f.attrs['units'] = 'cMpc   Msun'
         
         S_star_ref = 1e48
-        f_gamma = self.fgamma_hm 
-        if(self.acc_model == 'constant'):
-            mass2phot = msun2g / (m_p * ts)  * f_gamma
-        elif(self.acc_model == 'Schneider21'):
-            mass2phot = msun2g / m_p * f_gamma * self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value
-        normflux = srcmstar * mass2phot / S_star_ref
+
+        # source life-time in cgs
+        ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
+        
+        normflux = self.fstar_dpl['Nion'] * srcmstar / (m_p * ts * S_star_ref)
         
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
-        self.printlog(' Total Flux : %e' %np.sum(normflux*S_star_ref))
+        self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmass_msun.min(), srcmass_msun.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         return srcpos, normflux
     
     def read_haloes(self, halo_file, box_len): # >:( trgeoip
@@ -244,13 +247,12 @@ class C2Ray_fstar(C2Ray):
 
         with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
             if not (summary_exist):
-                header = '# z\ttot N_ions\ttot Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
+                header = '# z\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
                 f.write(header)                
 
-            tot_ions = np.sum(self.ndens*self.xh) * (self.boxsize*Mpc)**3
             massavrg_ion_frac = np.sum(self.xh*self.ndens)/np.sum(self.ndens)
 
-            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_ions, np.sum(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
+            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens),np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
             f.write(text)
 
     # =====================================================================================================
@@ -306,6 +308,7 @@ class C2Ray_fstar(C2Ray):
         self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
         self.fstar_kind = self._ld['Sources']['fstar_kind']
         self.fstar_dpl = {
+                        'Nion': self._ld['Sources']['Nion'],
                         'f0': self._ld['Sources']['f0'],
                         'Mt': self._ld['Sources']['Mt'], 
                         'Mp': self._ld['Sources']['Mp'], 
@@ -313,6 +316,9 @@ class C2Ray_fstar(C2Ray):
                         'g2': self._ld['Sources']['g2'], 
                         'g3': self._ld['Sources']['g3'], 
                         'g4': self._ld['Sources']['g4'], 
+                        'f0_esc': self._ld['Sources']['f0_esc'], 
+                        'Mp_esc': self._ld['Sources']['Mp_esc'], 
+                        'al_esc': self._ld['Sources']['al_esc']
                         }
         self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
 

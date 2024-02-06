@@ -7,6 +7,9 @@ class SinksPhysics:
 
     def mfp_Choudhury09(self, z):
         R_mfp = self.A_mfp*((1+z)/5.)**self.etha_mfp
+        if(R_mfp < 10.):
+            # minimum value for R_mfp
+            R_mfp = 10.
         return R_mfp
     
     def biashomogeneous_clumping(self, z):
