@@ -126,9 +126,10 @@ class C2Ray_fstar(C2Ray):
 
         # source life-time in cgs
         ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
-        
-        normflux = self.fstar_dpl['Nion'] * srcmstar / (m_p * ts * S_star_ref)
-        
+
+        # normalize flux
+        normflux = msun2g * self.fstar_dpl['Nion'] * srcmstar / (m_p * ts * S_star_ref)
+
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
