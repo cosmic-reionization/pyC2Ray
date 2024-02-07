@@ -132,7 +132,7 @@ class C2Ray_fstar(C2Ray):
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
         self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
         self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmass_msun.min(), srcmass_msun.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+        self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         return srcpos, normflux
     
     def read_haloes(self, halo_file, box_len): # >:( trgeoip
@@ -252,7 +252,7 @@ class C2Ray_fstar(C2Ray):
 
             massavrg_ion_frac = np.sum(self.xh*self.ndens)/np.sum(self.ndens)
 
-            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens),np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
+            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
             f.write(text)
 
     # =====================================================================================================
