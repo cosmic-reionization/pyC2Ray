@@ -303,25 +303,26 @@ class C2Ray_fstar(C2Ray):
     def _sources_init(self):
         """Initialize settings to read source files
         """
-        self.fgamma_hm = self._ld['Sources']['fgamma_hm']
-        self.fgamma_lm = self._ld['Sources']['fgamma_lm']
-        self.ts = self._ld['Sources']['ts'] * YEAR * 1e6
-        self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
         self.fstar_kind = self._ld['Sources']['fstar_kind']
-        self.fstar_dpl = {
-                        'Nion': self._ld['Sources']['Nion'],
-                        'f0': self._ld['Sources']['f0'],
-                        'Mt': self._ld['Sources']['Mt'], 
-                        'Mp': self._ld['Sources']['Mp'], 
-                        'g1': self._ld['Sources']['g1'], 
-                        'g2': self._ld['Sources']['g2'], 
-                        'g3': self._ld['Sources']['g3'], 
-                        'g4': self._ld['Sources']['g4'], 
-                        'f0_esc': self._ld['Sources']['f0_esc'], 
-                        'Mp_esc': self._ld['Sources']['Mp_esc'], 
-                        'al_esc': self._ld['Sources']['al_esc']
-                        }
-        self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
+        if(self.fstar_kind == 'fgamma'):
+            self.fgamma_hm = self._ld['Sources']['fgamma_hm']
+            self.fgamma_lm = self._ld['Sources']['fgamma_lm']
+            self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
+        elif(self.fstar_kind == 'dpl'):
+            self.fstar_dpl = {
+                            'Nion': self._ld['Sources']['Nion'],
+                            'f0': self._ld['Sources']['f0'],
+                            'Mt': self._ld['Sources']['Mt'], 
+                            'Mp': self._ld['Sources']['Mp'], 
+                            'g1': self._ld['Sources']['g1'], 
+                            'g2': self._ld['Sources']['g2'], 
+                            'g3': self._ld['Sources']['g3'], 
+                            'g4': self._ld['Sources']['g4'], 
+                            'f0_esc': self._ld['Sources']['f0_esc'], 
+                            'Mp_esc': self._ld['Sources']['Mp_esc'], 
+                            'al_esc': self._ld['Sources']['al_esc']
+                            }
+            self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
 
-        self.acc_model = self._ld['Sources']['accreation_model']
-        self.alph_h = self._ld['Sources']['alpha_h']
+            self.acc_model = self._ld['Sources']['accreation_model']
+            self.alph_h = self._ld['Sources']['alpha_h']

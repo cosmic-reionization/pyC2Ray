@@ -107,16 +107,14 @@ BlackBodySource:
   cross_section_pl_index: 2.8
 
 Sources:
-  # efficiency High-Mass Atomically Cooling Halo (HMACH)
+  # stellar-to-halo mass relation: 'fgamma' for classical mass independent model, 'dpl' for double power law (Schneider, Giri, Mirocha 2021).
+  fstar_kind: 'dpl' 
+  # efficiency High-Mass Atomically Cooling Halo (HMACH) - used only for fstar_kind: 'fgamma'
   fgamma_hm: 30
   # efficiency Low-Mass Atomically Cooling Halo (LMACH)
   fgamma_lm: 0.
-  # source lifetime in Myr units
-  ts: 20.0
-  # stellar-to-halo
-  fstar_kind: 'dpl' # 'fgamma' - Classical mass independent model, 'dpl' - Double power law (Schneider, Giri, Mirocha 2021).
   # Double power law parameter - these are used only when fstar_kind: 'dpl'
-  Nion: 1.0
+  Nion: 20.0
   f0: 1.0 
   Mt: 1e8 
   Mp: 3e11
