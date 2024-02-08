@@ -1,5 +1,6 @@
 import numpy as np
 from astropy.cosmology import FlatLambdaCDM
+from glob import glob
 import astropy.constants as cst
 import tools21cm as t2c
 import h5py, os
@@ -10,7 +11,7 @@ from .utils.logutils import printlog
 from .evolve import evolve3D
 from .asora_core import device_init, device_close, photo_table_to_device
 from .radiation import BlackBodySource, make_tau_table
-from .utils.other_utils import get_redshifts_from_output, find_bins
+from .utils.other_utils import get_extension_in_folder, get_redshifts_from_output, find_bins
 
 from .utils import get_source_redshifts
 from .c2ray_base import C2Ray, YEAR, Mpc, msun2g, ev2fr, ev2k
@@ -225,7 +226,7 @@ class C2Ray_fstar(C2Ray):
             # no need to re-read the same file again
             pass
 
-    def write_output(self, z):
+    def write_output(self, z, ext='.dat'):
         """Write ionization fraction & ionization rates as C2Ray binary files
 
         Parameters
@@ -233,9 +234,13 @@ class C2Ray_fstar(C2Ray):
         z : float
             Redshift (used to name the file)
         """
-        suffix = f"_{z:.3f}.dat"
-        t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
-        t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
+        suffix = f"_{z:.3f}"+ext
+        if(suffix.endswith('.dat')):
+            t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
+            t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
+        elif(suffix.endswith('.npy')):
+            np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
+            np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
 
         # print min, max and average quantities
         self.printlog('\n--- Reionization History ----')
@@ -281,15 +286,22 @@ class C2Ray_fstar(C2Ray):
         """Initialize material properties of the grid
         """
         if(self.resume):
-            #TODO: generalise the resuming of the simulation
+            #TODO: generalise the resuming of the simulation for reading the density
             # get fields at the resuming redshift
             self.ndens = t2c.DensityFile(filename='%scoarser_densities/%.3fn_all.dat' %(self.inputs_basename, self.prev_zdens)).cgs_density / (self.mean_molecular * m_p) * (1+self.zred)**3
             #self.ndens = self.read_density(z=self.zred)
-            self.xh = t2c.read_cbin(filename='%sxfrac_%.3f.dat' %(self.results_basename, self.zred), bits=64, order='F')
+            ext = get_extension_in_folder(path=self.results_basename)
+
+            if(ext == '.dat'):
+                self.xh = t2c.read_cbin(filename='%sxfrac_%.3f.dat' %(self.results_basename, self.zred), bits=64, order='F')
+                self.phi_ion = t2c.read_cbin(filename='%sIonRates_%.3f.dat' %(self.results_basename, self.zred), bits=32, order='F')
+            elif(ext == '.npy'):
+                self.xh = np.load('%sxfrac_%.3f.npy' %(self.results_basename, self.zred))
+                self.phi_ion = np.load('%sIonRates_%.3f.npy' %(self.results_basename, self.zred))
+
             # TODO: implement heating
             temp0 = self._ld['Material']['temp0']
             self.temp = temp0 * np.ones(self.shape, order='F')
-            self.phi_ion = t2c.read_cbin(filename='%sIonRates_%.3f.dat' %(self.results_basename, self.zred), bits=32, order='F')
         else:
             xh0 = self._ld['Material']['xh0']
             temp0 = self._ld['Material']['temp0']

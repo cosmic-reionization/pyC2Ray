@@ -1,7 +1,20 @@
 import numpy as np
 import glob, os
 
+def get_extension_in_folder(path):
+    arr = glob(path+'*')
+    f = arr[0]
+    if os.path.isfile(f):
+        ext = f[f.rfind('.'):]
+    elif os.path.isdir(f):
+        f = arr[1]
+        ext = f[f.rfind('.'):]
+    else:
+        ValueError('Check the output directory, it maybe empty or do not exist')
+    return ext
+
 def get_redshifts_from_output(output_dir, z_low=None, z_high=None, bracket=False):
+    """ from a given directory get the redshift based on the name of the file (remark: file name must be in the form of 'xfrac_%.3f.[extension]') """
     output_files = glob.glob(os.path.join(output_dir,'xfrac*'))
 
     redshifts = []
@@ -15,6 +28,7 @@ def get_redshifts_from_output(output_dir, z_low=None, z_high=None, bracket=False
     return np.sort(np.array(redshifts))
 
 def find_bins(input_array, binning_array):
+    """ For a given bin array and an input array get the indexes of the bins for each element of the input array """
     # Sort the binning array in ascending order
     sorted_bins = np.sort(binning_array)
 

@@ -46,7 +46,7 @@ for k in range(i_start, len(zred_array)-1):
     srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=zi, save_Mstar=sim.results_basename+'/sources')
     
     # Write output
-    sim.write_output(zi)
+    sim.write_output(z=zi, ext='.npy')
 
     # Set redshift to current slice redshift
     sim.zred = zi
