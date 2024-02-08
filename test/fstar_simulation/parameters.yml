@@ -89,7 +89,7 @@ Sinks:
   # define clumping factor for the constant model
   clumping: 1.0
   # define the mean-free-path model to use (can be 'constant' or 'Worseck2014')
-  mfp_model: 'Worseck2014' #'Choudhury09'
+  mfp_model: 'Worseck2014'
   # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
   # free parameter for the Worseck2014 mean-free-path model in cMpc units
@@ -126,7 +126,7 @@ Sources:
   Mp_esc: 1e10
   al_esc: 0.0
   # define the accreation model (can be 'constant' or 'EXP')
-  accretion_model: 'EXP' #'Schneider21'
+  accretion_model: 'EXP'
   # accreation rate parameter (see Schneider+ 2021)
   alpha_h: 0.79
 

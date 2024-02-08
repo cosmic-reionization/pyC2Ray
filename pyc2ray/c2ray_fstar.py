@@ -288,10 +288,11 @@ class C2Ray_fstar(C2Ray):
         if(self.resume):
             #TODO: generalise the resuming of the simulation for reading the density
             # get fields at the resuming redshift
-            self.ndens = t2c.DensityFile(filename='%scoarser_densities/%.3fn_all.dat' %(self.inputs_basename, self.prev_zdens)).cgs_density / (self.mean_molecular * m_p) * (1+self.zred)**3
-            #self.ndens = self.read_density(z=self.zred)
+            #self.ndens = t2c.DensityFile(filename='%scoarser_densities/%.3fn_all.dat' %(self.inputs_basename, self.prev_zdens)).cgs_density / (self.mean_molecular * m_p) * (1+self.zred)**3
+            self.ndens = self.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0' %self.resume, z=self.prev_zdens)
+            
+            # get extension of the output file
             ext = get_extension_in_folder(path=self.results_basename)
-
             if(ext == '.dat'):
                 self.xh = t2c.read_cbin(filename='%sxfrac_%.3f.dat' %(self.results_basename, self.zred), bits=64, order='F')
                 self.phi_ion = t2c.read_cbin(filename='%sIonRates_%.3f.dat' %(self.results_basename, self.zred), bits=32, order='F')
@@ -336,5 +337,5 @@ class C2Ray_fstar(C2Ray):
                             }
             self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
 
-            self.acc_model = self._ld['Sources']['accreation_model']
+            self.acc_model = self._ld['Sources']['accretion_model']
             self.alph_h = self._ld['Sources']['alpha_h']

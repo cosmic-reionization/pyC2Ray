@@ -5,7 +5,7 @@ class SinksPhysics:
         self.A_mfp = A_mfp
         self.etha_mfp = etha_mfp
 
-    def mfp_Choudhury09(self, z):
+    def mfp_Worseck2014(self, z):
         R_mfp = self.A_mfp*((1+z)/5.)**self.etha_mfp
         if(R_mfp < 10.):
             # minimum value for R_mfp

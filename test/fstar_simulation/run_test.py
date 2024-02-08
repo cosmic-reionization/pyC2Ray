@@ -20,6 +20,7 @@ idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt'
 # check for resume simulation
 if(sim.resume):
     i_start = np.argmin(np.abs(zred_array - sim.zred))
+    sim.resume = i_start
 else:
     i_start = 0
 

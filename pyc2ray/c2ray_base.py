@@ -293,9 +293,9 @@ class C2Ray:
         # Set new mean-free-path if it is redshift dependent
         if(self.mfp_model == 'constant'):
             pass
-        elif(self.mfp_model == 'Choudhury09'):
-            self.R_max_LLS = self.mfp.mfp_Choudhury09(z=self.zred) # in cMpc
-            self.printlog(f"Mean-free-path for photons at z ={self.zred : .3f} (Choudhury+ 2009): {self.R_max_LLS : .3e} cMpc")
+        elif(self.mfp_model == 'Worseck2014'):
+            self.R_max_LLS = self.mfp.mfp_Worseck2014(z=self.zred) # in cMpc
+            self.printlog(f"Mean-free-path for photons at z ={self.zred : .3f} (Worseck+ 2014): {self.R_max_LLS : .3e} cMpc")
             self.R_max_LLS *= self.N / self.boxsize     # in number of grids
             self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
 
@@ -534,7 +534,7 @@ class C2Ray:
 
     def _sinks_init(self):
         # for clumping factor
-        self.clumping_model = self._ld['Sinks']['mfp_model']
+        self.clumping_model = self._ld['Sinks']['clumping_model']
 
         # for mean-free path
         self.mfp_model = self._ld['Sinks']['mfp_model']
@@ -543,13 +543,13 @@ class C2Ray:
             # Set R_max (LLS 3) in cell units
             self.R_max_LLS = self._ld['Sinks']['R_max_cMpc'] * self.N / self.boxsize
             self.printlog(f"Maximum (constant) comoving distance for photons from source (type 3 LLS): {self._ld['Sinks']['R_max_cMpc'] : .3e} comoving Mpc")
-        elif(self.mfp_model == 'Choudhury09'):
+        elif(self.mfp_model == 'Worseck2014'):
             # call class for the mean-free-path (TODO: in the future we should add more models)
             self.mfp = SinksPhysics(A_mfp=self._ld['Sinks']['A_mfp'], etha_mfp= self._ld['Sinks']['eta_mfp'])
 
             # set mean-free-path to the initial redshift
-            self.R_max_LLS = self.mfp.mfp_Choudhury09(z=self._ld['Cosmology']['zred_0']) # in cMpc
-            self.printlog(f"Maximum comoving distance for photons from source defined by Choudhury+ (2009) model (redshift dependendt): A ={self._ld['Sinks']['R_max_cMpc'] : .2f} Mpc, eta ={self._ld['Sinks']['eta_mfp'] : .2f}")
+            self.R_max_LLS = self.mfp.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
+            self.printlog(f"Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A ={self._ld['Sinks']['R_max_cMpc'] : .2f} Mpc, eta ={self._ld['Sinks']['eta_mfp'] : .2f}")
             self.R_max_LLS *= self.N / self.boxsize
         self.printlog("This corresponds to %.3f grid cells." %self.R_max_LLS)
 
