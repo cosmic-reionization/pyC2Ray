@@ -126,7 +126,7 @@ Sources:
   Mp_esc: 1e10
   al_esc: 0.0
   # define the accreation model (can be 'constant' or 'EXP')
-  accreation_model: 'EXP' #'Schneider21'
+  accretion_model: 'EXP' #'Schneider21'
   # accreation rate parameter (see Schneider+ 2021)
   alpha_h: 0.79
 
