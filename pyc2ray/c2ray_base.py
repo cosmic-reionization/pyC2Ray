@@ -325,8 +325,12 @@ class C2Ray:
     def time2zred(self,t):
         """Calculate the redshift corresponding to an age t in seconds
         """
-        return z_at_value(self.cosmology.age, t*u.s).value
+        try:
+            return z_at_value(self.cosmology.age, t*u.s).value
+        except:
+            return z_at_value(self.cosmology.age, t*u.s)
 
+    
     def zred2time(self,z,unit='s'):
         """Calculate the age corresponding to a redshift z
 
