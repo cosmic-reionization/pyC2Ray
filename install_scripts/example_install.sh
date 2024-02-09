@@ -8,25 +8,25 @@ module load nvidia
 
 # activate python environment
 source /store/ska/sk015/pyc2ray-env/bin/activate
-python -m pip install requirements.txt
+python3 -m pip install requirements.txt
 
 # get pyC2Ray directory path
 cd ../
 PYC2RAY_PATH=$(pwd)
 
 # get python and numpy include paths
-PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path(name='include'))")
-NUMPY_INCLUDE=$(python -c "import numpy as np; print(np.get_include())")
+PYTHON_INCLUDE=$(python3 -c "import sysconfig; print(sysconfig.get_path(name='include'))")
+NUMPY_INCLUDE=$(python3 -c "import numpy as np; print(np.get_include())")
 
 # compile Fortran extension module
-cd $PYTHON_PATH/src/c2ray/
+cd $PYC2RAY_PATH/src/c2ray/
 make
 
-mkdir $PYTHON_PATH/pyc2ray/lib
+mkdir $PYC2RAY_PATH/pyc2ray/lib
 cp libc2ray.*.so $PYTHON_PATH/pyc2ray/lib
 
 # compile CUDA extension module
-cd $PYTHON_PATH/src/asora/
+cd $PYC2RAY_PATH/src/asora/
 
 # copy Makefile
 cp Makefile_copy Makefile
@@ -43,5 +43,5 @@ export PYTHONPATH="$PYC2RAY_PATH:$PYTHONPATH"
 
 # go to home to test installation and export
 cd
-python -c "import pyc2ray as pc2r"
+python3 -c "import pyc2ray as pc2r"
 echo "Installation of pyc2ray successful"
