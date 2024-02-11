@@ -2,7 +2,7 @@ import numpy as np
 import glob, os
 
 def get_extension_in_folder(path):
-    arr = glob(path+'*')
+    arr = glob.glob(path+'*')
     f = arr[0]
     if os.path.isfile(f):
         ext = f[f.rfind('.'):]
