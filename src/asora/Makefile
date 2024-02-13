@@ -1,7 +1,7 @@
 CXX=g++
 NVCC=nvcc
-PYTHONINC+=-I/usr/include/python3.6m
-NUMPYINC+=-I/store/ska/sk015/pyc2ray-env/lib64/python3.6/site-packages/numpy/core/include
+PYTHONINC+=-I/opt/python/3.9.4.1/include/python3.9
+NUMPYINC+=-I/store/ska/sk015/pyc2ray-env/lib/python3.9/site-packages/numpy/core/include
 
 # Include Paths for both local and piz daint
 INC+=$(PYTHONINC) $(NUMPYINC)

@@ -12,7 +12,12 @@ num_steps_between_slices = 2        # Number of timesteps between redshift slice
 paramfile = sys.argv[1]             # Name of the parameter file
 
 # Create C2Ray object
-sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=False)
+use_mpi = True
+if use_mpi:
+    from mpi4py import MPI
+    sim = pc2r.C2Ray_Test(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=MPI)
+else:
+    sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=False)
 
 # Get redshift list (test case)
 idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float, unpack=True)
@@ -20,7 +25,7 @@ idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt'
 # check for resume simulation
 if(sim.resume):
     i_start = np.argmin(np.abs(zred_array - sim.zred))
-    sim.resume = i_start
+    sim.resume = i_start+1
 else:
     i_start = 0
 

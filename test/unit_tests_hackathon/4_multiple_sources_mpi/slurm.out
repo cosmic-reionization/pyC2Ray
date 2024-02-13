@@ -1,0 +1,1816 @@
+Python 3.9.4
+GPU Device 0: "Tesla P100-PCIE-16GB" with compute capability 6.0
+125000000
+GPU Device 0: "Tesla P100-PCIE-16GB" with compute capability 6.0
+125000000
+GPU Device 0: "Tesla P100-PCIE-16GB" with compute capability 6.0
+125000000
+GPU Device 0: "Tesla P100-PCIE-16GB" with compute capability 6.0
+125000000
+Succesfully allocated 12375 Mb of device memory for grid of size N = 250, with source batch size 96
+Succesfully allocated 12375 Mb of device memory for grid of size N = 250, with source batch size 96
+Succesfully allocated 12375 Mb of device memory for grid of size N = 250, with source batch size 96
+Succesfully allocated 12375 Mb of device memory for grid of size N = 250, with source batch size 96
+                 _________   ____            
+    ____  __  __/ ____/__ \ / __ \____ ___  __
+   / __ \/ / / / /    __/ // /_/ / __ `/ / / /
+  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / 
+ / .___/\__, /\____//____/_/ |_|\__,_/\__, /  
+/_/    /____/                        /____/   
+
+Welcome! Mesh size is N = 250.
+Simulation Box size (comoving Mpc): 4.000e+00
+Cosmology is off.
+Using power-law opacity with 20000 table points between tau=10^(-20) and tau=10^(4)
+Using Black-Body sources with effective temperature T = 1.0e+05 K and Radius  1.437e-11 rsun
+Spectrum Frequency Range: 3.289e+15 to 1.316e+17 Hz
+This is Energy:           1.360e+01 to 5.442e+02 eV
+Integrating photoionization rates tables...
+Integrating photoheating rates tables...
+Successfully copied radiation tables to GPU memory.
+Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A = 15.00 Mpc, eta =-8.80
+This corresponds to 625.000 grid cells.
+Using ASORA Raytracing ( q_max =  376 )
+Using 4 MPI Ranks
+Starting simulation... 
+
+
+Running: "C2Ray Test"
+Raytracing radius: 100 grid cells (= 0.016 comoving Mpc)
+Running on 10 sources...
+
+=================================
+Doing redshift 9.000 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  9.000 Wall clock time:  0.303 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.000e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 2.000e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.5e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 663 of 15625000 ( 0.004 % ), Relative change in ionfrac:  9.89e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 940 of 15625000 ( 0.006 % ), Relative change in ionfrac:  5.64e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1632 of 15625000 ( 0.010 % ), Relative change in ionfrac:  2.91e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1714 of 15625000 ( 0.011 % ), Relative change in ionfrac:  4.19e-02
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1839 of 15625000 ( 0.012 % ), Relative change in ionfrac:  3.58e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1935 of 15625000 ( 0.012 % ), Relative change in ionfrac:  2.34e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1911 of 15625000 ( 0.012 % ), Relative change in ionfrac:  1.51e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1843 of 15625000 ( 0.012 % ), Relative change in ionfrac:  1.00e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1756 of 15625000 ( 0.011 % ), Relative change in ionfrac:  6.77e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1676 of 15625000 ( 0.011 % ), Relative change in ionfrac:  4.58e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1558 of 15625000 ( 0.010 % ), Relative change in ionfrac:  3.09e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1403 of 15625000 ( 0.009 % ), Relative change in ionfrac:  2.09e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1212 of 15625000 ( 0.008 % ), Relative change in ionfrac:  1.43e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 973 of 15625000 ( 0.006 % ), Relative change in ionfrac:  9.83e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 735 of 15625000 ( 0.005 % ), Relative change in ionfrac:  6.87e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 505 of 15625000 ( 0.003 % ), Relative change in ionfrac:  4.86e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 340 of 15625000 ( 0.002 % ), Relative change in ionfrac:  3.49e-04
+Doing Raytracing... rank=0 took  8.1e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 241 of 15625000 ( 0.002 % ), Relative change in ionfrac:  2.53e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 180 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.86e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 117 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.38e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 74 of 15625000 ( 0.000 % ), Relative change in ionfrac:  1.03e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 50 of 15625000 ( 0.000 % ), Relative change in ionfrac:  7.78e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  9.000 Wall clock time:  80.057 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.563e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 2.563e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4095 of 15625000 ( 0.026 % ), Relative change in ionfrac:  6.87e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3531 of 15625000 ( 0.023 % ), Relative change in ionfrac:  4.32e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3212 of 15625000 ( 0.021 % ), Relative change in ionfrac:  2.16e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2883 of 15625000 ( 0.018 % ), Relative change in ionfrac:  1.17e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2554 of 15625000 ( 0.016 % ), Relative change in ionfrac:  6.54e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2195 of 15625000 ( 0.014 % ), Relative change in ionfrac:  3.71e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1799 of 15625000 ( 0.012 % ), Relative change in ionfrac:  2.16e-03
+Doing Raytracing... rank=0 took  8.3e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1364 of 15625000 ( 0.009 % ), Relative change in ionfrac:  1.30e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 985 of 15625000 ( 0.006 % ), Relative change in ionfrac:  8.03e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 690 of 15625000 ( 0.004 % ), Relative change in ionfrac:  5.11e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 447 of 15625000 ( 0.003 % ), Relative change in ionfrac:  3.33e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 278 of 15625000 ( 0.002 % ), Relative change in ionfrac:  2.21e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 181 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.50e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 111 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.03e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 61 of 15625000 ( 0.000 % ), Relative change in ionfrac:  7.20e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  136.456 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.199e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 3.199e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 5964 of 15625000 ( 0.038 % ), Relative change in ionfrac:  5.53e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4823 of 15625000 ( 0.031 % ), Relative change in ionfrac:  3.56e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4175 of 15625000 ( 0.027 % ), Relative change in ionfrac:  1.58e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3564 of 15625000 ( 0.023 % ), Relative change in ionfrac:  7.81e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2906 of 15625000 ( 0.019 % ), Relative change in ionfrac:  4.00e-03
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2260 of 15625000 ( 0.014 % ), Relative change in ionfrac:  2.13e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1651 of 15625000 ( 0.011 % ), Relative change in ionfrac:  1.18e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1139 of 15625000 ( 0.007 % ), Relative change in ionfrac:  6.77e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 674 of 15625000 ( 0.004 % ), Relative change in ionfrac:  4.03e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 384 of 15625000 ( 0.002 % ), Relative change in ionfrac:  2.47e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 185 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.55e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 82 of 15625000 ( 0.001 % ), Relative change in ionfrac:  9.97e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  180.382 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.876e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 3.876e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 7501 of 15625000 ( 0.048 % ), Relative change in ionfrac:  4.59e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 5834 of 15625000 ( 0.037 % ), Relative change in ionfrac:  2.93e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4879 of 15625000 ( 0.031 % ), Relative change in ionfrac:  1.14e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3867 of 15625000 ( 0.025 % ), Relative change in ionfrac:  5.11e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2814 of 15625000 ( 0.018 % ), Relative change in ionfrac:  2.45e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1977 of 15625000 ( 0.013 % ), Relative change in ionfrac:  1.24e-03
+Doing Raytracing... rank=0 took  8.1e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1243 of 15625000 ( 0.008 % ), Relative change in ionfrac:  6.53e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 693 of 15625000 ( 0.004 % ), Relative change in ionfrac:  3.59e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 329 of 15625000 ( 0.002 % ), Relative change in ionfrac:  2.04e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 111 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.20e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 25 of 15625000 ( 0.000 % ), Relative change in ionfrac:  7.17e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.998
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  221.997 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 4.586e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 4.586e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 8874 of 15625000 ( 0.057 % ), Relative change in ionfrac:  3.91e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6762 of 15625000 ( 0.043 % ), Relative change in ionfrac:  2.54e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 5493 of 15625000 ( 0.035 % ), Relative change in ionfrac:  9.03e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4012 of 15625000 ( 0.026 % ), Relative change in ionfrac:  3.70e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2655 of 15625000 ( 0.017 % ), Relative change in ionfrac:  1.62e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1566 of 15625000 ( 0.010 % ), Relative change in ionfrac:  7.61e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 796 of 15625000 ( 0.005 % ), Relative change in ionfrac:  3.79e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 354 of 15625000 ( 0.002 % ), Relative change in ionfrac:  1.99e-04
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 93 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.09e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 13 of 15625000 ( 0.000 % ), Relative change in ionfrac:  6.17e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  258.065 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 5.325e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 5.325e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 10094 of 15625000 ( 0.065 % ), Relative change in ionfrac:  3.40e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 7594 of 15625000 ( 0.049 % ), Relative change in ionfrac:  2.15e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6088 of 15625000 ( 0.039 % ), Relative change in ionfrac:  7.24e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4153 of 15625000 ( 0.027 % ), Relative change in ionfrac:  2.80e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2534 of 15625000 ( 0.016 % ), Relative change in ionfrac:  1.19e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1342 of 15625000 ( 0.009 % ), Relative change in ionfrac:  5.39e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 512 of 15625000 ( 0.003 % ), Relative change in ionfrac:  2.58e-04
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 114 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.29e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 10 of 15625000 ( 0.000 % ), Relative change in ionfrac:  6.73e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.998
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  293.010 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 6.080e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 6.080e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 11290 of 15625000 ( 0.072 % ), Relative change in ionfrac:  3.00e+03
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 8333 of 15625000 ( 0.053 % ), Relative change in ionfrac:  1.88e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6365 of 15625000 ( 0.041 % ), Relative change in ionfrac:  5.92e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4017 of 15625000 ( 0.026 % ), Relative change in ionfrac:  2.18e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2281 of 15625000 ( 0.015 % ), Relative change in ionfrac:  8.72e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 977 of 15625000 ( 0.006 % ), Relative change in ionfrac:  3.75e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 234 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.72e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 26 of 15625000 ( 0.000 % ), Relative change in ionfrac:  8.29e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  322.306 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 6.851e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 6.851e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 12300 of 15625000 ( 0.079 % ), Relative change in ionfrac:  2.68e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 9109 of 15625000 ( 0.058 % ), Relative change in ionfrac:  1.62e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6754 of 15625000 ( 0.043 % ), Relative change in ionfrac:  4.81e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3936 of 15625000 ( 0.025 % ), Relative change in ionfrac:  1.68e-03
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1926 of 15625000 ( 0.012 % ), Relative change in ionfrac:  6.48e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 656 of 15625000 ( 0.004 % ), Relative change in ionfrac:  2.71e-04
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 72 of 15625000 ( 0.000 % ), Relative change in ionfrac:  1.21e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2 of 15625000 ( 0.000 % ), Relative change in ionfrac:  5.64e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.997
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  352.685 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 7.630e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 7.630e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 13247 of 15625000 ( 0.085 % ), Relative change in ionfrac:  2.43e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 9763 of 15625000 ( 0.062 % ), Relative change in ionfrac:  1.44e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6855 of 15625000 ( 0.044 % ), Relative change in ionfrac:  4.06e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3679 of 15625000 ( 0.024 % ), Relative change in ionfrac:  1.34e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1576 of 15625000 ( 0.010 % ), Relative change in ionfrac:  4.91e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 314 of 15625000 ( 0.002 % ), Relative change in ionfrac:  1.95e-04
+Doing Raytracing... rank=0 took  8.1e-01 s.
+Doing Chemistry... took  2.4 s.
+Number of non-converged points: 20 of 15625000 ( 0.000 % ), Relative change in ionfrac:  8.30e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  380.243 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 8.413e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 8.413e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 14093 of 15625000 ( 0.090 % ), Relative change in ionfrac:  2.21e+03
+Integrating photoionization rates tables...
+Integrating photoheating rates tables...
+Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A = 15.00 Mpc, eta =-8.80
+This corresponds to 625.000 grid cells.
+Raytracing radius: 100 grid cells (= 0.016 comoving Mpc)
+Running on 10 sources...
+
+=================================
+Doing redshift 9.000 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  9.000 Wall clock time:  1.221 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.000e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.6e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  9.000 Wall clock time:  80.847 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.563e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  136.064 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.199e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Integrating photoionization rates tables...
+Integrating photoheating rates tables...
+Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A = 15.00 Mpc, eta =-8.80
+This corresponds to 625.000 grid cells.
+Raytracing radius: 100 grid cells (= 0.016 comoving Mpc)
+Running on 10 sources...
+
+=================================
+Doing redshift 9.000 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  9.000 Wall clock time:  0.769 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.000e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  1.1e+00 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.6e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  179.906 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.876e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.7e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.5e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.9e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+
+ --- Timestep 2. Redshift: z =  9.000 Wall clock time:  82.140 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.563e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.8e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.998
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  136.848 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.199e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  220.906 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 4.586e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  9.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  258.323 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 5.325e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  1.1e+00 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.7e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  180.878 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.876e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.6e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.7e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.998
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  292.109 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 6.080e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  321.841 seconds --- 
+
+Doing Raytracing... rank=2 took  8.7e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.998
+Mean density is: 3.160e-04, mean ionization fraction: 6.851e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.5e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.997
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  351.748 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 7.630e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  222.290 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 4.586e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  9.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  258.767 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 5.325e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  379.368 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 8.413e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.6e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.997 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.997 Wall clock time:  406.716 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.199e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.998
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  293.237 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 6.080e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  322.758 seconds --- 
+
+Integrating photoionization rates tables...
+Integrating photoheating rates tables...
+Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A = 15.00 Mpc, eta =-8.80
+This corresponds to 625.000 grid cells.
+Raytracing radius: 100 grid cells (= 0.016 comoving Mpc)
+Running on 10 sources...
+
+=================================
+Doing redshift 9.000 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  9.000 Wall clock time:  1.093 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.000e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.8e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Mean density is: 3.160e-04, mean ionization fraction: 6.851e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.997
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  352.710 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 7.630e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  9.000 Wall clock time:  82.155 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 2.563e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  380.719 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 8.413e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.6e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.997 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.997 Wall clock time:  407.108 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.199e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.999
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  136.753 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.199e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  1.1e+00 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.7e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  180.788 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 3.876e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.8e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  9.0e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.9e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.999 to 8.998
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.999 Wall clock time:  222.237 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 4.586e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  9.1e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.999 Wall clock time:  258.891 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 5.325e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.998
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  293.191 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 6.080e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  322.654 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 6.851e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.998 to 8.997
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.998 Wall clock time:  352.802 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 7.630e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.7e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.998 Wall clock time:  380.749 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 8.413e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.7e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.997 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.997 Wall clock time:  407.063 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.199e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.7e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 10344 of 15625000 ( 0.066 % ), Relative change in ionfrac:  1.26e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6935 of 15625000 ( 0.044 % ), Relative change in ionfrac:  3.41e-03
+Doing Raytracing... rank=0 took  8.1e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3455 of 15625000 ( 0.022 % ), Relative change in ionfrac:  1.10e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1279 of 15625000 ( 0.008 % ), Relative change in ionfrac:  3.91e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 166 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.51e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4 of 15625000 ( 0.000 % ), Relative change in ionfrac:  6.24e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.997 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.997 Wall clock time:  406.009 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.199e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 9.199e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.3 s.
+Number of non-converged points: 14943 of 15625000 ( 0.096 % ), Relative change in ionfrac:  2.03e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 10945 of 15625000 ( 0.070 % ), Relative change in ionfrac:  1.13e-02
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6906 of 15625000 ( 0.044 % ), Relative change in ionfrac:  2.89e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 3164 of 15625000 ( 0.020 % ), Relative change in ionfrac:  8.84e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 907 of 15625000 ( 0.006 % ), Relative change in ionfrac:  3.03e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 46 of 15625000 ( 0.000 % ), Relative change in ionfrac:  1.14e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4 of 15625000 ( 0.000 % ), Relative change in ionfrac:  4.55e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.997 Wall clock time:  434.096 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.986e-04
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 9.986e-04
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 15730 of 15625000 ( 0.101 % ), Relative change in ionfrac:  1.88e+03
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.4 s.
+Number of non-converged points: 11467 of 15625000 ( 0.073 % ), Relative change in ionfrac:  1.01e-02
+Doing Raytracing... rank=0 took  8.6e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6770 of 15625000 ( 0.043 % ), Relative change in ionfrac:  2.46e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2833 of 15625000 ( 0.018 % ), Relative change in ionfrac:  7.31e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 652 of 15625000 ( 0.004 % ), Relative change in ionfrac:  2.45e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 24 of 15625000 ( 0.000 % ), Relative change in ionfrac:  9.00e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  457.983 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.077e-03
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 1.077e-03
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 16453 of 15625000 ( 0.105 % ), Relative change in ionfrac:  1.75e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 11995 of 15625000 ( 0.077 % ), Relative change in ionfrac:  9.16e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6719 of 15625000 ( 0.043 % ), Relative change in ionfrac:  2.14e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2509 of 15625000 ( 0.016 % ), Relative change in ionfrac:  6.07e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 342 of 15625000 ( 0.002 % ), Relative change in ionfrac:  1.96e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4 of 15625000 ( 0.000 % ), Relative change in ionfrac:  6.90e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  481.388 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.156e-03
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 1.156e-03
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 17210 of 15625000 ( 0.110 % ), Relative change in ionfrac:  1.64e+03
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 12623 of 15625000 ( 0.081 % ), Relative change in ionfrac:  8.37e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6661 of 15625000 ( 0.043 % ), Relative change in ionfrac:  1.92e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2305 of 15625000 ( 0.015 % ), Relative change in ionfrac:  5.30e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 169 of 15625000 ( 0.001 % ), Relative change in ionfrac:  1.66e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2 of 15625000 ( 0.000 % ), Relative change in ionfrac:  5.68e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  504.802 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.235e-03
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 1.235e-03
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.8e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.997 Wall clock time:  433.624 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.986e-04
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  9.0e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  457.050 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.077e-03
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.6e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  1.6e+00 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  480.779 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.156e-03
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.7e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  504.097 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.235e-03
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.6e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  527.557 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.314e-03
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.2e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.995 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.995 Wall clock time:  550.418 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.393e-03
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.0e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.995 Wall clock time:  569.679 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.472e-03
+...rank=1 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=1 took  8.4e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.1e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Doing Raytracing... rank=1 took  8.3e-01 s.
+Done. Final time:  589.643 seconds
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 17992 of 15625000 ( 0.115 % ), Relative change in ionfrac:  1.54e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 13044 of 15625000 ( 0.083 % ), Relative change in ionfrac:  7.68e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6582 of 15625000 ( 0.042 % ), Relative change in ionfrac:  1.70e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 2041 of 15625000 ( 0.013 % ), Relative change in ionfrac:  4.56e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 74 of 15625000 ( 0.000 % ), Relative change in ionfrac:  1.39e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 0 of 15625000 ( 0.000 % ), Relative change in ionfrac:  4.62e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  528.357 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.314e-03
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 1.314e-03
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 18714 of 15625000 ( 0.120 % ), Relative change in ionfrac:  1.45e+03
+Doing Raytracing... rank=0 took  8.1e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 13376 of 15625000 ( 0.086 % ), Relative change in ionfrac:  7.01e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6327 of 15625000 ( 0.040 % ), Relative change in ionfrac:  1.50e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1657 of 15625000 ( 0.011 % ), Relative change in ionfrac:  3.86e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 30 of 15625000 ( 0.000 % ), Relative change in ionfrac:  1.13e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 0 of 15625000 ( 0.000 % ), Relative change in ionfrac:  3.63e-05
+Multiple source convergence reached.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.995 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.995 Wall clock time:  551.235 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.393e-03
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 1.393e-03
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 19399 of 15625000 ( 0.124 % ), Relative change in ionfrac:  1.37e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 13804 of 15625000 ( 0.088 % ), Relative change in ionfrac:  6.43e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 6097 of 15625000 ( 0.039 % ), Relative change in ionfrac:  1.32e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1289 of 15625000 ( 0.008 % ), Relative change in ionfrac:  3.29e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 8 of 15625000 ( 0.000 % ), Relative change in ionfrac:  9.41e-05
+Multiple source convergence reached.
+
+ --- Timestep 2. Redshift: z =  8.995 Wall clock time:  570.464 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.472e-03
+...rank=0 has 2 sources.
+Copied source data to device.
+Calling evolve3D...
+dr [Mpc]: 1.600e-02
+dt [years]: 2.500e+04
+Running on 2 source(s), total normalized ionizing flux: 6.00e+07
+Mean density (cgs): 3.160e-04, Mean ionized fraction: 1.472e-03
+Convergence Criterion (Number of points):  3
+
+Doing Raytracing... rank=0 took  8.4e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 20034 of 15625000 ( 0.128 % ), Relative change in ionfrac:  1.30e+03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 14266 of 15625000 ( 0.091 % ), Relative change in ionfrac:  5.96e-03
+Doing Raytracing... rank=0 took  8.0e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 5979 of 15625000 ( 0.038 % ), Relative change in ionfrac:  1.19e-03
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 1024 of 15625000 ( 0.007 % ), Relative change in ionfrac:  2.93e-04
+Doing Raytracing... rank=0 took  7.9e-01 s.
+Doing Chemistry... took  2.2 s.
+Number of non-converged points: 4 of 15625000 ( 0.000 % ), Relative change in ionfrac:  8.24e-05
+Multiple source convergence reached.
+Done. Final time:  590.891 seconds
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.9e-01 s.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.9e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.997 Wall clock time:  434.651 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.986e-04
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.9e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  458.247 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.077e-03
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  1.6e+00 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  481.889 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.156e-03
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  505.388 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.235e-03
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.7e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.5e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  528.677 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.314e-03
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.4e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.995 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.995 Wall clock time:  551.479 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.393e-03
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.2e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.995 Wall clock time:  570.762 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.472e-03
+...rank=3 has 4 sources.
+Copied source data to device.
+Doing Raytracing... rank=3 took  8.6e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.1e-01 s.
+Doing Raytracing... rank=3 took  8.3e-01 s.
+Doing Raytracing... rank=3 took  8.7e-01 s.
+Done. Final time:  590.932 seconds
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.6e-01 s.
+Doing Raytracing... rank=2 took  8.7e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.997 Wall clock time:  434.620 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 9.986e-04
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.7e-01 s.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.996
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  458.339 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.077e-03
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  1.6e+00 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  481.777 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.156e-03
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.996 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.996 Wall clock time:  505.424 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.235e-03
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.996 Wall clock time:  528.770 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.314e-03
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.3e-01 s.
+Doing Raytracing... rank=2 took  8.1e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Running on 10 sources...
+
+=================================
+Doing redshift 8.995 to 8.995
+=================================
+
+
+ --- Timestep 1. Redshift: z =  8.995 Wall clock time:  551.581 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.393e-03
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+
+ --- Timestep 2. Redshift: z =  8.995 Wall clock time:  570.675 seconds --- 
+
+Mean density is: 3.160e-04, mean ionization fraction: 1.472e-03
+...rank=2 has 2 sources.
+Copied source data to device.
+Doing Raytracing... rank=2 took  8.5e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.0e-01 s.
+Doing Raytracing... rank=2 took  8.2e-01 s.
+Doing Raytracing... rank=2 took  8.4e-01 s.
+Done. Final time:  590.947 seconds
+Deallocating device memory...
+Deallocating device memory...
+Deallocating device memory...
+Deallocating device memory...
+
+
+Batch Job Summary Report (version 21.01.1) for Job "test_pyc2ray" (51738954) on daint
+
+Job information (1/3)
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed Time limit
+------------------- ------------------- ------------------- ------------------- ---------- ----------
+2024-02-13T13:51:54 2024-02-13T13:51:54 2024-02-13T13:53:05 2024-02-13T14:03:33   00:10:28   00:30:00
+-----------------------------------------------------------------------------------------------------
+
+Job information (2/3)
+-------------------------------------------------------------
+    Username      Account    Partition   NNodes        Energy
+------------ ------------ ------------ -------- -------------
+    mibianco        sk015       normal        4 not available kJ
+
+Job information (3/3) - GPU utilization data
+----------------------------------------------------
+   Node name       Usage      Max mem Execution time
+------------ ----------- ------------ --------------
+    nid02949        20 %    12061 MiB       00:09:53
+    nid02951        21 %    12061 MiB       00:09:53
+    nid02950        20 %    12061 MiB       00:09:53
+    nid02948        20 %    12061 MiB       00:09:53
+

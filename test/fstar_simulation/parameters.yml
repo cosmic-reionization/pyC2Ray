@@ -114,7 +114,7 @@ Sources:
   # efficiency Low-Mass Atomically Cooling Halo (LMACH)
   fgamma_lm: 0.
   # Double power law parameter - these are used only when fstar_kind: 'dpl'
-  Nion: 5.0
+  Nion: 4.0
   f0: 1.0 
   Mt: 1e8 
   Mp: 1e10
@@ -126,7 +126,7 @@ Sources:
   fesc_model: 'constant'
   f0_esc: 1.0
   Mp_esc: 1e10
-  al_esc: 0.0
+  al_esc: -0.5
   # define the accreation model (can be 'constant' or 'EXP')
   accretion_model: 'EXP'
   # accreation rate parameter (see Schneider+ 2021)
@@ -160,7 +160,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_8_f0_1_Mt_1e8_Mp_1e10_g1_m03_g2_m03_g3_0_g4_0/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_f0_1_Mt_1e8_Mp_1e10_g1_m03_g2_m03_g3_0_g4_0_alesc_m05/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk015/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)

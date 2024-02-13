@@ -5,6 +5,7 @@ module purge
 module load daint-gpu
 module load gcc/9.3.0
 module load nvidia
+module load cray-python/3.9.4.1
 
 # activate python environment
 source /store/ska/sk015/pyc2ray-env/bin/activate

@@ -104,6 +104,7 @@ class C2Ray:
         else:
             self.mpi = False
             self.rank = 0
+            self.nprocs = 1
 
         # Read YAML parameter file and set main properties
         self._read_paramfile(paramfile)
@@ -190,6 +191,7 @@ class C2Ray:
             self.printlog(f"zfactor = {1./dilution_factor : .10f}")
         # Set new time and redshift (after timestep)
         self.zred = z_now
+
     def evolve3D(self, dt, src_flux, src_pos):
         """Evolve the grid over one timestep
 
@@ -212,41 +214,29 @@ class C2Ray:
         else:
             ValueError('ASORA requires the shape of the src_pos array to be (3, N_src). Here, it does not appear that you are providing an array with this shape.')
         
-        if self.mpi:
-            NumSrc = src_flux.shape[0]
-            # TODO: this is a bit ugly but it works: 
-            # if the number of sources exceed the number of MPI processors then call the evolve designed for the MPI source splitting.
-            # otherwise: all ranks are calling (independently) the evolve with no source splitting until the condition above is meet.
-            if(NumSrc >= self.nprocs):
-                self.xh, self.phi_ion = evolve3D_MPI(
-                    dt, self.dr,
-                    src_flux, src_pos,
-                    self.gpu, self.max_subbox,self.subboxsize,self.loss_fraction,
-                    self.mpi,self.comm, self.rank, self.nprocs,
-                    self.temp, self.ndens, self.xh,
-                    self.photo_thin_table, self.photo_thick_table,
-                    self.minlogtau, self.dlogtau,
-                    self.R_max_LLS, self.convergence_fraction,
-                    self.sig, self.bh00, self.albpow, self.colh0, self.temph0, self.abu_c,
-                    self.logfile
-                )
-            else:
-                self.xh, self.phi_ion = evolve3D(
-                    dt, self.dr,
-                    src_flux, src_pos,
-                    self.gpu, self.max_subbox,self.subboxsize,self.loss_fraction,
-                    self.temp, self.ndens, self.xh,
-                    self.photo_thin_table, self.photo_thick_table,
-                    self.minlogtau, self.dlogtau,
-                    self.R_max_LLS, self.convergence_fraction,
-                    self.sig, self.bh00, self.albpow, self.colh0, self.temph0, self.abu_c,
-                    self.logfile
-                    )
+        NumSrc = src_flux.shape[0]
+        # TODO: this is a bit ugly but it works: 
+        # if the number of sources exceed the number of MPI processors then call the evolve designed for the MPI source splitting.
+        # otherwise: all ranks are calling (independently) the evolve with no source splitting until the condition above is meet.
+        if(NumSrc >= self.nprocs and self.mpi):
+            self.xh, self.phi_ion = evolve3D(
+                dt, self.dr,
+                src_flux, src_pos,
+                self.gpu, self.max_subbox,self.subboxsize,self.loss_fraction,
+                self.mpi, self.comm, self.rank, self.nprocs,
+                self.temp, self.ndens, self.xh,
+                self.photo_thin_table, self.photo_thick_table,
+                self.minlogtau, self.dlogtau,
+                self.R_max_LLS, self.convergence_fraction,
+                self.sig, self.bh00, self.albpow, self.colh0, self.temph0, self.abu_c,
+                self.logfile
+            )
         else:
             self.xh, self.phi_ion = evolve3D(
                 dt, self.dr,
                 src_flux, src_pos,
                 self.gpu, self.max_subbox,self.subboxsize,self.loss_fraction,
+                False, None, 0, 1,  # mpi flag, comm, rank=0, nproc=1
                 self.temp, self.ndens, self.xh,
                 self.photo_thin_table, self.photo_thick_table,
                 self.minlogtau, self.dlogtau,

@@ -35,15 +35,16 @@ __all__ = ['evolve3D']
 # version, and a MPI version which enables usage on multiple GPU nodes.
 # =========================================================================
 
-def evolve3D(dt,dr,
-        src_flux,src_pos,
-        use_gpu,max_subbox,subboxsize,loss_fraction,
-        temp,ndens,xh,
-        photo_thin_table,photo_thick_table,
-        minlogtau,dlogtau,
+def evolve3D(dt, dr,
+        src_flux, src_pos,
+        use_gpu, max_subbox, subboxsize, loss_fraction,
+        use_mpi, comm, rank, nprocs,
+        temp, ndens, xh,
+        photo_thin_table, photo_thick_table,
+        minlogtau, dlogtau,
         R_max_LLS, convergence_fraction,
-        sig,bh00,albpow,colh0,temph0,abu_c,
-        logfile="pyC2Ray.log",quiet=False):
+        sig, bh00, albpow, colh0, temph0, abu_c,
+        logfile="pyC2Ray.log", quiet=False):
 
     """Evolves the ionization fraction over one timestep for the whole grid
 
@@ -130,6 +131,8 @@ def evolve3D(dt,dr,
     prev_sum_xh1_int = 2*NumCells
     prev_sum_xh0_int = 2*NumCells
     converged = False
+    if(rank != 0):
+        xh_new = np.empty_like(xh)
     niter = 0
 
     # initialize average and intermediate results to values at beginning of timestep
@@ -141,29 +144,44 @@ def evolve3D(dt,dr,
         # Format input data for the CUDA extension module (flat arrays, C-types,etc)
         xh_av_flat = np.ravel(xh).astype('float64',copy=True)
         ndens_flat = np.ravel(ndens).astype('float64',copy=True)
-        srcpos_flat, normflux_flat = format_sources(src_pos, src_flux)
+        if use_mpi:
+            # TODO:       #if(NumSrc > nprocs):
+            perrank = NumSrc//nprocs
+            i_start = int(rank*perrank)
+            if(rank != nprocs-1):
+                i_end = int((rank+1)*perrank)
+            else:
+                i_end = NumSrc
+            
+            # overwrite number of sources 
+            NumSrc = i_end - i_start
+            srcpos_flat, normflux_flat = format_sources(src_pos[:,i_start:i_end], src_flux[i_start:i_end])
+            printlog(f"...rank={rank:n} has {NumSrc:n} sources.", logfile, quiet)
+        else:
+            srcpos_flat, normflux_flat = format_sources(src_pos, src_flux)
 
         # Copy positions & fluxes of sources to the GPU in advance
         libasora.source_data_to_device(srcpos_flat,normflux_flat,NumSrc)
 
-        # Initialize Flat Column density & ionization rate arrays. These are used to store the
-        # output of the raytracing module. TODO: python column density array is actually not needed ?
-        coldensh_out_flat = np.ravel(np.zeros((N,N,N),dtype='float64'))
-        phi_ion_flat = np.ravel(np.zeros((N,N,N),dtype='float64'))
+        # Initialize Flat Column density & ionization rate arrays. These are used to store the output of the raytracing module. 
+        # TODO: python column density array is actually not needed ?
+        coldensh_out_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
+        phi_ion_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
 
         # Copy density field to GPU once at the beginning of timestep (!! do_all_sources assumes this !!)
-        libasora.density_to_device(ndens_flat,N)
+        libasora.density_to_device(ndens_flat, N)
         printlog("Copied source data to device.",logfile,quiet)
 
     # -----------------------------------------------------------
     # Start Evolve step, Iterate until convergence in <x> and <y>
     # -----------------------------------------------------------
-    printlog("Calling evolve3D...",logfile,quiet)
-    printlog(f"dr [Mpc]: {dr/3.086e24:.3e}",logfile,quiet)
-    printlog(f"dt [years]: {dt/3.15576E+07:.3e}",logfile,quiet)
-    printlog(f"Running on {NumSrc:n} source(s), total normalized ionizing flux: {src_flux.sum():.2e}",logfile,quiet)
-    printlog(f"Mean density (cgs): {ndens.mean():.3e}, Mean ionized fraction: {xh.mean():.3e}",logfile,quiet)
-    printlog(f"Convergence Criterion (Number of points): {conv_criterion : n}",logfile,quiet,end='\n\n')
+    if(rank == 0):
+        printlog("Calling evolve3D...",logfile, quiet)
+        printlog(f"dr [Mpc]: {dr/3.086e24:.3e}",logfile, quiet)
+        printlog(f"dt [years]: {dt/3.15576E+07:.3e}",logfile, quiet)
+        printlog(f"Running on {NumSrc:n} source(s), total normalized ionizing flux: {src_flux.sum():.2e}", logfile, quiet)
+        printlog(f"Mean density (cgs): {ndens.mean():.3e}, Mean ionized fraction: {xh.mean():.3e}", logfile, quiet)
+        printlog(f"Convergence Criterion (Number of points): {conv_criterion : n}", logfile, quiet, end='\n\n')
 
     while not converged:
         niter += 1
@@ -176,15 +194,14 @@ def evolve3D(dt,dr,
         # Set rates to 0. When using ASORA, this is done internally by the library (directly on the GPU)
         if not use_gpu:
             phi_ion = np.zeros((N,N,N),order='F')
-            # So far in evolve we ignore heating (not considered in chemistry), but
-            # the raytracing function requires heating tables as argument
+            # So far in evolve we ignore heating (not considered in chemistry), but the raytracing function requires heating tables as argument
             phi_heat = np.zeros((N,N,N),order='F')
             coldensh_out = np.zeros((N,N,N),order='F')
 
         # Do the raytracing part for each source. This computes the cumulative ionization rate for each cell.
         if use_gpu:
             # Use GPU raytracing
-            libasora.do_all_sources(R_max_LLS,coldensh_out_flat,sig,dr,ndens_flat,xh_av_flat,phi_ion_flat,NumSrc,N,minlogtau,dlogtau,NumTau)
+            libasora.do_all_sources(R_max_LLS, coldensh_out_flat, sig, dr, ndens_flat, xh_av_flat, phi_ion_flat, NumSrc, N, minlogtau, dlogtau, NumTau)
         else:
             # Use CPU raytracing with subbox optimization
             nsubbox, photonloss = libc2ray.raytracing.do_all_sources(src_flux,src_pos,max_subbox,subboxsize,coldensh_out,sig,dr,ndens,
@@ -192,56 +209,87 @@ def evolve3D(dt,dr,
                                                                      photo_thin_table,photo_thick_table,
                                                                      np.zeros(NumTau),np.zeros(NumTau), # Eventually we'll add heating tables here
                                                                      minlogtau,dlogtau,R_max_LLS)
-
-        printlog(f"took {(time.time()-trt0) : .1f} s.", logfile,quiet)
+        if use_mpi:
+            printlog(f"rank={rank:n} took {(time.time()-trt0) : .1e} s.", logfile, quiet)
+        else:
+            printlog(f"took {(time.time()-trt0) : .1f} s.", logfile,quiet)
 
         # Since chemistry (ODE solving) is done on the CPU in Fortran, flattened CUDA arrays need to be reshaped
         if use_gpu:
             phi_ion = np.reshape(phi_ion_flat, (N,N,N))
         else:
             printlog(f"Average number of subboxes: {nsubbox/NumSrc:n}, Total photon loss: {photonloss:.3e}",logfile,quiet)
-            
-        # ---------------------
-        # (2): ODE Solving Step
-        # ---------------------
-        tch0 = time.time()
-        printlog("Doing Chemistry...",logfile,quiet,' ')
-        # Apply the global rates to compute the updated ionization fraction
-        conv_flag = libc2ray.chemistry.global_pass(dt,ndens,temp,xh,xh_av,xh_intermed,phi_ion,bh00,albpow,colh0,temph0,abu_c)
-        printlog(f"took {(time.time()-tch0) : .1f} s.", logfile,quiet)
 
-        # ----------------------------
-        # (3): Test Global Convergence
-        # ----------------------------
-        sum_xh1_int = np.sum( xh_intermed )
-        sum_xh0_int = np.sum( 1.0 - xh_intermed )
+        if use_mpi:
+            # collect results from the different MPI processors
+            if rank == 0:
+                comm.Reduce(use_mpi.IN_PLACE, [phi_ion, use_mpi.DOUBLE], op=use_mpi.SUM, root=0)
+            else:
+                comm.Reduce([phi_ion, use_mpi.DOUBLE], None, op=use_mpi.SUM, root=0)
+            comm.Bcast([phi_ion, use_mpi.DOUBLE], root=0)
 
-        if sum_xh1_int > 0.0:
-            rel_change_xh1 = np.abs( (sum_xh1_int - prev_sum_xh1_int) / sum_xh1_int )
+        if(rank == 0):            
+            # ---------------------
+            # (2): ODE Solving Step
+            # ---------------------
+            tch0 = time.time()
+            printlog("Doing Chemistry...",logfile,quiet,' ')
+            # Apply the global rates to compute the updated ionization fraction
+            conv_flag = libc2ray.chemistry.global_pass(dt,ndens,temp,xh,xh_av,xh_intermed,phi_ion,bh00,albpow,colh0,temph0,abu_c)
+            printlog(f"took {(time.time()-tch0) : .1f} s.", logfile,quiet)
+
+            # ----------------------------
+            # (3): Test Global Convergence
+            # ----------------------------
+            sum_xh1_int = np.sum( xh_intermed )
+            sum_xh0_int = np.sum( 1.0 - xh_intermed )
+
+            if sum_xh1_int > 0.0:
+                rel_change_xh1 = np.abs( (sum_xh1_int - prev_sum_xh1_int) / sum_xh1_int )
+            else:
+                rel_change_xh1 = 1.0
+
+            if sum_xh0_int > 0.0:
+                rel_change_xh0 = np.abs( (sum_xh0_int - prev_sum_xh0_int) / sum_xh0_int )
+            else:
+                rel_change_xh0 = 1.0
+
+            # Display convergence
+            printlog(f"Number of non-converged points: {conv_flag} of {NumCells} ({conv_flag / NumCells * 100 : .3f} % ), Relative change in ionfrac: {rel_change_xh1 : .2e}",logfile,quiet)
+
+            converged = (conv_flag < conv_criterion) or ( (rel_change_xh1 < convergence_fraction) and (rel_change_xh0 < convergence_fraction))
+
+            # Set previous metrics to current ones and repeat if not converged
+            prev_sum_xh1_int = sum_xh1_int
+            prev_sum_xh0_int = sum_xh0_int
+
+            # Finally, when using GPU, need to reshape x back for the next ASORA call
+            if (use_gpu and not converged):
+                xh_av_flat = np.ravel(xh_av)
+        
+        if use_mpi:
+            # broadcast ionised fraction field
+            comm.Bcast([xh_av_flat, use_mpi.DOUBLE], root=0)
+            comm.Bcast([xh_intermed, use_mpi.DOUBLE], root=0)
+
+            # convert the bool variable to bit
+            converged_array = array.array('i', [converged])
+
+            # braodcast convergence to the other ranks
+            comm.Bcast(converged_array, root=0)
+            if (rank != 0):
+                converged = bool(converged_array[0])
         else:
-            rel_change_xh1 = 1.0
+            pass
+    if(rank == 0):
+        # When converged, return the updated ionization fractions at the end of the timestep
+        printlog("Multiple source convergence reached.", logfile, quiet)
+        xh_new = xh_intermed
+    
+    if use_mpi:
+        # braodcast final result
+        comm.Bcast([xh_new, use_mpi.DOUBLE], root=0)    
 
-        if sum_xh0_int > 0.0:
-            rel_change_xh0 = np.abs( (sum_xh0_int - prev_sum_xh0_int) / sum_xh0_int )
-        else:
-            rel_change_xh0 = 1.0
-
-        # Display convergence
-        printlog(f"Number of non-converged points: {conv_flag} of {NumCells} ({conv_flag / NumCells * 100 : .3f} % ), Relative change in ionfrac: {rel_change_xh1 : .2e}",logfile,quiet)
-
-        converged = (conv_flag < conv_criterion) or ( (rel_change_xh1 < convergence_fraction) and (rel_change_xh0 < convergence_fraction))
-
-        # Set previous metrics to current ones and repeat if not converged
-        prev_sum_xh1_int = sum_xh1_int
-        prev_sum_xh0_int = sum_xh0_int
-
-        # Finally, when using GPU, need to reshape x back for the next ASORA call
-        if (use_gpu and not converged):
-            xh_av_flat = np.ravel(xh_av)
-
-    # When converged, return the updated ionization fractions at the end of the timestep
-    printlog("Multiple source convergence reached.", logfile,quiet)
-    xh_new = xh_intermed
     return xh_new, phi_ion
 
 
