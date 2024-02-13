@@ -305,7 +305,7 @@ class C2Ray:
             printlog(s,self.logfile,quiet)
 
 
-    def write_output(self,z):
+    def write_output(self, z, ext='.dat'):
         """Write ionization fraction & ionization rates as C2Ray binary files
 
         Parameters

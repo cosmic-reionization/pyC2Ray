@@ -15,7 +15,7 @@ paramfile = sys.argv[1]             # Name of the parameter file
 use_mpi = True
 if use_mpi:
     from mpi4py import MPI
-    sim = pc2r.C2Ray_Test(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=MPI)
+    sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=MPI)
 else:
     sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=False)
 
@@ -52,7 +52,8 @@ for k in range(i_start, len(zred_array)-1):
     srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=zi, save_Mstar=sim.results_basename+'/sources')
     
     # Write output
-    sim.write_output(z=zi, ext='.npy')
+    if(sim.rank == 0):
+        sim.write_output(z=zi, ext='.npy')
 
     # Set redshift to current slice redshift
     sim.zred = zi
