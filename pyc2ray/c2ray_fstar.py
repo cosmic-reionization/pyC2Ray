@@ -226,41 +226,6 @@ class C2Ray_fstar(C2Ray):
             # no need to re-read the same file again
             pass
 
-    def write_output(self, z, ext='.dat'):
-        """Write ionization fraction & ionization rates as C2Ray binary files
-
-        Parameters
-        ----------
-        z : float
-            Redshift (used to name the file)
-        """
-        suffix = f"_{z:.3f}"+ext
-        if(suffix.endswith('.dat')):
-            t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
-            t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
-        elif(suffix.endswith('.npy')):
-            np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
-            np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
-
-        # print min, max and average quantities
-        self.printlog('\n--- Reionization History ----')
-        self.printlog(' min, mean, max xHII : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
-        self.printlog(' min, mean, max Irate : %.5e  %.5e  %.5e [1/s]' %(self.phi_ion.min(), self.phi_ion.mean(), self.phi_ion.max()))
-        self.printlog(' min, mean, max density : %.5e  %.5e  %.5e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
-
-        # write summary output file
-        summary_exist = os.path.exists(self.results_basename+'PhotonCounts2.txt')
-
-        with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
-            if not (summary_exist):
-                header = '# z\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
-                f.write(header)                
-
-            massavrg_ion_frac = np.sum(self.xh*self.ndens)/np.sum(self.ndens)
-
-            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
-            f.write(text)
-
     # =====================================================================================================
     # Below are the overridden initialization routines specific to the CubeP3M case
     # =====================================================================================================
