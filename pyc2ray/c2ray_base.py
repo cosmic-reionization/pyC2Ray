@@ -570,7 +570,7 @@ class C2Ray:
             self.printlog(f"Maximum (constant) comoving distance for photons from source (type 3 LLS): {self._ld['Sinks']['R_max_cMpc'] : .3e} comoving Mpc")
         elif(self.mfp_model == 'Worseck2014'):
             # call class for the mean-free-path (TODO: in the future we should add more models)
-            self.mfp = SinksPhysics(A_mfp=self._ld['Sinks']['A_mfp'], etha_mfp= self._ld['Sinks']['eta_mfp'])
+            self.mfp = SinksPhysics(A_mfp=self._ld['Sinks']['A_mfp'], etha_mfp=self._ld['Sinks']['eta_mfp'], z1_mfp=self._ld['Sinks']['z1_mfp'], eta1_mfp=self._ld['Sinks']['eta1_mfp'])
 
             # set mean-free-path to the initial redshift
             self.R_max_LLS = self.mfp.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
