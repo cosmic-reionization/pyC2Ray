@@ -165,7 +165,7 @@ def evolve3D(dt, dr,
 
         # Initialize Flat Column density & ionization rate arrays. These are used to store the output of the raytracing module. 
         # TODO: python column density array is actually not needed but only for debug?
-        #coldensh_out_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
+        coldensh_out_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
         
         phi_ion_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
 
