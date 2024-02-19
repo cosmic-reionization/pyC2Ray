@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np, pandas as pd
 from astropy.cosmology import FlatLambdaCDM
 from glob import glob
 import astropy.constants as cst
@@ -42,7 +42,8 @@ class C2Ray_fstar(C2Ray):
 
         """
         super().__init__(paramfile, Nmesh, use_gpu, use_mpi)
-        self.printlog('Running: "C2Ray for %d Mpc/h volume"' %self.boxsize)
+        if(self.rank == 0):
+            self.printlog('Running: "C2Ray for %d Mpc/h volume"' %self.boxsize)
 
     # =====================================================================================================
     # USER DEFINED METHODS
@@ -130,12 +131,12 @@ class C2Ray_fstar(C2Ray):
 
         # normalize flux
         normflux = msun2g * self.fstar_dpl['Nion'] * srcmstar / (m_p * ts * S_star_ref)
-
-        self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
-        self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
-        self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-        self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
-        return srcpos, normflux
+        if(self.rank == 0):
+            self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
+            self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
+            self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
+            self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+            return srcpos, normflux
     
     def read_haloes(self, halo_file, box_len): # >:( trgeoip
         """Read haloes from a file.
@@ -179,52 +180,61 @@ class C2Ray_fstar(C2Ray):
 
         return srcpos_mpc, srcmass_msun
         
-    def read_density(self, fbase='%.3fn_all.dat', z=None):
+    def read_density(self, fbase, z=None):
         """ Read coarser density field from C2Ray-formatted file
 
         This method is meant for reading density field run with either N-body or hydro-dynamical simulations. The field is then smoothed on a coarse mesh grid.
 
         Parameters
         ----------
+        fbase : string
+            the file name (without the path) of the file to open
+        
+        """
+        file = self.density_basename+fbase
+        rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
+        self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+z)**3
+        if(self.rank == 0):
+            self.printlog('\n---- Reading density file:\n  %s' %file)
+            self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
+
+
+    def read_clumping(self, parfile, z=None):
+        """ Read coarser clumping factor
+
+        This method is meant for reading clumping files or compute them with Bianco+ (2021) method.
+
+        Parameters
+        ----------
         n : int
             Number of sources to read from the file
         
-        Returns
-        -------
-        srcpos : array
-            Grid positions of the sources formatted in a suitable way for the chosen raytracing algorithm
-        normflux : array
-            density mesh-grid in csg units
         """
-        if self.cosmological:
-            redshift = z
-        else:
-            redshift = self.zred_0
+        
+        # get parameter files
+        df = pd.read_csv(parfile, index_col=0)
 
-        idx_high_z = np.argmin(np.abs(self.zred_density[self.zred_density >= redshift] - redshift))
-        high_z = self.zred_density[idx_high_z]
+        # find nearest redshift bin
+        zlow, zhigh = find_bins(z, df.index)
 
-        # condition if need to read new file or use the one from the previous time-step
-        if(high_z != self.prev_zdens):
-            if(fbase.endswith('.dat')):
-                # get file name
-                file = self.density_basename+fbase %high_z
+        # calculate weight to 
+        w_l, w_h = (z-zlow)/(zhigh - zlow), (zhigh-z)/(zhigh - zlow)
+        
+        # get parameters weighted
+        a, b, c = (df.loc[zlow]*w_l + df.loc[zhigh]*w_h).to_numpy()
 
-                # use tools21cm to read density file and get baryonic number density
-                self.ndens = t2c.DensityFile(filename=file).cgs_density / (self.mean_molecular * m_p) * (1+redshift)**3
-            elif(fbase.endswith('.0')):
-                # get file name
-                file = self.density_basename+fbase %(idx_high_z+1)
-                
-                rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
-                self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+redshift)**3
-            
-            self.printlog('\n---- Reading density file:\n  %s' %file)
-            self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
-            self.prev_zdens = high_z
-        else:
-            # no need to re-read the same file again
-            pass
+        # compute clumping factor
+        x = np.log(1 + self.ndens / self.ndens.mean())
+        clump = 10**(a*x**2 + b*x**2 + c)
+
+        # combine clumping and density field
+        self.ndens *= clump
+
+        if(self.rank == 0):
+            self.printlog('\n---- Created Clumping Factor :')
+            self.printlog(' min, mean and max clumping : %.3e  %.3e  %.3e' %(clump.min(), clump.mean(), clump.max()))
+            self.printlog(' min, mean and max density : %.3e  %.3e  %.3e' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
+        return clump
 
     # =====================================================================================================
     # Below are the overridden initialization routines specific to the CubeP3M case
@@ -237,7 +247,7 @@ class C2Ray_fstar(C2Ray):
         self.zred_sources = np.loadtxt(self.sources_basename+'redshift_sources.txt')
         if(self.resume):
             # get the resuming redshift
-            self.zred = np.min(get_redshifts_from_output(self.results_basename)) 
+            self.zred = np.min(get_redshifts_from_output(self.results_basename))
             _, self.prev_zdens = find_bins(self.zred, self.zred_density)
             _, self.prev_zsourc = find_bins(self.zred, self.zred_sources)
         else:
@@ -251,9 +261,7 @@ class C2Ray_fstar(C2Ray):
         """Initialize material properties of the grid
         """
         if(self.resume):
-            #TODO: generalise the resuming of the simulation for reading the density
             # get fields at the resuming redshift
-            #self.ndens = t2c.DensityFile(filename='%scoarser_densities/%.3fn_all.dat' %(self.inputs_basename, self.prev_zdens)).cgs_density / (self.mean_molecular * m_p) * (1+self.zred)**3
             self.ndens = self.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0' %self.resume, z=self.prev_zdens)
             
             # get extension of the output file
@@ -285,7 +293,8 @@ class C2Ray_fstar(C2Ray):
         if(self.fstar_kind == 'fgamma'):
             self.fgamma_hm = self._ld['Sources']['fgamma_hm']
             self.fgamma_lm = self._ld['Sources']['fgamma_lm']
-            self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
+            if(self.rank == 0):
+                self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
         elif(self.fstar_kind == 'dpl'):
             self.fstar_dpl = {
                             'Nion': self._ld['Sources']['Nion'],
@@ -300,7 +309,8 @@ class C2Ray_fstar(C2Ray):
                             'Mp_esc': self._ld['Sources']['Mp_esc'], 
                             'al_esc': self._ld['Sources']['al_esc']
                             }
-            self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
+            if(self.rank == 0):
+                self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
 
             self.acc_model = self._ld['Sources']['accretion_model']
             self.alph_h = self._ld['Sources']['alpha_h']

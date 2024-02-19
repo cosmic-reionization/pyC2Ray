@@ -164,8 +164,9 @@ def evolve3D(dt, dr,
         libasora.source_data_to_device(srcpos_flat,normflux_flat,NumSrc)
 
         # Initialize Flat Column density & ionization rate arrays. These are used to store the output of the raytracing module. 
-        # TODO: python column density array is actually not needed ?
-        coldensh_out_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
+        # TODO: python column density array is actually not needed but only for debug?
+        #coldensh_out_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
+        
         phi_ion_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
 
         # Copy density field to GPU once at the beginning of timestep (!! do_all_sources assumes this !!)
@@ -235,7 +236,7 @@ def evolve3D(dt, dr,
             tch0 = time.time()
             printlog("Doing Chemistry...",logfile,quiet,' ')
             # Apply the global rates to compute the updated ionization fraction
-            conv_flag = libc2ray.chemistry.global_pass(dt,ndens,temp,xh,xh_av,xh_intermed,phi_ion,bh00,albpow,colh0,temph0,abu_c)
+            conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, colh0, temph0, abu_c)
             printlog(f"took {(time.time()-tch0) : .1f} s.", logfile,quiet)
 
             # ----------------------------
