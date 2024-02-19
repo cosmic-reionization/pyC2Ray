@@ -93,9 +93,12 @@ Sinks:
   # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
   # free parameter for the Worseck2014 mean-free-path model in cMpc units
-  A_mfp: 225.0
+  A_mfp: 210.0
   # spectral index of the Worseck2014 mean-free-path model redshift evolution
-  eta_mfp: -8.8
+  eta_mfp: -9
+  # parameters for the modification to the Worseck2014 fit
+  z1_mfp: 6.0
+  eta1_mfp: 9
 
 # --------------------------------
 # Parameters for Black Body source
