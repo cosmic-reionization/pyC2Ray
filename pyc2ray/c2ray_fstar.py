@@ -91,7 +91,7 @@ class C2Ray_fstar(C2Ray):
             Normalization of the flux of each source (relative to S_star)
         """
         box_len, n_grid = self.boxsize, self.N
-        print(self.sources_basename+file)
+        
         srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, box_len)
         fstar, fesc = self.fstar_model(srcmass_msun)
         mstar_msun = fesc*fstar*srcmass_msun
@@ -136,7 +136,8 @@ class C2Ray_fstar(C2Ray):
             self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
             self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
             self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
-            return srcpos, normflux
+        
+        return srcpos, normflux
     
     def read_haloes(self, halo_file, box_len): # >:( trgeoip
         """Read haloes from a file.
