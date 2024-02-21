@@ -2,6 +2,7 @@ import yaml
 import atexit
 import re
 import numpy as np, os
+import tools21cm as t2c
 from astropy import units as u
 from astropy import constants as c
 from astropy.cosmology import FlatLambdaCDM, z_at_value
