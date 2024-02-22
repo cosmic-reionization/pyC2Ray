@@ -1,4 +1,5 @@
 import numpy as np, pandas as pd
+import pyc2ray as pc2r
 from .utils.other_utils import find_bins
 
 class SinksPhysics:
@@ -11,13 +12,13 @@ class SinksPhysics:
 
         if(clump_model != 'constant'):
             # Clumping factor parameters
-            self.model_res = np.loadtxt('./tables/resolutions.txt')
+            self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/resolutions.txt')
             
             # use parameters from tables with similare spatial resolution
             tab_res = self.model_res[np.argmin(np.abs(self.model_res - res))]
 
             # get parameter files
-            self.clumping_params = np.loadtxt('./tables/par_%s_%.3fMpc.txt' %(clump_model, tab_res))
+            self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(clump_model, tab_res))
             if(clump_model == 'redshift'):
                 self.c2, self.c1, self.C0 = self.clumping_params[:4]
                 self.calculate_clumping = self.biashomogeneous_clumping
