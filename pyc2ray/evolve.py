@@ -237,7 +237,7 @@ def evolve3D(dt, dr,
             tch0 = time.time()
             printlog("Doing Chemistry...",logfile,quiet,' ')
             # Apply the global rates to compute the updated ionization fraction
-            conv_flag = libc2ray.chemistry.global_pass(dt, clump*ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, colh0, temph0, abu_c)
+            conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, colh0, temph0, abu_c)
             printlog(f"took {(time.time()-tch0) : .1f} s.", logfile,quiet)
 
             # ----------------------------
