@@ -228,7 +228,7 @@ class C2Ray:
                 src_flux=src_flux, src_pos=src_pos,
                 use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
                 use_mpi=self.mpi, comm=self.comm, rank=self.rank, nprocs=self.nprocs,
-                temp=self.temp, ndens=self.ndens, xh=self.xh, #TODO: pass the clumping factor too
+                temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
                 photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
                 minlogtau=self.minlogtau, dlogtau=self.dlogtau,
                 R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
@@ -240,7 +240,7 @@ class C2Ray:
                 src_flux=src_flux, src_pos=src_pos,
                 use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
                 use_mpi=False, comm=None, rank=0, nprocs=1, # mpi flag, comm, rank=0, nproc=1
-                temp=self.temp, ndens=self.ndens, xh=self.xh, #TODO: pass the clumping factor too
+                temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
                 photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
                 minlogtau=self.minlogtau, dlogtau=self.dlogtau,
                 R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
