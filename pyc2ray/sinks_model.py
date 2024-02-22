@@ -10,7 +10,7 @@ class SinksPhysics:
         self.z1_mfp = z1_mfp
         self.eta1_mfp = eta1_mfp
 
-        if(clump_model != 'constant'):
+        if(clump_model != 'constant' and clump_model != None):
             # Clumping factor parameters
             self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/resolutions.txt')
             
