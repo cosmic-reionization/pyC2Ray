@@ -204,44 +204,6 @@ class C2Ray_fstar(C2Ray):
             self.printlog('\n---- Reading density file:\n  %s' %file)
             self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
 
-
-    def read_clumping(self, parfile, z=None):
-        """ Read coarser clumping factor
-
-        This method is meant for reading clumping files or compute them with Bianco+ (2021) method.
-
-        Parameters
-        ----------
-        n : int
-            Number of sources to read from the file
-        
-        """
-        
-        # get parameter files
-        df = pd.read_csv(parfile, index_col=0)
-
-        # find nearest redshift bin
-        zlow, zhigh = find_bins(z, df.index)
-
-        # calculate weight to 
-        w_l, w_h = (z-zlow)/(zhigh - zlow), (zhigh-z)/(zhigh - zlow)
-        
-        # get parameters weighted
-        a, b, c = (df.loc[zlow]*w_l + df.loc[zhigh]*w_h).to_numpy()
-
-        # compute clumping factor
-        x = np.log(1 + self.ndens / self.ndens.mean())
-        clump = 10**(a*x**2 + b*x**2 + c)
-
-        # combine clumping and density field
-        self.ndens *= clump
-
-        if(self.rank == 0):
-            self.printlog('\n---- Created Clumping Factor :')
-            self.printlog(' min, mean and max clumping : %.3e  %.3e  %.3e' %(clump.min(), clump.mean(), clump.max()))
-            self.printlog(' min, mean and max density : %.3e  %.3e  %.3e' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
-        return clump
-
     # =====================================================================================================
     # Below are the overridden initialization routines specific to the CubeP3M case
     # =====================================================================================================

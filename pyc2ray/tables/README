@@ -1,0 +1,3 @@
+These tables were created with the SubGridClumping model of from Bianco+ (2021) for different spatial resolution. These parameters of the different models was extracted from the <i>sph_smooth_cubepm_130314_6_1728_6.3Mpc_ext2</i> N-body simulation with mesh size 1200. The code can be find on GitHub but to create new tables:
+ - https://arxiv.org/abs/2101.01712
+ - https://github.com/micbia/SubgridClumping

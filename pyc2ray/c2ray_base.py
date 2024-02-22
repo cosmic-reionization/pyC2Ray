@@ -11,7 +11,7 @@ try:
 except ImportError:
     from yaml import SafeLoader
 from .utils.logutils import printlog
-from .evolve import evolve3D, evolve3D_MPI
+from .evolve import evolve3D
 from .raytracing import do_raytracing
 from .asora_core import device_init, device_close, photo_table_to_device
 from .radiation import BlackBodySource, make_tau_table
@@ -117,7 +117,7 @@ class C2Ray:
             self.gpu = True
             # Allocate GPU memory
             src_batch_size = self._ld["Raytracing"]["source_batch_size"]
-            device_init(Nmesh,src_batch_size)
+            device_init(Nmesh, src_batch_size)
             # Register deallocation function (automatically calls this on program termination)
             atexit.register(self._gpu_close)
         else:
@@ -137,12 +137,14 @@ class C2Ray:
             if self.gpu:
                 # Print maximum shell size for info, based on LLS (qmax is s.t. Rmax fits inside of it)
                 q_max = np.ceil(1.73205080757*min(self.R_max_LLS,1.73205080757*self.N/2))
-                self.printlog(f"Using ASORA Raytracing ( q_max = {q_max : n} )")
+                self.printlog("Using ASORA Raytracing ( q_max = %d )" %q_max)
             else:
                 # Print info about subbox algorithm
-                self.printlog(f"Using CPU Raytracing (subboxsize = {self.subboxsize : n}, max_subbox = {self.max_subbox : n})")
-            if (self.mpi): self.printlog(f"Using {self.nprocs:n} MPI Ranks")
-            else: self.printlog(f"Running in non-MPI (single-GPU/CPU) mode")
+                self.printlog("Using CPU Raytracing (subboxsize = %d, max_subbox = %d)" %(self.subboxsize, self.max_subbox))
+            if (self.mpi): 
+                self.printlog("Using %d MPI Ranks" %self.nprocs)
+            else: 
+                self.printlog("Running in non-MPI (single-GPU/CPU) mode")
             self.printlog("Starting simulation... \n\n")
 
     # =====================================================================================================
@@ -189,7 +191,8 @@ class C2Ray:
             # Set cell size to current proper size
             # self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
             self.dr /= dilution_factor
-            self.printlog(f"zfactor = {1./dilution_factor : .10f}")
+            if(self.rank == 0):
+                self.printlog(f"zfactor = {1./dilution_factor : .10f}")
         # Set new time and redshift (after timestep)
         self.zred = z_now
 
@@ -221,31 +224,28 @@ class C2Ray:
         # otherwise: all ranks are calling (independently) the evolve with no source splitting until the condition above is meet.
         if(NumSrc >= self.nprocs and self.mpi):
             self.xh, self.phi_ion = evolve3D(
-                dt, self.dr,
-                src_flux, src_pos,
-                self.gpu, self.max_subbox,self.subboxsize,self.loss_fraction,
-                self.mpi, self.comm, self.rank, self.nprocs,
-                self.temp, self.ndens, self.xh,
-                self.photo_thin_table, self.photo_thick_table,
-                self.minlogtau, self.dlogtau,
-                self.R_max_LLS, self.convergence_fraction,
-                self.sig, self.bh00, self.albpow, self.colh0, self.temph0, self.abu_c,
-                self.logfile
-            )
+                dt=dt, dr=self.dr,
+                src_flux=src_flux, src_pos=src_pos,
+                use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
+                use_mpi=self.mpi, comm=self.comm, rank=self.rank, nprocs=self.nprocs,
+                temp=self.temp, ndens=self.ndens, xh=self.xh, #TODO: pass the clumping factor too
+                photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
+                minlogtau=self.minlogtau, dlogtau=self.dlogtau,
+                R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
+                sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
+                logfile=self.logfile, quiet=False)
         else:
             self.xh, self.phi_ion = evolve3D(
-                dt, self.dr,
-                src_flux, src_pos,
-                self.gpu, self.max_subbox,self.subboxsize,self.loss_fraction,
-                False, None, 0, 1,  # mpi flag, comm, rank=0, nproc=1
-                self.temp, self.ndens, self.xh,
-                self.photo_thin_table, self.photo_thick_table,
-                self.minlogtau, self.dlogtau,
-                self.R_max_LLS, self.convergence_fraction,
-                self.sig, self.bh00, self.albpow, self.colh0, self.temph0, self.abu_c,
-                self.logfile
-                )
-
+                dt=dt, dr=self.dr,
+                src_flux=src_flux, src_pos=src_pos,
+                use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
+                use_mpi=False, comm=None, rank=0, nprocs=1, # mpi flag, comm, rank=0, nproc=1
+                temp=self.temp, ndens=self.ndens, xh=self.xh, #TODO: pass the clumping factor too
+                photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
+                minlogtau=self.minlogtau, dlogtau=self.dlogtau,
+                R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
+                sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
+                logfile=self.logfile, quiet=False)
 
     def cosmo_evolve(self, dt):
         """Evolve cosmology over a timestep
@@ -274,8 +274,15 @@ class C2Ray:
             # Set cell size to current proper size
             self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
 
-        # TODO: add the clumping factor to the density, something like:
-        # self.ndens *= np.sqrt(clum) # square root to double check, as I think that the self.ndens is squared in the doric method when calculating the solution. But probably not because it assumes constant electron density.
+        # Set new clumping factor if is not redshift constant
+        if(self.clumping_model != 'constant'):
+            if(self.clumping_model == 'redshift'):
+               self.clumping_factor = self.clumpiness.calculate_clumping(z=self.zred)
+            else:
+               self.clumping_factor = self.clumpiness.calculate_clumping(z=self.zred, ndens=self.ndens)
+            
+            if(self.rank == 0):
+                self.printlog(' min, mean and max clumping factor at z = %.3f: %.2f  %.2f  %.2f' %(self.zred, self.clumping_factor.min(), self.clumping_factor.mean(), self.clumping_factor.max()))
 
         # Set new time and redshift (after timestep)
         self.zred = z_half
@@ -286,9 +293,10 @@ class C2Ray:
             pass
         elif(self.mfp_model == 'Worseck2014'):
             self.R_max_LLS = self.mfp.mfp_Worseck2014(z=self.zred) # in cMpc
-            self.printlog(f"Mean-free-path for photons at z ={self.zred : .3f} (Worseck+ 2014): {self.R_max_LLS : .3e} cMpc")
             self.R_max_LLS *= self.N / self.boxsize     # in number of grids
-            self.printlog(f"This corresponds to {self.R_max_LLS : .3f} grid cells.")
+            if(self.rank == 0):
+                self.printlog("Mean-free-path for photons at z = %.3f (Worseck+ 2014): %.3e cMpc" %(self.zred, self.R_max_LLS*self.boxsize/self.N))
+                self.printlog("This corresponds to %.3f grid cells." %self.R_max_LLS)
 
     def printlog(self,s,quiet=False):
         """Print to log file and standard output
@@ -303,7 +311,7 @@ class C2Ray:
         if self.logfile is None:
             raise RuntimeError("Please set the log file in output_ini")
         else:
-            printlog(s,self.logfile,quiet)
+            printlog(s, self.logfile, quiet)
 
 
     def write_output(self, z, ext='.dat'):
@@ -323,10 +331,11 @@ class C2Ray:
             np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
 
         # print min, max and average quantities
-        self.printlog('\n--- Reionization History ----')
-        self.printlog(' min, mean, max xHII : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
-        self.printlog(' min, mean, max Irate : %.5e  %.5e  %.5e [1/s]' %(self.phi_ion.min(), self.phi_ion.mean(), self.phi_ion.max()))
-        self.printlog(' min, mean, max density : %.5e  %.5e  %.5e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
+        if(self.rank == 0):
+            self.printlog('\n--- Reionization History ----')
+            self.printlog(' min, mean, max xHII : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
+            self.printlog(' min, mean, max Irate : %.5e  %.5e  %.5e [1/s]' %(self.phi_ion.min(), self.phi_ion.mean(), self.phi_ion.max()))
+            self.printlog(' min, mean, max density : %.5e  %.5e  %.5e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
 
         # write summary output file
         summary_exist = os.path.exists(self.results_basename+'PhotonCounts2.txt')
@@ -497,10 +506,12 @@ class C2Ray:
             # 1. Add heating rate computation to ASORA (GPU raytracing)
             # 2. Add heating (thermal) to chemistry module
             if self.compute_heating_rates:
-                self.printlog("Integrating photoheating rates tables...")
+                if(self.rank == 0):
+                    self.printlog("Integrating photoheating rates tables...")
                 self.heat_thin_table, self.heat_thick_table = radsource.make_heat_table(self.tau,freq_min,freq_max,1e48) # nb integration bounds are given in log10(freq/freq_HI)
             else:
-                self.printlog("INFO: No heating rates")
+                if(self.rank == 0):
+                    self.printlog("INFO: No heating rates")
                 self.heat_thin_table = np.zeros(self.NumTau+1)
                 self.heat_thick_table = np.zeros(self.NumTau+1)
 
@@ -512,7 +523,8 @@ class C2Ray:
         # Copy radiation table to GPU
         if self.gpu:
             photo_table_to_device(self.photo_thin_table,self.photo_thick_table)
-            if(self.rank == 0): self.printlog("Successfully copied radiation tables to GPU memory.")
+            if(self.rank == 0): 
+                self.printlog("Successfully copied radiation tables to GPU memory.")
 
     def _grid_init(self):
         """ Set up grid properties
@@ -545,39 +557,57 @@ class C2Ray:
 
         self.logfile = self.results_basename + self._ld['Output']['logfile']
         title = '                 _________   ____            \n    ____  __  __/ ____/__ \ / __ \____ ___  __\n   / __ \/ / / / /    __/ // /_/ / __ `/ / / /\n  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / \n / .___/\__, /\____//____/_/ |_|\__,_/\__, /  \n/_/    /____/                        /____/   \n'
-        if(self._ld['Grid']['resume']):
-            title = "\n\nResuming"+title[8:]+"\n\n"
-            with open(self.logfile,"r") as f: 
-                log = f.readlines()
-            with open(self.logfile,"w") as f: 
-                log.append(title)
-                f.write(''.join(log))
-        else:
-            with open(self.logfile,"w") as f: 
-                # Clear file and write header line
-                f.write(title+"\nLog file for pyC2Ray.\n\n") 
-        print(title)
-
+        
+        if(self.rank == 0):    
+            if(self._ld['Grid']['resume']):
+                title = "\n\nResuming"+title[8:]+"\n\n"
+                with open(self.logfile,"r") as f: 
+                    log = f.readlines()
+                with open(self.logfile,"w") as f: 
+                    log.append(title)
+                    f.write(''.join(log))
+            else:
+                with open(self.logfile,"w") as f: 
+                    # Clear file and write header line
+                    f.write(title+"\nLog file for pyC2Ray.\n\n") 
+        
     def _sinks_init(self):
         # for clumping factor
         self.clumping_model = self._ld['Sinks']['clumping_model']
 
+        if(self.clumping_model == 'constant'):
+            self.clumping_factor = self._ld['Sinks']['clumping']
+            pass 
+        else:
+            # this works fore the other models
+            self.clumpiness = SinksPhysics(clump_model=self._ld['Sinks']['clumping_model'], res=self.boxsize/self.N)
+
+            # this is either a float or a ndarray
+            self.clumping_factor = self.clumpiness.calculate_clumping(z=self._ld['Cosmology']['zred_0'])
+            if(self.rank == 0):
+                self.printlog('\n---- Calculated Clumping Factor :')
+                self.printlog(' min, mean and max clumping : %.3e  %.3e  %.3e' %(self.clumping_factor.min(), self.clumping_factor.mean(), self.clumping_factor.max()))
+            
         # for mean-free path
         self.mfp_model = self._ld['Sinks']['mfp_model']
 
         if(self.mfp_model == 'constant'):
             # Set R_max (LLS 3) in cell units
             self.R_max_LLS = self._ld['Sinks']['R_max_cMpc'] * self.N / self.boxsize
-            self.printlog(f"Maximum (constant) comoving distance for photons from source (type 3 LLS): {self._ld['Sinks']['R_max_cMpc'] : .3e} comoving Mpc")
+            if(self.rank == 0):
+                self.printlog(f"Maximum (constant) comoving distance for photons from source (type 3 LLS): {self._ld['Sinks']['R_max_cMpc'] : .3e} comoving Mpc")
         elif(self.mfp_model == 'Worseck2014'):
             # call class for the mean-free-path (TODO: in the future we should add more models)
             self.mfp = SinksPhysics(A_mfp=self._ld['Sinks']['A_mfp'], etha_mfp=self._ld['Sinks']['eta_mfp'], z1_mfp=self._ld['Sinks']['z1_mfp'], eta1_mfp=self._ld['Sinks']['eta1_mfp'])
 
             # set mean-free-path to the initial redshift
             self.R_max_LLS = self.mfp.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
-            self.printlog(f"Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A ={self._ld['Sinks']['R_max_cMpc'] : .2f} Mpc, eta ={self._ld['Sinks']['eta_mfp'] : .2f}")
+            if(self.rank == 0): 
+                self.printlog(f"Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A ={self._ld['Sinks']['R_max_cMpc'] : .2f} Mpc, eta ={self._ld['Sinks']['eta_mfp'] : .2f}")
             self.R_max_LLS *= self.N / self.boxsize
-        self.printlog("This corresponds to %.3f grid cells." %self.R_max_LLS)
+        
+        if(self.rank == 0):
+            self.printlog("This corresponds to %.3f grid cells." %self.R_max_LLS)
 
     # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):
