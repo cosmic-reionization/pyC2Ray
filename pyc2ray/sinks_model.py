@@ -20,7 +20,7 @@ class SinksPhysics:
             # get parameter files
             self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(clump_model, tab_res))
             if(clump_model == 'redshift'):
-                self.c2, self.c1, self.C0 = self.clumping_params[:4]
+                self.c2, self.c1, self.C0 = self.clumping_params[:3]
                 self.calculate_clumping = self.biashomogeneous_clumping
             elif(clump_model == 'density'):
                 self.calculate_clumping = self.inhomogeneous_clumping
