@@ -595,7 +595,7 @@ class C2Ray:
             self.R_max_LLS *= self.N / self.boxsize
         
         if(self.rank == 0):
-            self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model) : A = %.2f Mpc, eta = %.2f.\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.sink.A_mfp, self.sin.etha_mfp, self.R_max_LLS))
+            self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model) : A = %.2f Mpc, eta = %.2f.\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.sinks.A_mfp, self.sinks.etha_mfp, self.R_max_LLS))
 
     # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):
