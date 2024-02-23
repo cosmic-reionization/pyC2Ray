@@ -576,7 +576,7 @@ class C2Ray:
         self.clumping_model = self._ld['Sinks']['clumping_model']
 
         if(self.clumping_model == 'constant'):
-            self.clumping_factor = self._ld['Sinks']['clumping']
+            self.clumping_factor = np.ones((self.N, self.N, self.N))*self._ld['Sinks']['clumping']
             pass 
         else:
             # this works fore the other models
