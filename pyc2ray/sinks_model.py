@@ -4,7 +4,7 @@ from .utils.other_utils import find_bins
 
 class SinksPhysics:
     def __init__(self, params=None, N=None):
-        self.clump_model = params['Sinks']['clumping_model']
+        self.clumping_model = params['Sinks']['clumping_model']
         self.mfp_model = params['Sinks']['mfp_model']
         self.N = N
 
@@ -23,7 +23,7 @@ class SinksPhysics:
             ValueError(' MFP model not implemented : %s' %self.mfp_model)
 
         # Clumping factor parameters
-        if(self.clump_model == 'constant'):
+        if(self.clumping_model == 'constant'):
             self.calculate_clumping = np.ones((N, N, N), dtype=np.float64) * params['Sinks']['clumping']
         else:
             self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/resolutions.txt')
@@ -32,16 +32,16 @@ class SinksPhysics:
             tab_res = self.model_res[np.argmin(np.abs(self.model_res*0.7 - res))]     # the tables where calculated for cMpc/h with h=0.7
 
             # get parameter files
-            self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(self.clump_model, tab_res))
-            if(self.clump_model == 'redshift'):
+            self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(self.clumping_model, tab_res))
+            if(self.clumping_model == 'redshift'):
                 self.c2, self.c1, self.C0 = self.clumping_params[:3]
                 self.calculate_clumping = self.biashomogeneous_clumping
-            elif(self.clump_model == 'density'):
+            elif(self.clumping_model == 'density'):
                 self.calculate_clumping = self.inhomogeneous_clumping
-            elif(self.clump_model == 'stochastic'):
+            elif(self.clumping_model == 'stochastic'):
                 self.calculate_clumping = self.stochastic_clumping
             else:
-                ValueError(' Cluming factor model not implemented : %s' %self.clump_model)
+                ValueError(' Cluming factor model not implemented : %s' %self.clumping_model)
 
     def mfp_Worseck2014(self, z):
         R_mfp = self.A_mfp*((1+z)/5.)**self.etha_mfp
@@ -79,14 +79,14 @@ class SinksPhysics:
 
 
 class SinksPhysics_old:
-    def __init__(self, A_mfp=None, etha_mfp=None, z1_mfp=None, eta1_mfp=None, clump_model=None, res=None):
+    def __init__(self, A_mfp=None, etha_mfp=None, z1_mfp=None, eta1_mfp=None, clumping_model=None, res=None):
         # MFP parameters
         self.A_mfp = A_mfp
         self.etha_mfp = etha_mfp
         self.z1_mfp = z1_mfp
         self.eta1_mfp = eta1_mfp
 
-        if(clump_model != 'constant' and clump_model != None):
+        if(clumping_model != 'constant' and clumping_model != None):
             # Clumping factor parameters
             self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/resolutions.txt')
             
@@ -94,13 +94,13 @@ class SinksPhysics_old:
             tab_res = self.model_res[np.argmin(np.abs(self.model_res - res))]
 
             # get parameter files
-            self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(clump_model, tab_res))
-            if(clump_model == 'redshift'):
+            self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(clumping_model, tab_res))
+            if(clumping_model == 'redshift'):
                 self.c2, self.c1, self.C0 = self.clumping_params[:3]
                 self.calculate_clumping = self.biashomogeneous_clumping
-            elif(clump_model == 'density'):
+            elif(clumping_model == 'density'):
                 self.calculate_clumping = self.inhomogeneous_clumping
-            elif(clump_model == 'stochastic'):
+            elif(clumping_model == 'stochastic'):
                 self.calculate_clumping = self.stochastic_clumping
 
     def mfp_Worseck2014(self, z):

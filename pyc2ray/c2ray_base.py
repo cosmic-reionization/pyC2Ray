@@ -582,7 +582,7 @@ class C2Ray:
             self.clumping_factor = self.sinks.calculate_clumping(z=self._ld['Cosmology']['zred_0'], ndens=self.ndens)
 
         if(self.rank == 0):
-            self.printlog('\n---- Calculated Clumping Factor (%s model):' %self.sinks.clump_model)
+            self.printlog('\n---- Calculated Clumping Factor (%s model):' %self.sinks.clumping_model)
             self.printlog(' min, mean and max clumping : %.3e  %.3e  %.3e' %(self.clumping_factor.min(), self.clumping_factor.mean(), self.clumping_factor.max()))
             
         # for mean-free-path 
