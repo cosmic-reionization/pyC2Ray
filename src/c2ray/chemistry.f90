@@ -122,7 +122,6 @@ module chemistry
     ! ===============================================================================================
     subroutine do_chemistry(dt,ndens_p,temperature_start,xh_p,xh_av_p,xh_intermed_p,phi_ion_p, &
                             clump_p,bh00,albpow,colh0,temph0,abu_c)
-        ! TODO: add clumping argument
         ! Subroutine Arguments
         real(kind=real64), intent(in) :: dt                    ! time step
         real(kind=real64), intent(in) :: temperature_start    ! Local starting temperature
@@ -143,8 +142,6 @@ module chemistry
         real(kind=real64) :: xh_av_p_old                      ! Time-average ionization fraction from previous iteration
         real(kind=real64) :: de                               ! local electron density
         integer :: nit                                        ! Iteration counter
-
-        ! TODO: clumping
         
         ! Initialize IC
         !xh0_p = xh_p
@@ -244,7 +241,6 @@ module chemistry
         real(kind=real64),intent(out) :: xh                         ! Updated H ionization fraction
         real(kind=real64),intent(out) :: xh_av                      ! Updated H ionization fraction (time-averaged)
 
-        ! --> TODO: use clumping_module, only: clumping
         ! --> use tped, only: electrondens ! should this really be used inside doric?
         ! --> real(kind=real64),parameter :: sqrtt_isothermal=sqrt(1e4)
         ! --> real(kind=real64),parameter :: acolh0_isothermal=colh0* sqrtt_isothermal*exp(-temph0/1e4)
