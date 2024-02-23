@@ -586,10 +586,10 @@ class C2Ray:
             self.printlog(' min, mean and max clumping : %.3e  %.3e  %.3e' %(self.clumping_factor.min(), self.clumping_factor.mean(), self.clumping_factor.max()))
             
         # for mean-free-path 
-        if(self.mfp_model == 'constant'):
+        if(self.sinks.mfp_model == 'constant'):
             # Set R_max (LLS 3) in cell units
             self.R_max_LLS = self.sinks.R_mfp_cell_unit
-        elif(self.mfp_model == 'Worseck2014'):
+        elif(self.sinks.mfp_model == 'Worseck2014'):
             # set mean-free-path to the initial redshift
             self.R_max_LLS = self.sinks.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
             self.R_max_LLS *= self.N / self.boxsize
