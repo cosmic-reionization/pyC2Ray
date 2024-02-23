@@ -26,10 +26,10 @@ class SinksPhysics:
         if(self.clump_model == 'constant'):
             self.calculate_clumping = np.ones((N, N, N), dtype=np.float64) * params['Sinks']['clumping']
         else:
-            self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/resolutions.txt')*0.7     # the tables where calculated for cMpc/h with h=0.7
+            self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/resolutions.txt')
             
             # use parameters from tables with similare spatial resolution
-            tab_res = self.model_res[np.argmin(np.abs(self.model_res - res))]
+            tab_res = self.model_res[np.argmin(np.abs(self.model_res*0.7 - res))]     # the tables where calculated for cMpc/h with h=0.7
 
             # get parameter files
             self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(self.clump_model, tab_res))
