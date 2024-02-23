@@ -33,7 +33,7 @@ class SinksPhysics:
         return R_mfp
     
     def biashomogeneous_clumping(self, z):
-        clump_fact = self.C0 * np.exp(self.c1*z + self.c2*z^2) + 1.
+        clump_fact = self.C0 * np.exp(self.c1*z + self.c2*z**2) + 1.
         return clump_fact
     
     def inhomogeneous_clumping(self, z, ndens):
