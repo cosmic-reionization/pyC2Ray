@@ -16,7 +16,7 @@ class SinksPhysics:
             self.R_mfp_cell_unit = params['Sinks']['R_max_cMpc'] / res
         elif(self.mfp_model == 'Worseck2014'):
             self.A_mfp = params['Sinks']['A_mfp']
-            self.etha_mfp = params['Sinks']['etha_mfp']
+            self.etha_mfp = params['Sinks']['eta_mfp']
             self.z1_mfp = params['Sinks']['z1_mfp']
             self.eta1_mfp = params['Sinks']['eta1_mfp']
         else:
