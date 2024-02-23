@@ -275,11 +275,11 @@ class C2Ray:
             self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
 
         # Set new clumping factor if is not redshift constant
-        if(self.clumping_model != 'constant'):
-            if(self.clumping_model == 'redshift'):
-               self.clumping_factor = self.clumpiness.calculate_clumping(z=self.zred)
+        if(self.sinks.clumping_model != 'constant'):
+            if(self.sinks.clumping_model == 'redshift'):
+               self.clumping_factor = self.sinks.calculate_clumping(z=self.zred)
             else:
-               self.clumping_factor = self.clumpiness.calculate_clumping(z=self.zred, ndens=self.ndens)
+               self.clumping_factor = self.sinks.calculate_clumping(z=self.zred, ndens=self.ndens)
             
             if(self.rank == 0):
                 self.printlog(' min, mean and max clumping factor at z = %.3f: %.2f  %.2f  %.2f' %(self.zred, self.clumping_factor.min(), self.clumping_factor.mean(), self.clumping_factor.max()))
@@ -289,10 +289,8 @@ class C2Ray:
         self.time = t_after
 
         # Set new mean-free-path if it is redshift dependent
-        if(self.mfp_model == 'constant'):
-            pass
-        elif(self.mfp_model == 'Worseck2014'):
-            self.R_max_LLS = self.mfp.mfp_Worseck2014(z=self.zred) # in cMpc
+        if(self.sinks.mfp_model == 'Worseck2014'):
+            self.R_max_LLS = self.sinks.mfp_Worseck2014(z=self.zred) # in cMpc
             self.R_max_LLS *= self.N / self.boxsize     # in number of grids
             if(self.rank == 0):
                 self.printlog("Mean-free-path for photons at z = %.3f (Worseck+ 2014): %.3e cMpc" %(self.zred, self.R_max_LLS*self.boxsize/self.N))
@@ -572,42 +570,32 @@ class C2Ray:
                     f.write(title+"\nLog file for pyC2Ray.\n\n") 
         
     def _sinks_init(self):
-        # for clumping factor
-        self.clumping_model = self._ld['Sinks']['clumping_model']
+        # init sink physics class for MFP and clumping
+        self.sinks = SinksPhysics(params=self._ld, N=self.N)
 
-        if(self.clumping_model == 'constant'):
-            self.clumping_factor = np.ones((self.N, self.N, self.N))*self._ld['Sinks']['clumping']
-            pass 
+        # for clumping factor        
+        if(self.sinks.clumping_model == 'constant'):
+            self.clumping_factor = self.sinks.calculate_clumping
+        elif(self.sinks.clumping_model == 'redshift'):
+            self.clumping_factor = self.sinks.calculate_clumping(z=self._ld['Cosmology']['zred_0'])
         else:
-            # this works fore the other models
-            self.clumpiness = SinksPhysics(clump_model=self._ld['Sinks']['clumping_model'], res=self.boxsize/self.N)
+            self.clumping_factor = self.sinks.calculate_clumping(z=self._ld['Cosmology']['zred_0'], ndens=self.ndens)
 
-            # this is either a float or a ndarray
-            self.clumping_factor = self.clumpiness.calculate_clumping(z=self._ld['Cosmology']['zred_0'])
-            if(self.rank == 0):
-                self.printlog('\n---- Calculated Clumping Factor :')
-                self.printlog(' min, mean and max clumping : %.3e  %.3e  %.3e' %(self.clumping_factor.min(), self.clumping_factor.mean(), self.clumping_factor.max()))
+        if(self.rank == 0):
+            self.printlog('\n---- Calculated Clumping Factor (%s model):' %self.sinks.clump_model)
+            self.printlog(' min, mean and max clumping : %.3e  %.3e  %.3e' %(self.clumping_factor.min(), self.clumping_factor.mean(), self.clumping_factor.max()))
             
-        # for mean-free path
-        self.mfp_model = self._ld['Sinks']['mfp_model']
-
+        # for mean-free-path 
         if(self.mfp_model == 'constant'):
             # Set R_max (LLS 3) in cell units
-            self.R_max_LLS = self._ld['Sinks']['R_max_cMpc'] * self.N / self.boxsize
-            if(self.rank == 0):
-                self.printlog(f"Maximum (constant) comoving distance for photons from source (type 3 LLS): {self._ld['Sinks']['R_max_cMpc'] : .3e} comoving Mpc")
+            self.R_max_LLS = self.sinks.R_mfp_cell_unit
         elif(self.mfp_model == 'Worseck2014'):
-            # call class for the mean-free-path (TODO: in the future we should add more models)
-            self.mfp = SinksPhysics(A_mfp=self._ld['Sinks']['A_mfp'], etha_mfp=self._ld['Sinks']['eta_mfp'], z1_mfp=self._ld['Sinks']['z1_mfp'], eta1_mfp=self._ld['Sinks']['eta1_mfp'])
-
             # set mean-free-path to the initial redshift
-            self.R_max_LLS = self.mfp.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
-            if(self.rank == 0): 
-                self.printlog(f"Maximum comoving distance for photons from source defined by Worseck+ (2014) model (redshift dependendt): A ={self._ld['Sinks']['R_max_cMpc'] : .2f} Mpc, eta ={self._ld['Sinks']['eta_mfp'] : .2f}")
+            self.R_max_LLS = self.sinks.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
             self.R_max_LLS *= self.N / self.boxsize
         
         if(self.rank == 0):
-            self.printlog("This corresponds to %.3f grid cells." %self.R_max_LLS)
+            self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model) : A = %.2f Mpc, eta = %.2f.\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.sink.A_mfp, self.sin.etha_mfp, self.R_max_LLS))
 
     # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):
