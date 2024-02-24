@@ -230,17 +230,14 @@ class C2Ray_fstar(C2Ray):
             # get extension of the output file
             ext = get_extension_in_folder(path=self.results_basename)
             if(ext == '.dat'):
-                print(' rank=%d  -> 1' %self.rank)
                 fname = '%sxfrac_%.3f.dat' %(self.results_basename, self.zred)
                 self.xh = t2c.read_cbin(filename=fname, bits=64, order='F')
                 self.phi_ion = t2c.read_cbin(filename='%sIonRates_%.3f.dat' %(self.results_basename, self.zred), bits=32, order='F')
             elif(ext == '.npy'):
-                print(' rank=%d  -> 2' %self.rank)
                 fname = '%sxfrac_%.3f.npy' %(self.results_basename, self.zred)
                 self.xh = np.load(fname)
                 self.phi_ion = np.load('%sIonRates_%.3f.npy' %(self.results_basename, self.zred))
             else:
-                print(' rank=%d  -> 3' %self.rank)
                 raise FileNotFoundError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
             
             if(self.rank == 0):
