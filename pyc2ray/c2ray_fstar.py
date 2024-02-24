@@ -156,7 +156,6 @@ class C2Ray_fstar(C2Ray):
         """
 
         if(halo_file.endswith('.hdf5')):
-            print('  1')
             # Read haloes from a CUBEP3M file format converted in hdf5.
             f = h5py.File(halo_file)
             h = f.attrs['h']
@@ -164,16 +163,12 @@ class C2Ray_fstar(C2Ray):
             srcpos_mpc = f['pos'][:]/h   #Mpc
             f.close()
         elif(halo_file.endswith('.dat')):
-            print('  2')
-
             # Read haloes from a CUBEP3M file format.
             hl = t2c.HaloCubeP3MFull(filename=halo_file, box_len=box_len)
             h  = self.h
             srcmass_msun = hl.get(var='m')/h   #Msun
             srcpos_mpc  = hl.get(var='pos')/h #Mpc
         elif(halo_file.endswith('.txt')):
-            print('  3')
-
             # Read haloes from a PKDGrav converted in txt.
             hl = np.loadtxt(halo_file)
             srcmass_msun = hl[:,0]/self.cosmology.h # Msun
@@ -240,7 +235,8 @@ class C2Ray_fstar(C2Ray):
             elif(ext == '.npy'):
                 self.xh = np.load('%sxfrac_%.3f.npy' %(self.results_basename, self.zred))
                 self.phi_ion = np.load('%sIonRates_%.3f.npy' %(self.results_basename, self.zred))
-
+            else:
+                NameError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
             # TODO: implement heating
             temp0 = self._ld['Material']['temp0']
             self.temp = temp0 * np.ones(self.shape, order='F')
