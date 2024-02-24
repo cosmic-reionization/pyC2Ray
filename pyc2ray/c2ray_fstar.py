@@ -241,7 +241,7 @@ class C2Ray_fstar(C2Ray):
                 NameError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
             
             if(self.rank == 0):
-                self.printlog('\n---- Re-loading ionized fraction field:\n %s' %fname)
+                self.printlog('\n---- Reading ionized fraction field:\n %s' %fname)
                 self.printlog(' min, mean and max density : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
 
             # TODO: implement heating
