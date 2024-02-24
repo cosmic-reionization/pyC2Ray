@@ -241,7 +241,7 @@ class C2Ray_fstar(C2Ray):
                 self.phi_ion = np.load('%sIonRates_%.3f.npy' %(self.results_basename, self.zred))
             else:
                 print(' rank=%d  -> 3' %self.rank)
-                NameError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
+                raise FileNotFoundError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
             
             if(self.rank == 0):
                 self.printlog('\n---- Reading ionized fraction field:\n %s' %fname)
