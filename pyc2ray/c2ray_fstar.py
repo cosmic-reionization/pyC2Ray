@@ -230,13 +230,20 @@ class C2Ray_fstar(C2Ray):
             # get extension of the output file
             ext = get_extension_in_folder(path=self.results_basename)
             if(ext == '.dat'):
-                self.xh = t2c.read_cbin(filename='%sxfrac_%.3f.dat' %(self.results_basename, self.zred), bits=64, order='F')
+                fname = '%sxfrac_%.3f.dat' %(self.results_basename, self.zred)
+                self.xh = t2c.read_cbin(filename=fname, bits=64, order='F')
                 self.phi_ion = t2c.read_cbin(filename='%sIonRates_%.3f.dat' %(self.results_basename, self.zred), bits=32, order='F')
             elif(ext == '.npy'):
-                self.xh = np.load('%sxfrac_%.3f.npy' %(self.results_basename, self.zred))
+                fname = '%sxfrac_%.3f.npy' %(self.results_basename, self.zred)
+                self.xh = np.load(fname)
                 self.phi_ion = np.load('%sIonRates_%.3f.npy' %(self.results_basename, self.zred))
             else:
                 NameError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
+            
+            if(self.rank == 0):
+                self.printlog('\n---- Re-loading ionized fraction field:\n %s' %fname)
+                self.printlog(' min, mean and max density : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
+
             # TODO: implement heating
             temp0 = self._ld['Material']['temp0']
             self.temp = temp0 * np.ones(self.shape, order='F')
