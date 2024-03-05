@@ -588,14 +588,15 @@ class C2Ray:
         # for mean-free-path 
         if(self.sinks.mfp_model == 'constant'):
             # Set R_max (LLS 3) in cell units
-            self.R_max_LLS = self.sinks.R_mfp_cell_unit
+            self.R_max_LLS = self.sinks.R_mfp_cell_unit        
+            if(self.rank == 0):
+                self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model).\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.R_max_LLS))
         elif(self.sinks.mfp_model == 'Worseck2014'):
             # set mean-free-path to the initial redshift
             self.R_max_LLS = self.sinks.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
             self.R_max_LLS *= self.N / self.boxsize
-        
-        if(self.rank == 0):
-            self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model) : A = %.2f Mpc, eta = %.2f.\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.sinks.A_mfp, self.sinks.etha_mfp, self.R_max_LLS))
+            if(self.rank == 0):
+                self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model) : A = %.2f Mpc, eta = %.2f.\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.sinks.A_mfp, self.sinks.etha_mfp, self.R_max_LLS))
 
     # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):
