@@ -83,6 +83,26 @@ Photo:
   compute_heating_rates: 0
   R_max_cMpc: 10  #15.0
 
+# ------------------------------------
+# Parameters of the radiation sinks
+# ------------------------------------
+Sinks:
+  # define the clumping model to use (can be 'constant', 'redshift', 'density' or 'stochastic')
+  clumping_model: 'constant'
+  # define clumping factor for the constant model
+  clumping: 1.0
+  # define the mean-free-path model to use (can be 'constant' or 'Worseck2014')
+  mfp_model: 'constant'
+  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
+  R_max_cMpc: 15.0
+  # free parameter for the Worseck2014 mean-free-path model in cMpc units
+  A_mfp: 210.0
+  # spectral index of the Worseck2014 mean-free-path model redshift evolution
+  eta_mfp: -9
+  # parameters for the modification to the Worseck2014 fit
+  z1_mfp: 6.0
+  eta1_mfp: 9
+  
 # -------------------------------------
 # Parameters for Black Body source type
 # -------------------------------------
@@ -120,7 +140,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: ./test_results/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/test_pyc2ray/
   # Name of the log file to write
   logfile: pyC2Ray.log
 
