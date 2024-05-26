@@ -21,7 +21,7 @@ args = parser.parse_args()
 
 # Global parameters
 paramfile = "parameters.yml"
-N = 250                             # Mesh size
+N = 200                             # Mesh size
 use_gpu = args.gpu
 fgamma = 0.02
 outfn = str(args.o)
@@ -45,7 +45,7 @@ print(f"Rmax = {r_RT:n} cells \n\n")
 if args.numsrc is not None:
     nsrc_range = np.array([int(args.numsrc)])
 else:
-    nsrc_range = np.array([1,10,100,1000,10000,100000,1000000]) #,100000]) #,1000000]) #100,1000,10000,100000]
+    nsrc_range = np.array([1,10,100,1000,10000,100000,500000]) #,100000]) #,1000000]) #100,1000,10000,100000]
 
 timings = np.empty(len(nsrc_range))
 
@@ -82,7 +82,7 @@ for k,nsrc in enumerate(nsrc_range):
     for i in range(nreps):
         t1 = time.time()
         if use_gpu:
-            pc2r.evolve.libasora.do_all_sources(r_RT,coldensh_out_flat,sim.sig,sim.dr,ndens_flat,xh_av_flat,phi_ion_flat,nsrc,N,sim.minlogtau,sim.dlogtau,sim.NumTau)
+            pc2r.evolve.libasora.do_all_sources(r_RT, coldensh_out_flat, sim.sig, sim.dr, ndens_flat, xh_av_flat, phi_ion_flat, nsrc, N, sim.minlogtau, sim.dlogtau, sim.NumTau)
             pass
         else:
             pc2r.evolve.libc2ray.raytracing.do_all_sources(normflux,srcpos,max_subbox,r_RT,coldensh_out,sim.sig,sim.dr,sim.ndens,xh_av,phi_ion,sim.loss_fraction,sim.photo_thin_table,sim.photo_thick_table,sim.minlogtau,sim.dlogtau,r_RT)
