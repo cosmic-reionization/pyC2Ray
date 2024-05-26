@@ -103,7 +103,11 @@ Sinks:
   z1_mfp: 6.0
   eta1_mfp: 9
 <<<<<<< HEAD
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 2ca5373137cd0170776e08111d747a8f9849b23e
 =======
 
 >>>>>>> 2ca5373137cd0170776e08111d747a8f9849b23e
@@ -145,7 +149,11 @@ Cosmology:
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
 <<<<<<< HEAD
+<<<<<<< HEAD
   results_basename: /scratch/snx3000/mibianco/results_c2ray/test_pyc2ray/
+=======
+  results_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
+>>>>>>> 2ca5373137cd0170776e08111d747a8f9849b23e
 =======
   results_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
 >>>>>>> 2ca5373137cd0170776e08111d747a8f9849b23e
