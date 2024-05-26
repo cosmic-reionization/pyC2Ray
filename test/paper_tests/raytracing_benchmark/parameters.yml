@@ -102,7 +102,11 @@ Sinks:
   # parameters for the modification to the Worseck2014 fit
   z1_mfp: 6.0
   eta1_mfp: 9
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 2ca5373137cd0170776e08111d747a8f9849b23e
 # -------------------------------------
 # Parameters for Black Body source type
 # -------------------------------------
@@ -140,7 +144,11 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
+<<<<<<< HEAD
   results_basename: /scratch/snx3000/mibianco/results_c2ray/test_pyc2ray/
+=======
+  results_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
+>>>>>>> 2ca5373137cd0170776e08111d747a8f9849b23e
   # Name of the log file to write
   logfile: pyC2Ray.log
 
