@@ -40,7 +40,7 @@ def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, 
     """
     pass
 
-def hydrogenODE(dt, ndens, temp, xh, phi_ion, bh00=2.59e-13, albpow=-0.7, colh0=1.3e-8, abu_c=7.1e-7):
+def hydrogenODE(dt, ndens, temp, xh, phi_ion, clump, bh00=2.59e-13, albpow=-0.7, colh0=1.3e-8, abu_c=7.1e-7):
     """ Do chemistry on the whole grid just for hydrogen.
         This script is in principle for testing or for use of the chemistry alone.
 
@@ -88,7 +88,7 @@ def hydrogenODE(dt, ndens, temp, xh, phi_ion, bh00=2.59e-13, albpow=-0.7, colh0=
     temph0 = (13.598*u.eV/cst.k_B).cgs.value
 
     # dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, colh0, temph0, abu_c
-    conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh, xh_intermed, phi_ion, bh00, albpow, colh0, temph0, abu_c)
+    conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
     
     convergence = conv_flag / np.size(xh_intermed) 
     assert convergence < 0.01
