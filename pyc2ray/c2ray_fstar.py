@@ -194,7 +194,7 @@ class C2Ray_fstar(C2Ray):
         """
         file = self.density_basename+fbase
         rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
-        self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+z)**3
+        self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 /self.cosmology.Om0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+z)**3
         if(self.rank == 0):
             self.printlog('\n---- Reading density file:\n  %s' %file)
             self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))

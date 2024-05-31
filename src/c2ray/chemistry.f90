@@ -283,6 +283,7 @@ module chemistry
         deltht=delth*dt
         ee=exp(-deltht)
         xh = (xh_old-eqxh)*ee+eqxh
+        !xh = 1.0d0+(xh_old-1.0d0)*ee
         ! --> xh(0)=(xfh0old-eqxfh0)*ee+eqxfh0
         !rhe=electrondens(rhh,xfh) ! should this really be used inside doric?
 

@@ -37,7 +37,7 @@ def evolve0D_global(dt, pos, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump
     yh_av_p = 1.0 - xh_av_p
     
     xh_av = do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c)
-    
+ 
     xh_av_p_old = xh_av #[i, j, k]
     if ((abs(xh_av_p - xh_av_p_old) > minimum_fractional_change and abs((xh_av_p - xh_av_p_old) / yh_av_p) > minimum_fractional_change and 
          yh_av_p > minimum_fraction_of_atoms)):
@@ -68,6 +68,7 @@ def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, p
         if nit > 400:
             conv_flag += 1
             break
+    return conv_flag
 
 def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping, xh, xh_av):
     brech0 = clumping * bh00 * (temp_p / 1e4) ** albpow
@@ -93,6 +94,7 @@ def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping,
     xh_av = eqxh + (xh_old - eqxh) * avg_factor
     if xh_av < epsilon:
         xh_av = epsilon
+<<<<<<< HEAD
 
 
 def friedrich(NH, NHe, n_e, phi_HI, phi_HeI, phi_HeII, temp):
@@ -176,3 +178,6 @@ def friedrich(NH, NHe, n_e, phi_HI, phi_HeI, phi_HeII, temp):
     r_HeI2HI = p*alphA_HeII + y*alp
     pass
     
+=======
+    return xh_av
+>>>>>>> 9a61016950b56bdca2d55a9fde055eb89ef47b4f

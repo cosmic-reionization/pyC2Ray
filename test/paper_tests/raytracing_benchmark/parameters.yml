@@ -14,7 +14,13 @@ Grid:
   # !! As in C2Ray, when cosmological = false, this box size is
   # used "as is". When cosmological = true, it is first scaled to zred_0
   # Maybe this should be changed, as it can induce some confusion ?
-  boxsize:  3
+  boxsize: 3
+  # size per side of the mesh grid
+  meshsize: 200
+  # boolean varible to switch on ASORA raytracing
+  gpu: 1
+  # boolean varible to switch on MPI parallelization on the sources list
+  mpi: 0
   resume: 0
 
 # --------------------------------------------------------------------
@@ -140,7 +146,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /home/mbianco/Documents/PostDoc_ETH/dev_pyc2ray/test_results/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/test_pyc2ray/
   # Name of the log file to write
   logfile: pyC2Ray.log
 
