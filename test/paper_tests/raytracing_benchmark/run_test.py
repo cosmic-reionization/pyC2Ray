@@ -7,7 +7,6 @@ import time
 import argparse
 import pickle as pkl
 
-np.random.seed(918)
 MYR = 3.15576E+13
 m_p = 1.672661e-24
 msun2g = 1.98892e33
@@ -18,6 +17,9 @@ parser.add_argument("-R",default=10,type=int)
 parser.add_argument("-numreps",default=10,type=int)
 parser.add_argument("-o",default="benchmark_result.pkl",type=str)
 args = parser.parse_args()
+
+# fix seed for reproducibility
+np.random.seed(918)
 
 # Global parameters
 paramfile = "parameters.yml"
