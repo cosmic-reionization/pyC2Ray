@@ -292,7 +292,7 @@ def evolve3D(dt, dr,
         printlog("Multiple source convergence reached after %d ray-tracing iterations." %n_count, logfile, quiet)
         xh_new = xh_intermed
     
-    if use_mpi:
+    if use_mpi != False:
         # braodcast final result
         comm.Bcast([xh_new, use_mpi.DOUBLE], root=0)    
 

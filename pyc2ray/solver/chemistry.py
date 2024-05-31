@@ -12,7 +12,7 @@ def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, a
         for j in range(m2):
             for i in range(m1):
                 pos = (i, j, k)
-                evolve0D_global(dt, pos, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c, conv_flag, m1, m2, m3)
+                conv_flag = evolve0D_global(dt, pos, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c, conv_flag, m1, m2, m3)
     
     return conv_flag
 
@@ -28,7 +28,7 @@ def evolve0D_global(dt, pos, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump
     xh_intermed_p = xh_intermed[i, j, k]
     yh_av_p = 1.0 - xh_av_p
     
-    do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c)
+    conv_flag = do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c)
     
     xh_av_p_old = xh_av[i, j, k]
     if ((abs(xh_av_p - xh_av_p_old) > minimum_fractional_change and 
@@ -38,6 +38,7 @@ def evolve0D_global(dt, pos, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump
 
     xh_intermed[i, j, k] = xh_intermed_p
     xh_av[i, j, k] = xh_av_p
+    return conv_flag
 
 def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c):
     temperature_end = temperature_start
@@ -49,7 +50,7 @@ def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, p
         xh_av_p_old = xh_av_p
 
         de = ndens_p * (xh_av_p + abu_c)
-        doric(xh_p, dt, temperature_end, de, phi_ion_p, bh00, albpow, colh0, temph0, clump_p, xh_intermed_p, xh_av_p)
+        xh_av_p = doric(xh_p, dt, temperature_end, de, phi_ion_p, bh00, albpow, colh0, temph0, clump_p, xh_intermed_p, xh_av_p)
         
         if ((abs((xh_av_p - xh_av_p_old) / (1.0 - xh_av_p)) < minimum_fractional_change or 
              (1.0 - xh_av_p < minimum_fraction_of_atoms)) and 
@@ -59,6 +60,7 @@ def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, p
         if nit > 400:
             conv_flag += 1
             break
+    return conv_flag
 
 def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping, xh, xh_av):
     brech0 = clumping * bh00 * (temp_p / 1e4) ** albpow
@@ -84,4 +86,4 @@ def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping,
     xh_av = eqxh + (xh_old - eqxh) * avg_factor
     if xh_av < epsilon:
         xh_av = epsilon
-
+    return xh_av

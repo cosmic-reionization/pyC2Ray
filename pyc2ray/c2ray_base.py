@@ -83,7 +83,7 @@ msun2g = 1.98892e33 #(1*u.Msun).to('g').value       # solar mass to grams
 
 
 class C2Ray:
-    def __init__(self, paramfile, Nmesh, use_gpu, use_mpi=False):
+    def __init__(self, paramfile):
         """Basis class for a C2Ray Simulation
 
         Parameters
@@ -96,10 +96,15 @@ class C2Ray:
             Whether to use the GPU-accelerated ASORA library for raytracing
 
         """
+        # Read YAML parameter file and set main properties
+        self._read_paramfile(paramfile)
+        self._param_init()
+
         # MPI setup
-        if use_mpi:
-            self.mpi = use_mpi
-            self.comm = use_mpi.COMM_WORLD
+        if self.mpi:
+            from mpi4py import MPI
+            self.mpi = MPI
+            self.comm = self.mpi.COMM_WORLD
             self.rank = self.comm.Get_rank()
             self.nprocs = self.comm.Get_size()
         else:
@@ -107,24 +112,20 @@ class C2Ray:
             self.rank = 0
             self.nprocs = 1
 
-        # Read YAML parameter file and set main properties
-        self._read_paramfile(paramfile)
-        self.N = Nmesh
-        self.shape = (Nmesh,Nmesh,Nmesh)
+        self.shape = (self.N, self.N, self.N)
 
         # Set Raytracing mode
-        if use_gpu:
-            self.gpu = True
+        if self.gpu:
             # Allocate GPU memory
             src_batch_size = self._ld["Raytracing"]["source_batch_size"]
-            device_init(Nmesh, src_batch_size)
+            device_init(self.N, src_batch_size)
             # Register deallocation function (automatically calls this on program termination)
             atexit.register(self._gpu_close)
         else:
-            self.gpu = False
+            # is going to run the raytracing algorithm on CPU
+            pass
 
         # Initialize Simulation
-        self._param_init()
         self._output_init()
         self._grid_init()
         self._cosmology_init()
@@ -320,33 +321,36 @@ class C2Ray:
         z : float
             Redshift (used to name the file)
         """
-        suffix = f"_{z:.3f}"+ext
-        if(suffix.endswith('.dat')):
-            t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
-            t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
-        elif(suffix.endswith('.npy')):
-            np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
-            np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
-
-        # print min, max and average quantities
         if(self.rank == 0):
+            suffix = f"_{z:.3f}"+ext
+            if(suffix.endswith('.dat')):
+                t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
+                t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
+            elif(suffix.endswith('.npy')):
+                np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
+                np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
+
+            # print min, max and average quantities
             self.printlog('\n--- Reionization History ----')
             self.printlog(' min, mean, max xHII : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
             self.printlog(' min, mean, max Irate : %.5e  %.5e  %.5e [1/s]' %(self.phi_ion.min(), self.phi_ion.mean(), self.phi_ion.max()))
             self.printlog(' min, mean, max density : %.5e  %.5e  %.5e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
 
-        # write summary output file
-        summary_exist = os.path.exists(self.results_basename+'PhotonCounts2.txt')
+            # write summary output file
+            summary_exist = os.path.exists(self.results_basename+'PhotonCounts2.txt')
 
-        with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
-            if not (summary_exist):
-                header = '# z\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
-                f.write(header)                
+            with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
+                if not (summary_exist):
+                    header = '# z\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
+                    f.write(header)                
 
-            massavrg_ion_frac = np.sum(self.xh*self.ndens)/np.sum(self.ndens)
+                massavrg_ion_frac = np.sum(self.xh*self.ndens)/np.sum(self.ndens)
 
-            text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
-            f.write(text)
+                text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
+                f.write(text)
+        else:
+            # this is for the other ranks
+            pass
 
     # =====================================================================================================
     # UTILITY METHODS
@@ -407,6 +411,9 @@ class C2Ray:
         Computes additional required quantities from the read-in parameters
         and stores them as attributes
         """
+        self.N = self._ld['Grid']['meshsize']
+        self.gpu = self._ld['Grid']['gpu']
+        self.mpi = self._ld['Grid']['mpi']
         self.eth0 = self._ld['CGS']['eth0']
         self.ethe0 = self._ld['CGS']['ethe0']
         self.ethe1 = self._ld['CGS']['ethe1']
@@ -547,7 +554,7 @@ class C2Ray:
         """ Set up output & log file
         """
         self.results_basename = self._ld['Output']['results_basename']
-        if not os.path.exists(self.results_basename):
+        if not os.path.exists(self.results_basename) and self.rank == 0:
             os.mkdir(self.results_basename)
         self.inputs_basename = self._ld['Output']['inputs_basename']
         self.sources_basename = self._ld['Output']['sources_basename']
