@@ -9,3 +9,4 @@ build
 work
 run
 .ipynb_checkpoints/
+.vscode/
