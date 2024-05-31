@@ -94,7 +94,6 @@ def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping,
     xh_av = eqxh + (xh_old - eqxh) * avg_factor
     if xh_av < epsilon:
         xh_av = epsilon
-<<<<<<< HEAD
 
 
 def friedrich(NH, NHe, n_e, phi_HI, phi_HeI, phi_HeII, temp):
@@ -178,6 +177,3 @@ def friedrich(NH, NHe, n_e, phi_HI, phi_HeI, phi_HeII, temp):
     r_HeI2HI = p*alphA_HeII + y*alp
     pass
     
-=======
-    return xh_av
->>>>>>> 9a61016950b56bdca2d55a9fde055eb89ef47b4f
