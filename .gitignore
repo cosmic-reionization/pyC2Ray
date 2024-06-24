@@ -9,8 +9,5 @@ build
 work
 run
 .ipynb_checkpoints/
-<<<<<<< HEAD
 .vscode/
-=======
 *.pkl
->>>>>>> 9a61016950b56bdca2d55a9fde055eb89ef47b4f

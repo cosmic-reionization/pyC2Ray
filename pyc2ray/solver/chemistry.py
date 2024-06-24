@@ -1,102 +1,133 @@
 import numpy as np
 
-# Constants
+# Define constants
 epsilon = 1e-14
 minimum_fractional_change = 1.0e-3
 minimum_fraction_of_atoms = 1.0e-8
 
-def global_pass(dt, ndens, temp, xfrac, xfrac_av, xfrac_intermed, irate, clumping, bh00, albpow, colh0, temph0, abu_c):
-    conv_flag = 0
-    xh_new = np.zeros_like(xfrac)
+def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping):
+    # Calculate the hydrogen recombination rate at the local temperature
+    brech0 = clumping * bh00 * (temp_p / 1e4)**albpow
 
-    m1, m2, m3 = xfrac.shape   
-    for k in range(m3):
-        for j in range(m2):
-            for i in range(m1):
-                pos = (i, j, k)
-                clump = clumping[i,j,k]
-                phi_ion = irate[i,j,k]
-                xh = xfrac[i,j,k]
-                xh_av = xfrac_av[i,j,k]
-                xh_intermed = xfrac_intermed[i,j,k]
-                a = evolve0D_global(dt, pos, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c, conv_flag, m1, m2, m3)
-                print(a)
-                xh_new[i,j,k] = a
-    return xh_new
+    # Calculate the hydrogen collisional ionization rate at the local temperature
+    acolh0 = colh0 * np.sqrt(temp_p) * np.exp(-temph0 / temp_p)
 
-def evolve0D_global(dt, pos, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c, conv_flag, m1, m2, m3):
-    i, j, k = pos
-    temperature_start = temp #[i, j, k]
-    ndens_p = ndens #[i, j, k]
-    phi_ion_p = phi_ion #[i, j, k]
-    clump_p = clump #[i, j, k]
-    
-    xh_p = xh #[i, j, k]
-    xh_av_p = xh_av #[i, j, k]
-    xh_intermed_p = xh_intermed #[i, j, k]
-    yh_av_p = 1.0 - xh_av_p
-    
-    xh_av = do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c)
- 
-    xh_av_p_old = xh_av #[i, j, k]
-    if ((abs(xh_av_p - xh_av_p_old) > minimum_fractional_change and abs((xh_av_p - xh_av_p_old) / yh_av_p) > minimum_fractional_change and 
-         yh_av_p > minimum_fraction_of_atoms)):
-        conv_flag += 1
-
-    #xh_intermed[i, j, k] = xh_intermed_p
-    xh_intermed = xh_intermed_p
-    #xh_av[i, j, k] = xh_av_p
-    return xh_intermed
-
-def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c):
-    temperature_end = temperature_start
-    nit = 0
-    
-    while True:
-        nit += 1
-        temperature_previous_iteration = temperature_end
-        xh_av_p_old = xh_av_p
-
-        de = ndens_p * (xh_av_p + abu_c)
-        xh_av_p = doric(xh_p, dt, temperature_end, de, phi_ion_p, bh00, albpow, colh0, temph0, clump_p, xh_intermed_p, xh_av_p)
-        
-        if ((abs((xh_av_p - xh_av_p_old) / (1.0 - xh_av_p)) < minimum_fractional_change or 
-             (1.0 - xh_av_p < minimum_fraction_of_atoms)) and 
-            (abs((temperature_end - temperature_previous_iteration) / temperature_end) < minimum_fractional_change)):
-            break
-
-        if nit > 400:
-            conv_flag += 1
-            break
-    return conv_flag
-
-def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping, xh, xh_av):
-    brech0 = clumping * bh00 * (temp_p / 1e4) ** albpow
-    sqrtt0 = np.sqrt(temp_p)
-    acolh0 = colh0 * sqrtt0 * np.exp(-temph0 / temp_p)
+    # Find the true photo-ionization rate
     aphoth0 = phi_p
-    
+
+    # Determine ionization states
     aih0 = aphoth0 + rhe * acolh0
     delth = aih0 + rhe * brech0
     eqxh = aih0 / delth
     deltht = delth * dt
     ee = np.exp(-deltht)
-    
     xh = (xh_old - eqxh) * ee + eqxh
-    if xh < epsilon:
-        xh = epsilon
-    
-    if deltht < 1.0e-8:
-        avg_factor = 1.0
-    else:
-        avg_factor = (1.0 - ee) / deltht
-    
+
+    # Handle precision fluctuations
+    xh = np.maximum(xh, epsilon)
+
+    # Determine average ionization fraction over the time step
+    avg_factor = np.where(deltht < 1.0e-8, 1.0, (1.0 - ee) / deltht)
     xh_av = eqxh + (xh_old - eqxh) * avg_factor
-    if xh_av < epsilon:
-        xh_av = epsilon
+    xh_av = np.maximum(xh_av, epsilon)
+
+    return xh, xh_av
+
+def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c):
+    # Initialize local quantities
+    temperature_end = temperature_start
+        
+    # Calculate the new and mean ionization states
+    #xh_intermed = np.copy(xh)  # Placeholder, actual intermediate state calculation may vary
+
+    convergence, niter = False, 0
+    while not convergence:
+        # Save temperature solution from last iteration
+        temperature_previous_iteration = temperature_end
+
+        # At each iteration, the intial condition x(0) is reset. Change happens in the time-average and thus the electron density
+        xh_av_p_old = xh_av_p
+
+        # Calculate (mean) electron density
+        de = ndens_p * (xh_av_p + abu_c)
+
+        # Calculate the new and mean ionization states
+        new_xh_p, xh_av_p = doric(xh_p, dt, temperature_end, de, phi_ion_p, bh00, albpow, colh0, temph0, clump_p)
+
+        # Check for convergence
+        cond1 = np.abs(xh_av_p-xh_av_p_old)/(1-xh_av_p) < minimum_fractional_change
+        cond2 = 1 - xh_av_p < minimum_fraction_of_atoms
+        cond3 = np.abs(temperature_end-temperature_previous_iteration)/temperature_end < minimum_fractional_change
+
+        if((cond1 or cond2) and cond3):
+            convergence = True
+
+        # Warn about non-convergence and terminate iteration
+        if(niter > 400):
+            print('Warning!!! non-convergence. Therefore, terminating iteration.')
+            convergence = True
+        else:
+            niter += 1
+        
+    return new_xh_p, xh_av_p, xh_intermed_p
+
+def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c):
+    conv_flag = 0
+
+    new_xh = np.zeros_like(xh)
+    new_xh_av = np.zeros_like(xh)
+    
+    for k in range(xh.shape[0]):
+        for j in range(xh.shape[1]):
+            for i in range(xh.shape[2]):
+                # Initialize local quantities
+                temperature_start = temp[i,j,k]
+                ndens_p = ndens[i,j,k]
+                phi_ion_p = phi_ion[i,j,k]
+                clump_p = clump[i,j,k]
+
+                # Initialize local ion fractions
+                xh_p = xh[i,j,k]
+                xh_av_p = xh_av[i,j,k]
+                xh_intermed_p = xh_intermed[i,j,k]
+
+                # call do chemistry
+                new_xh[i, j, k], new_xh_av[i, j, k], _ = do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c)
+
+                # Check for convergence (global flag). In original, convergence is tested using neutral fraction, but testing with ionized fraction should be equivalent. TODO: add temperature convergence criterion when non-isothermal mode is added later on.
+                xh_av_p_old = new_xh_av[i,j,k]
+
+                cond1 = np.abs(xh_av_p-xh_av_p_old) > minimum_fractional_change
+                cond2 = np.abs((xh_av_p - xh_av_p_old) / (1.0 - xh_av_p)) > minimum_fractional_change
+                cond3 = (1.0 - xh_av_p) > minimum_fraction_of_atoms
+                if(cond1 * cond2 * cond3):
+                    conv_flag += 1
+                                               
+    return new_xh, new_xh_av, conv_flag
 
 
-def friedrich(NH, NHe, n_e, phi_HI, phi_HeI, phi_HeII, temp):
+
+def friedrich(NH, NHe, n_gas, X, Y, xHI, xHeI, xHeII, n_e, phi_HI, phi_HeI, phi_HeII, temp):
+    """
+        Chemistry equation solver for H and He.
+
+        Inputs:
+            - NH (array):       neutral hydrogen column density
+            - NHe (array):      neutral helium column density
+            - n_gas (array):    gas number density
+            - X (float):        abbundance of hydrogen
+            - Y (float):        abbunace of helium
+            - xHI (array):      hydrogen ionized fraction
+            - xHeI (array):     helium first ionized fraction
+            - xHeII (array):    helium second ionized fraction
+            - n_e (array):      electron number density
+            - phi_HI (array):   photoionization rate for hydrogen
+            - phi_HeI (array):  photoionization rate for first ionized helium
+            - phi_HeII (array):  photoionization rate for second ionized helium
+        Return:
+            - ...
+    """
+
     # Recombination rate of HI (Eq. 2.12 and 2.13)
     alphA_HII = 1.269e-13 * np.power(315608/temp, 1.503) / np.power(np.power(1 + 604613/temp, 0.47), 1.923)
     alphB_HII = 2.753e-14 * np.power(315608/temp, 1.5) / np.power(np.power(1 + 115185/temp, 0.407), 2.242)
@@ -156,8 +187,14 @@ def friedrich(NH, NHe, n_e, phi_HI, phi_HeI, phi_HeII, temp):
     # Fraction of photons from recombination of HeII that ionize HeI (pag 32 of Kai Yan Lee's thesis)
     p = 0.96
 
-    l, m = 1.425, 0.737
+    # fraction of photons from 2-photon decay, energetic enough to ionize hydrogen
+    l = 1.425
+    
+    # fraction of photons from 2-photon decay, energetic enough to ionize neutral helium
+    m = 0.737
 
+    # "escape” fraction of Ly α photons, it depends on the neutral fraction
+    f_lya = 1
 
     # Collisional ionization process (Eq. 2.21-23)
     cHI = 5.835e-11 * np.sqrt(temp) * np.exp(-157804/temp)
@@ -169,11 +206,19 @@ def friedrich(NH, NHe, n_e, phi_HI, phi_HeI, phi_HeII, temp):
     uHeI = phi_HeI + cHeI * n_e
     uHeII = phi_HeII + cHeII * n_e
     
-
-
-
     # Recombination rate (Eq. 2.30-35)
-    r_HII2HI = -alphB_HII
-    r_HeI2HI = p*alphA_HeII + y*alp
+    rHII2HI = -alphB_HII
+    rHeII2HI = p*alphA_HeII + y*alph1_HeIII
+    rHeII2HeI = (1-y)*alph1_HII - alphA_HeII
+    rHeIII2HI = (1-y2a-y2b)*alph1_HeIII + alph2_HeIII + (nu*(l-m+m*y)+(1-nu)*f_lya*z)*alphB_HeIII
+    rHeIII2HeI = y2b*alph1_HeIII + (nu*m*(1-y)+(1-nu)*f_lya*(1-z))*alphB_HeIII + alphA_HeIII - y2a*alph1_HeIII
+    rHeIII2HeII = y2a*alph1_HeIII - alphA_HeIII
+
+    A11 = -uHI + rHII2HI
+    A12 = 0.
+    A12 = 0.
+    A11 = Y/X * rHeII2HI * n_e
+    
+
     pass
     
