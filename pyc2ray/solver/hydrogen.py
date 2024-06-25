@@ -2,7 +2,7 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as cst
 
-from .load_extensions import load_c2ray
+from ..load_extensions import load_c2ray
 
 # TODO: Add chemistry wrapper function
 

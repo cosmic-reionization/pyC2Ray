@@ -146,7 +146,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: ./
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/test_pyc2ray/
   # Name of the log file to write
   logfile: pyC2Ray.log
 
