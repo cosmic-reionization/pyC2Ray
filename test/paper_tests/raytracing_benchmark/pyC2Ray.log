@@ -1,0 +1,30 @@
+
+Log file for pyC2Ray 
+
+                 _________   ____            
+    ____  __  __/ ____/__ \ / __ \____ ___  __
+   / __ \/ / / / /    __/ // /_/ / __ `/ / / /
+  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / 
+ / .___/\__, /\____//____/_/ |_|\__,_/\__, /  
+/_/    /____/                        /____/   
+
+Welcome! Mesh size is N = 200.
+Simulation Box size (comoving Mpc): 3.000e+00
+Cosmology is off.
+Using power-law opacity with 20000 table points between tau=10^(-20) and tau=10^(4)
+Using Black-Body sources with effective temperature T = 1.0e+05 K and Radius  1.437e-11 rsun
+Spectrum Frequency Range: 3.289e+15 to 1.316e+17 Hz
+This is Energy:           1.360e+01 to 5.442e+02 eV
+Integrating photoionization rates tables...
+INFO: No heating rates
+
+---- Calculated Clumping Factor (constant model):
+ min, mean and max clumping : 1.000e+00  1.000e+00  1.000e+00
+Maximum comoving distance for photons from source mfp = 15.00 cMpc (constant model).
+ This corresponds to 1000.000 grid cells.
+Using CPU Raytracing (subboxsize = 15, max_subbox = 1000)
+Running in non-MPI (single-GPU/CPU) mode
+Starting simulation... 
+
+
+Running: "C2Ray Test"

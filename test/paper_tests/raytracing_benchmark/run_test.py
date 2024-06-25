@@ -1,5 +1,4 @@
 import sys
-sys.path.append("../../../")
 import pyc2ray as pc2r
 from pyc2ray.utils.sourceutils import format_sources
 import numpy as np
@@ -80,7 +79,7 @@ for k, nsrc in enumerate(nsrc_range):
             pc2r.evolve.libasora.do_all_sources(r_RT, coldensh_out_flat, sim.sig, sim.dr, ndens_flat, xh_av_flat, phi_ion_flat, nsrc, sim.N, sim.minlogtau, sim.dlogtau, sim.NumTau)
             pass
         else:
-            pc2r.evolve.libc2ray.raytracing.do_all_sources(normflux,srcpos,sim.max_subbox,r_RT,coldensh_out,sim.sig,sim.dr,sim.ndens,xh_av,phi_ion,sim.loss_fraction,sim.photo_thin_table,sim.photo_thick_table,sim.minlogtau,sim.dlogtau,r_RT)
+            pc2r.evolve.libc2ray.raytracing.do_all_sources(normflux, srcpos, sim.max_subbox, r_RT, coldensh_out, sim.sig, sim.dr, sim.ndens, xh_av, phi_ion, phi_ion, sim.loss_fraction, sim.photo_thin_table, sim.photo_thick_table, np.zeros(sim.NumTau+1),np.zeros(sim.NumTau+1), sim.minlogtau, sim.dlogtau, r_RT)
         t2 = time.time()
         t_ave += t2-t1
     t_ave /= nreps
