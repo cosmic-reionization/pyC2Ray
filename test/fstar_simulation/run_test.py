@@ -12,12 +12,7 @@ num_steps_between_slices = 2        # Number of timesteps between redshift slice
 paramfile = sys.argv[1]             # Name of the parameter file
 
 # Create C2Ray object
-use_mpi = True
-if use_mpi:
-    from mpi4py import MPI
-    sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=MPI)
-else:
-    sim = pc2r.C2Ray_fstar(paramfile=paramfile, Nmesh=256, use_gpu=True, use_mpi=False)
+sim = pc2r.C2Ray_fstar(paramfile=paramfile)
 
 # Get redshift list (test case)
 idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float, unpack=True)
@@ -49,7 +44,7 @@ for k in range(i_start, len(zred_array)-1):
     sim.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0' %idx_zred[k], z=zi)
 
     # Read source files
-    srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=zi, save_Mstar=sim.results_basename+'/sources')
+    srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=zi) #, save_Mstar=sim.results_basename+'/sources')
 
     #TODO: move this after time-loop and change for zf
     if(sim.rank == 0 and k != i_start):    

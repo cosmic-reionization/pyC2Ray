@@ -19,34 +19,25 @@ from .c2ray_base import YEAR, Mpc, msun2g, ev2fr, ev2k
 # msun2g = 1.98892e33 #(1*u.Msun).to('g').value       # solar mass to grams
 m_p = 1.672661e-24
 
-def stellar_to_halo_fraction(Mhalo, f0=0.3, Mt=1e8, Mp=3e11,
-					g1=0.49, g2=-0.61, g3=3, g4=-3, **kwargs):
+def stellar_to_halo_fraction(Mhalo, f0=0.3, Mt=1e8, Mp=3e11, g1=0.49, g2=-0.61, g3=3, g4=-3, Om=0.27, Ob=0.044):
 	'''
 	A parameterised stellar to halo relation (2011.12308, 2201.02210, 2302.06626).
 	'''
-	# Cosmology
-	h  = kwargs.get('h', kwargs.get('hlittle', 0.7))
-	Ob = kwargs.get('Ob', kwargs.get('Omega_b', kwargs.get('OmegaB', 0.044)))
-	Om = kwargs.get('Om', kwargs.get('Omega_m', kwargs.get('Omega0', 0.270)))
-
 	# Double power law, motivated by UVLFs
-	dpl = lambda M: (2*Ob/Om*f0)/((M/Mp)**g1+(M/Mp)**g2)
+	dpl = 2*Ob/Om*f0/((Mhalo/Mp)**g1+(Mhalo/Mp)**g2)
+
 	# Suppression at the small-mass end
-	S_M = lambda M: (1 + (Mt/M)**g3)**g4
+	S_M = (1 + (Mt/Mhalo)**g3)**g4
 
-	fstar = lambda M: dpl(M)*S_M(M)
+	fstar = dpl*S_M
 
-	return fstar(Mhalo)
+	return fstar
 
 class StellarToHaloRelation:
 	"""Modelling the mass relation between dark matter halo and the residing stars/galaxies."""
-	def __init__(self, f0=0.3, Mt=1e8, Mp=3e11,
-				g1=0.49, g2=-0.61, g3=3, g4=-3, **kwargs):
+	def __init__(self, f0=0.3, Mt=1e8, Mp=3e11, g1=0.49, g2=-0.61, g3=3, g4=-3, cosmo=None):
 
-		self.h  = kwargs.get('h', kwargs.get('hlittle', 0.7))
-		self.Ob = kwargs.get('Ob', kwargs.get('Omega_b', kwargs.get('OmegaB', 0.044)))
-		self.Om = kwargs.get('Om', kwargs.get('Omega_m', kwargs.get('Omega0', 0.270)))
-
+		self.h, self.Ob, self.Om = cosmo.h, cosmo.Ob0, cosmo.Om0
 		self.f0 = f0
 		self.Mt = Mt
 		self.Mp = Mp
@@ -54,85 +45,50 @@ class StellarToHaloRelation:
 		self.g2 = g2
 		self.g3 = g3
 		self.g4 = g4
+
+	def deterministic(self, Mhalo):
+		fstar_mean = stellar_to_halo_fraction(Mhalo, f0=self.f0, Mt=self.Mt, Mp=self.Mp, g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, Ob=self.Ob, Om=self.Om)
+		Mstar = Mhalo*fstar_mean 
+		return {'fstar': fstar_mean, 'Mstar': Mstar}
+
+	def stochastic_Gaussian(self, Mhalo, sigma):
+		fstar_mean = stellar_to_halo_fraction(Mhalo, f0=self.f0, Mt=self.Mt, Mp=self.Mp, g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, Ob=self.Ob, Om=self.Om)
 		
-	def set_params(self, **kwargs):
-		self.f0 = kwargs.get('f0', self.f0)
-		self.Mt = kwargs.get('Mt', self.Mt) 
-		self.Mp = kwargs.get('Mp', self.Mp) 
-		self.g1 = kwargs.get('g1', self.g1)
-		self.g2 = kwargs.get('g2', self.g2)
-		self.g3 = kwargs.get('g3', self.g3)
-		self.g4 = kwargs.get('g4', self.g4)
-
-	def deterministic(self, Mhalo, **kwargs):
-		self.set_params(**kwargs)
-		fstar_mean = lambda M: stellar_to_halo_fraction(M, f0=self.f0, Mt=self.Mt, Mp=self.Mp,
-					g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, h=self.h, Ob=self.Ob, Om=self.Om)
-		self.fstar_mean = fstar_mean
-		fstar = fstar_mean(Mhalo) 
-		Mstar = Mhalo*fstar 
-		return {'fstar': fstar, 'Mstar': Mstar}
-
-	def stochastic_Gaussian(self, Mhalo, sigma, sigma_percent=False, **kwargs):
-		self.set_params(**kwargs)
-		fstar_mean = lambda M: stellar_to_halo_fraction(M, f0=self.f0, Mt=self.Mt, Mp=self.Mp,
-					g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, h=self.h, Ob=self.Ob, Om=self.Om)
-		self.fstar_mean = fstar_mean
-		if isinstance(sigma,float): 
-			fstar_std = lambda M: sigma*np.ones_like(M) 
+		if isinstance(sigma, float): 
+			fstar_std = lambda M: sigma*np.ones_like(Mhalo) 
 		else:
 			fstar_std = sigma
-		self.fstar_std = fstar_std
 
-		if sigma_percent:
-			fstar = fstar_mean(Mhalo)*(1+np.random.normal(0, fstar_std(Mhalo)))
-		else:
-			fstar = fstar_mean(Mhalo)+np.random.normal(0, fstar_std(Mhalo))
+		fstar = np.clip(fstar_mean*(1+np.random.normal(0, fstar_std)), a_min=0, a_max=1)
 		Mstar = Mhalo*fstar
+
 		return {'fstar': fstar, 'Mstar': Mstar}
 
 	def stochastic_lognormal(self, Mhalo, sigma, sigma_percent=False, **kwargs):
-		self.set_params(**kwargs)
-		fstar_mean = lambda M: stellar_to_halo_fraction(M, f0=self.f0, Mt=self.Mt, Mp=self.Mp,
-					g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, h=self.h, Ob=self.Ob, Om=self.Om)
-		self.fstar_mean = fstar_mean
+		fstar_mean = stellar_to_halo_fraction(Mhalo, f0=self.f0, Mt=self.Mt, Mp=self.Mp, g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, Ob=self.Ob, Om=self.Om)
+
 		if isinstance(sigma,float): 
-			log_fstar_std = lambda M: sigma*np.ones_like(M) 
+			log_fstar_std = sigma*np.ones_like(Mhalo) 
 		else:
 			log_fstar_std = sigma
-		self.log_fstar_std = log_fstar_std
 
-		if sigma_percent:
-			log_fstar = np.log(fstar_mean(Mhalo))*(1+np.random.normal(0, log_fstar_std(Mhalo)))
-		else:
-			log_fstar = np.log(fstar_mean(Mhalo))+np.random.normal(0, log_fstar_std(Mhalo))
-		fstar = np.exp(log_fstar)
+		log_fstar = np.log(fstar_mean)+np.random.normal(0, log_fstar_std)
+		fstar = np.clip(a=np.exp(log_fstar), a_min=0, a_max=1)
 		Mstar = Mhalo*fstar
 		return {'fstar': fstar, 'Mstar': Mstar}
 
 class EscapeFraction:
 	"""Modelling the escape of photons from the stars/galaxies inside dark matter haloes."""
-	def __init__(self, f0_esc=0.1, Mp_esc=1e10, al_esc=0, **kwargs):
-
-		self.h  = kwargs.get('h', kwargs.get('hlittle', 0.7))
-		self.Ob = kwargs.get('Ob', kwargs.get('Omega_b', kwargs.get('OmegaB', 0.044)))
-		self.Om = kwargs.get('Om', kwargs.get('Omega_m', kwargs.get('Omega0', 0.270)))
+	def __init__(self, f0_esc=0.1, Mp_esc=1e10, al_esc=0):
 
 		self.f0_esc = f0_esc
 		self.Mp_esc = Mp_esc
 		self.al_esc = al_esc
-		
-	def set_params(self, **kwargs):
-		self.f0_esc = kwargs.get('f0_esc', self.f0_esc)
-		self.Mp_esc = kwargs.get('Mp_esc', self.Mp_esc) 
-		self.al_esc = kwargs.get('al_esc', self.al_esc)
 
-	def deterministic(self, Mhalo, **kwargs):
-		self.set_params(**kwargs)
-		fesc_mean = lambda M: self.f0_esc*(M/self.Mp_esc)**self.al_esc
-		self.fesc_mean = fesc_mean
-		fesc = fesc_mean(Mhalo) 
-		return {'fesc': fesc}
+	def deterministic(self, Mhalo):
+		fesc_mean = self.f0_esc*(Mhalo/self.Mp_esc)**self.al_esc
+		return {'fesc': fesc_mean}
+
 
 class Halo2Grid:
 	def __init__(self, box_len, n_grid, method='nearest'):
@@ -219,6 +175,7 @@ class Halo2Grid:
 		binned_pos_list  = np.argwhere(binned_value>0) 
 		binned_value_list = binned_value[binned_value>0]
 		return binned_pos_list, binned_value_list
+
 
 class SourceModel(Halo2Grid):
 	"""Combines StellarToHaloRelation and Halo2Grid to model the source properties."""
