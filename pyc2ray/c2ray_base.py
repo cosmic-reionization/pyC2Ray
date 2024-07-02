@@ -14,7 +14,7 @@ from .utils.logutils import printlog
 from .evolve import evolve3D
 from .raytracing import do_raytracing
 from .asora_core import device_init, device_close, photo_table_to_device
-from .radiation import BlackBodySource, make_tau_table
+from .radiation import BlackBodySource, YggdrasilModel, make_tau_table
 from .sinks_model import SinksPhysics
 
 # ======================================================================
@@ -497,33 +497,43 @@ class C2Ray:
                 self.printlog(f"Using Black-Body sources with effective temperature T = {radsource.temp :.1e} K and Radius {(radsource.R_star/c.R_sun.to('cm')).value : .3e} rsun")
                 self.printlog(f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz")
                 self.printlog(f"This is Energy:           {freq_min/ev2fr:.3e} to {freq_max/ev2fr:.3e} eV")
+        elif self.SourceType == 'powerlaw':
+            # TODO: power law spectra is already implemented in radiation folder 
+            pass
+        elif self.SourceType == 'Zackrisson2011':
+            freq_min = ion_freq_HI
+            freq_max = 10*ion_freq_HI   # maximum frequency in Zackrisson tables
 
-            # Integrate table
-            self.printlog("Integrating photoionization rates tables...")
-            self.photo_thin_table, self.photo_thick_table = radsource.make_photo_table(self.tau,freq_min,freq_max,1e48)
-            
-            # WIP: Heating rates
-            # 30.11.23 P.Hirling: The heating tables can be calculated, and used
-            # with the standalone CPU raytracing method to calculate photo-heating rates
-            # for the whole grid. However, at this time, the chemistry solver doesn't
-            # use these rates.
-            # TODO:
-            # 1. Add heating rate computation to ASORA (GPU raytracing)
-            # 2. Add heating (thermal) to chemistry module
-            if self.compute_heating_rates:
-                if(self.rank == 0):
-                    self.printlog("Integrating photoheating rates tables...")
-                self.heat_thin_table, self.heat_thick_table = radsource.make_heat_table(self.tau,freq_min,freq_max,1e48) # nb integration bounds are given in log10(freq/freq_HI)
-            else:
-                if(self.rank == 0):
-                    self.printlog("INFO: No heating rates")
-                self.heat_thin_table = np.zeros(self.NumTau+1)
-                self.heat_thick_table = np.zeros(self.NumTau+1)
+            self.cs_pl_idx_h = self._ld['BlackBodySource']['cross_section_pl_index']
+            fname = self._ld['Photo']['sed_table']
+            radsource = YggdrasilModel(tabname=fname, grey=self.grey, freq0=ion_freq_HI, pl_index=self.cs_pl_idx_h, S_star_ref=1e48)
 
-        # Here you could add another source type, e.g. a monochromatic, power-law,...
-        # Define a class in the radiation submodule and initialize it here
+            # Print info
+            if(self.rank == 0):
+                self.printlog(f"Using Yggdrasil Models for SED, Zackrisson et al (2011), for PopIII or PopII sources")
+                self.printlog(f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz")
+                self.printlog(f"This is Energy:           {freq_min/ev2fr:.3e} to {freq_max/ev2fr:.3e} eV")
         else:
             raise NameError("Unknown source type : ",self.SourceType)
+
+        # Integrate table
+        self.printlog("Integrating photoionization rates tables...")
+        self.photo_thin_table, self.photo_thick_table = radsource.make_photo_table(self.tau, freq_min, freq_max, 1e48)
+        
+        # WIP: Heating rates
+        # 30.11.23 P.Hirling: The heating tables can be calculated, and used with the standalone CPU raytracing method to calculate photo-heating rates for the whole grid. However, at this time, the chemistry solver doesn't use these rates.
+        # TODO:
+        # 1. Add heating rate computation to ASORA (GPU raytracing)
+        # 2. Add heating (thermal) to chemistry module
+        if self.compute_heating_rates:
+            if(self.rank == 0):
+                self.printlog("Integrating photoheating rates tables...")
+            self.heat_thin_table, self.heat_thick_table = radsource.make_heat_table(self.tau, freq_min, freq_max, 1e48) # nb integration bounds are given in log10(freq/freq_HI)
+        else:
+            if(self.rank == 0):
+                self.printlog("INFO: No heating rates")
+            self.heat_thin_table = np.zeros(self.NumTau+1)
+            self.heat_thick_table = np.zeros(self.NumTau+1)
         
         # Copy radiation table to GPU
         if self.gpu:

@@ -53,7 +53,8 @@ class C2Ray_fstar(C2Ray):
     def fstar_model(self, mhalo):
         kind = self.fstar_kind
         if kind.lower() in ['fgamma', 'f_gamma', 'mass_independent']: 
-            fstar = (self.cosmology.Ob0/self.cosmology.Om0)
+            fstar = self.fstar_dpl['f0'] * (self.cosmology.Ob0/self.cosmology.Om0)
+            fesc = self.fstar_dpl['f0_esc']
         elif kind.lower() == 'dpl':
             model_star = StellarToHaloRelation(f0=self.fstar_dpl['f0'], Mt=self.fstar_dpl['Mt'], Mp=self.fstar_dpl['Mp'], g1=self.fstar_dpl['g1'], g2=self.fstar_dpl['g2'], g3=self.fstar_dpl['g3'], g4=self.fstar_dpl['g4'], cosmo=self.cosmology)
             fstar = model_star.deterministic(mhalo)['fstar']
@@ -69,7 +70,7 @@ class C2Ray_fstar(C2Ray):
             print(f'{kind} fstar model is not implemented.')
         return fstar, fesc
 
-    def ionizing_flux(self, file, z, save_Mstar=False): # >:( trgeoip
+    def ionizing_flux(self, file, z, dt=None, save_Mstar=False): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
         Parameters
         ----------
@@ -128,7 +129,10 @@ class C2Ray_fstar(C2Ray):
         S_star_ref = 1e48
 
         # source life-time in cgs
-        ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
+        if(self.acc_model == 'EXP'):
+            ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
+        elif(self.acc_model == 'constant'):
+            ts = dt
 
         # normalize flux
         normflux = msun2g * self.fstar_dpl['Nion'] * srcmstar / (m_p * ts * S_star_ref)
@@ -262,10 +266,13 @@ class C2Ray_fstar(C2Ray):
         """
         self.fstar_kind = self._ld['Sources']['fstar_kind']
         if(self.fstar_kind == 'fgamma'):
-            self.fgamma_hm = self._ld['Sources']['fgamma_hm']
-            self.fgamma_lm = self._ld['Sources']['fgamma_lm']
+            self.fstar_dpl = {'Nion': self._ld['Sources']['Nion'],
+                              'f0': self._ld['Sources']['fgamma_hm'],
+                              'f0_esc': self._ld['Sources']['f0_esc']}
+            #self.fgamma_lm = self._ld['Sources']['fgamma_lm']
             if(self.rank == 0):
-                self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
+                #self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
+                self.printlog(f"Using UV model with fgamma_hm = {self.fstar_dpl['f0']:.1f}, Nion = {self.fstar_dpl['Nion']:.1f}")
         elif(self.fstar_kind == 'dpl' or self.fstar_kind == 'lognorm'):
             self.fstar_dpl = {
                             'Nion': self._ld['Sources']['Nion'],
@@ -283,5 +290,5 @@ class C2Ray_fstar(C2Ray):
             if(self.rank == 0):
                 self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
 
-            self.acc_model = self._ld['Sources']['accretion_model']
-            self.alph_h = self._ld['Sources']['alpha_h']
+        self.acc_model = self._ld['Sources']['accretion_model']
+        self.alph_h = self._ld['Sources']['alpha_h']
