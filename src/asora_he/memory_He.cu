@@ -1,5 +1,7 @@
 #include "memory_He.cuh"
 
+#include "hip/hip_runtime.h"
+
 #include <iostream>
 
 // ========================================================================
@@ -50,19 +52,19 @@ int NUM_FREQ;
 void device_init(const int &N, const int &num_src_par, const int &num_freq) {
     int dev_id = 0;
 
-    cudaDeviceProp device_prop;
-    cudaGetDevice(&dev_id);
-    cudaGetDeviceProperties(&device_prop, dev_id);
-    if (device_prop.computeMode == cudaComputeModeProhibited) {
+    hipDeviceProp_t device_prop;
+    hipGetDevice(&dev_id);
+    hipGetDeviceProperties(&device_prop, dev_id);
+    if (device_prop.computeMode == hipComputeModeProhibited) {
         std::cerr << "Error: device is running in <Compute Mode Prohibited>, no "
-                     "threads can use ::cudaSetDevice()"
+                     "threads can use ::hipSetDevice()"
                   << std::endl;
     }
 
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        std::cout << "cudaGetDeviceProperties returned error code " << error << ", line("
-                  << __LINE__ << ")" << std::endl;
+    hipError_t error = hipGetLastError();
+    if (error != hipSuccess) {
+        std::cout << "hipGetDeviceProperties returned error code " << error << ", line(" << __LINE__
+                  << ")" << std::endl;
     } else {
         std::cout << "GPU Device " << dev_id << ": \"" << device_prop.name
                   << "\" with compute capability " << device_prop.major << "." << device_prop.minor
@@ -79,29 +81,29 @@ void device_init(const int &N, const int &num_src_par, const int &num_freq) {
     NUM_FREQ = num_freq;
 
     // Allocate memory
-    cudaMalloc(&cdh_dev, NUM_SRC_PAR * bytsize_grid);
-    cudaMalloc(&cdhei_dev, NUM_SRC_PAR * bytsize_grid);
-    cudaMalloc(&cdheii_dev, NUM_SRC_PAR * bytsize_grid);
-    cudaMalloc(&n_dev, bytsize_grid);
-    cudaMalloc(&xHI_dev, bytsize_grid);
-    cudaMalloc(&xHeI_dev, bytsize_grid);
-    cudaMalloc(&xHeII_dev, bytsize_grid);
-    cudaMalloc(&phi_HI_dev, bytsize_grid);
-    cudaMalloc(&phi_HeI_dev, bytsize_grid);
-    cudaMalloc(&phi_HeII_dev, bytsize_grid);
-    cudaMalloc(&heat_HI_dev, bytsize_grid);
-    cudaMalloc(&heat_HeI_dev, bytsize_grid);
-    cudaMalloc(&heat_HeII_dev, bytsize_grid);
-    cudaMalloc(&sig_hi_dev, bytsize_freq);
-    cudaMalloc(&sig_hei_dev, bytsize_freq);
-    cudaMalloc(&sig_heii_dev, bytsize_freq);
+    hipMalloc(&cdh_dev, NUM_SRC_PAR * bytsize_grid);
+    hipMalloc(&cdhei_dev, NUM_SRC_PAR * bytsize_grid);
+    hipMalloc(&cdheii_dev, NUM_SRC_PAR * bytsize_grid);
+    hipMalloc(&n_dev, bytsize_grid);
+    hipMalloc(&xHI_dev, bytsize_grid);
+    hipMalloc(&xHeI_dev, bytsize_grid);
+    hipMalloc(&xHeII_dev, bytsize_grid);
+    hipMalloc(&phi_HI_dev, bytsize_grid);
+    hipMalloc(&phi_HeI_dev, bytsize_grid);
+    hipMalloc(&phi_HeII_dev, bytsize_grid);
+    hipMalloc(&heat_HI_dev, bytsize_grid);
+    hipMalloc(&heat_HeI_dev, bytsize_grid);
+    hipMalloc(&heat_HeII_dev, bytsize_grid);
+    hipMalloc(&sig_hi_dev, bytsize_freq);
+    hipMalloc(&sig_hei_dev, bytsize_freq);
+    hipMalloc(&sig_heii_dev, bytsize_freq);
 
-    error = cudaGetLastError();
-    if (error != cudaSuccess) {
+    error = hipGetLastError();
+    if (error != hipSuccess) {
         throw std::runtime_error(
             "Couldn't allocate memory: " +
             std::to_string((3 * bytsize_freq + (7 + 3 * NUM_SRC_PAR) * bytsize_grid) / 1e6) +
-            std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
+            std::string(hipGetErrorName(error)) + " - " + std::string(hipGetErrorString(error)));
     } else {
         // TODO: add message that tells also how many frequencies ...
         std::cout << "Succesfully allocated "
@@ -116,40 +118,40 @@ void device_init(const int &N, const int &num_src_par, const int &num_freq) {
 // Utility functions to copy data to device
 // ========================================================================
 void density_to_device(double *ndens, const int &N) {
-    cudaMemcpy(n_dev, ndens, N * N * N * sizeof(double), cudaMemcpyHostToDevice);
+    hipMemcpy(n_dev, ndens, N * N * N * sizeof(double), hipMemcpyHostToDevice);
 }
 
 void tables_to_device(double *photo_thin_table, double *photo_thick_table, double *heat_thin_table,
                       double *heat_thick_table, const int &NumTau, const int &NumFreq) {
     // Copy thin table
-    cudaMalloc(&photo_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
-    cudaMalloc(&heat_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
-    cudaMemcpy(photo_thin_table_dev, photo_thin_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
-    cudaMemcpy(heat_thin_table_dev, heat_thin_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
+    hipMalloc(&photo_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    hipMalloc(&heat_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    hipMemcpy(photo_thin_table_dev, photo_thin_table, int(NumTau * NumFreq) * sizeof(double),
+              hipMemcpyHostToDevice);
+    hipMemcpy(heat_thin_table_dev, heat_thin_table, int(NumTau * NumFreq) * sizeof(double),
+              hipMemcpyHostToDevice);
 
     // Copy thick table
-    cudaMalloc(&photo_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
-    cudaMalloc(&heat_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
-    cudaMemcpy(photo_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
-    cudaMemcpy(heat_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
+    hipMalloc(&photo_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    hipMalloc(&heat_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    hipMemcpy(photo_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
+              hipMemcpyHostToDevice);
+    hipMemcpy(heat_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
+              hipMemcpyHostToDevice);
 }
 
 void source_data_to_device(int *pos, double *flux, const int &NumSrc) {
     // Free arrays from previous evolve call
-    cudaFree(src_pos_dev);
-    cudaFree(src_flux_dev);
+    hipFree(src_pos_dev);
+    hipFree(src_flux_dev);
 
     // Allocate memory for sources of current evolve call
-    cudaMalloc(&src_pos_dev, 3 * NumSrc * sizeof(int));
-    cudaMalloc(&src_flux_dev, NumSrc * sizeof(double));
+    hipMalloc(&src_pos_dev, 3 * NumSrc * sizeof(int));
+    hipMalloc(&src_flux_dev, NumSrc * sizeof(double));
 
     // Copy source data (positions & strengths) to device
-    cudaMemcpy(src_pos_dev, pos, 3 * NumSrc * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(src_flux_dev, flux, NumSrc * sizeof(double), cudaMemcpyHostToDevice);
+    hipMemcpy(src_pos_dev, pos, 3 * NumSrc * sizeof(int), hipMemcpyHostToDevice);
+    hipMemcpy(src_flux_dev, flux, NumSrc * sizeof(double), hipMemcpyHostToDevice);
 }
 
 // ========================================================================
@@ -157,23 +159,23 @@ void source_data_to_device(int *pos, double *flux, const int &NumSrc) {
 // ========================================================================
 void device_close() {
     printf("Deallocating device memory...\n");
-    cudaFree(cdh_dev);
-    cudaFree(cdhei_dev);
-    cudaFree(cdheii_dev);
-    cudaFree(n_dev);
-    cudaFree(xHI_dev);
-    cudaFree(xHeI_dev);
-    cudaFree(xHeII_dev);
-    cudaFree(phi_HI_dev);
-    cudaFree(phi_HeI_dev);
-    cudaFree(phi_HeII_dev);
-    cudaFree(heat_HI_dev);
-    cudaFree(heat_HeI_dev);
-    cudaFree(heat_HeII_dev);
-    cudaFree(photo_thick_table_dev);
-    cudaFree(photo_thin_table_dev);
-    cudaFree(heat_thick_table_dev);
-    cudaFree(heat_thin_table_dev);
-    cudaFree(src_pos_dev);
-    cudaFree(src_flux_dev);
+    hipFree(cdh_dev);
+    hipFree(cdhei_dev);
+    hipFree(cdheii_dev);
+    hipFree(n_dev);
+    hipFree(xHI_dev);
+    hipFree(xHeI_dev);
+    hipFree(xHeII_dev);
+    hipFree(phi_HI_dev);
+    hipFree(phi_HeI_dev);
+    hipFree(phi_HeII_dev);
+    hipFree(heat_HI_dev);
+    hipFree(heat_HeI_dev);
+    hipFree(heat_HeII_dev);
+    hipFree(photo_thick_table_dev);
+    hipFree(photo_thin_table_dev);
+    hipFree(heat_thick_table_dev);
+    hipFree(heat_thin_table_dev);
+    hipFree(src_pos_dev);
+    hipFree(src_flux_dev);
 }

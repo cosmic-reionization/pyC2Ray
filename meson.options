@@ -1,2 +1,3 @@
 # Get nvidia compute capability
 option('gpu-architecture', type : 'string', value : '', description : 'Compute capability for target CUDA device')
+option('rocm-root', type : 'string', value : '/opt/rocm', description : 'Path to the root of the ROCm installation directory')

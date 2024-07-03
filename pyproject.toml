@@ -6,6 +6,9 @@ requires = [
   "numpy>=2",
 ]
 
+[tool.meson-python.args]
+setup = ["--native-file=$PWD/hipnative.ini"]
+
 [project]
 name = "pyc2ray"
 version = "0.1.0"

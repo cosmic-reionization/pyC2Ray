@@ -11,19 +11,35 @@ Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the com
 
 ## Installation
 
-**Requirements**:
+### Requirements
 - C Compiler
 - `gfortran` Fortran Compiler
-- `nvcc` CUDA compiler
+- `hipcc` HIP compiler
+- CUDA toolkit with the `nvcc` compiler (only for NVIDIA devices)
 
-In your environment simply run
+### With an NVIDIA device
+
+Set the platform for the HIP compiler
 
 ```bash
-pip install .
+export HIP_PLATFORM="nvidia"
 ```
+
+`hipcc` forwards the compilation arguments to `nvcc`.
+Edit the `hipnative.ini` configuration file and set the `cuda` variable to the `hipcc` compiler.
+Then in your environment run
+
+```bash
+pip install . -Csetup-args="-Drocm-root=/path/to/rocm"
+```
+
+where `/path/to/rocm` is the location of the ROCm installation, i.e. where the header directory is located.
 
 If the setuptools method doesn't work, you can alway compile the libraries manually.
 
+### With a AMD device
+
+Meson, as of version 1.9.0, doesn't support the HIP compiler, therefore follow the manual compilation instructions.
 Please see our [documentation](https://pyc2ray.readthedocs.io/en/latest/installation.html) for step-by-step instructions on how to install `pyc2ray`.
 
 A few example scripts summarizing the installation steps can be found in the repository [`/install_script/`](https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts).
