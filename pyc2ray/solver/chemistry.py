@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 # Define constants
 epsilon = 1e-14
@@ -107,7 +108,7 @@ def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, a
 
 
 
-def friedrich(NH, NHe, n_gas, X, Y, xHI, xHeI, xHeII, n_e, phi_HI, phi_HeI, phi_HeII, temp):
+def friedrich(NH, NHe, n_gas, X, Y, xHII, xHeII, xHeIII, n_e, phi_HI, phi_HeI, phi_HeII, temp):
     """
         Chemistry equation solver for H and He.
 
@@ -213,12 +214,52 @@ def friedrich(NH, NHe, n_gas, X, Y, xHI, xHeI, xHeII, n_e, phi_HI, phi_HeI, phi_
     rHeIII2HI = (1-y2a-y2b)*alph1_HeIII + alph2_HeIII + (nu*(l-m+m*y)+(1-nu)*f_lya*z)*alphB_HeIII
     rHeIII2HeI = y2b*alph1_HeIII + (nu*m*(1-y)+(1-nu)*f_lya*(1-z))*alphB_HeIII + alphA_HeIII - y2a*alph1_HeIII
     rHeIII2HeII = y2a*alph1_HeIII - alphA_HeIII
-
+    
+    # get matrix
     A11 = -uHI + rHII2HI
     A12 = 0.
     A12 = 0.
-    A11 = Y/X * rHeII2HI * n_e
+    A21 = Y/X * rHeII2HI * n_e
+    A22 = -uHeI - uHeII + rHeII2HeI * n_e
+    A23 = uHeII
+    A31 = Y/X * rHeIII2HI * n_e
+    A32 = -uHeI + rHeIII2HeI * n_e
+    A33 = rHeIII2HeII * n_e
     
+    g = [uHI, uHeI, 0]
 
-    pass
+    S = np.sqrt(A33**2 - 2*A33*A22 + A22**2 + 4*A32*23)
+    K = 1/(A23*A32 - A33*A22)
+    R = 2*A23*(A33*uHI*K - xHII_ini)
+    T = -A32*uHeI*K - xHeIII_ini
+
+    lamb1  = A11
+    lamb2 = 0.5*(A33 + A22 - S)
+    lamb3 = 0.5*(A33 + A22 + S)
+
+    p1 = -(uHI + (A33*A12 - A32*A13)*uHeI*K) / A11
+    p2 = A33*uHeI*K
+    p3 = -A32*uHeI*K
+
+    B11 = 1.
+    B12 = (-2*A32*A13 + A12 *(A33-A22+S)) / (2*A32*(A11-lamb2))
+    B13 = (-2*A32*A13 + A12 *(A33-A22-S)) / (2*A32*(A11-lamb3))
+    B21 = 0.
+    B22 = (-A33+A22-S) / (2*A32)
+    B23 = (-A33+A22+S) / (2*A32)
+    B31 = 0.
+    B32 = 1.
+    B33 = 1.
+
+    c1 = (2*p1*S - (R+(A33-A22)*T)*(A21 - A31)) / 2*S + xHII_ini + T/2*(A21+A3)
+    c2 = (R + (A33 - A22 - S)*T) / (2*S)
+    c3 = -(R + (A33 - A22 + S)*T) / (2*S)
+
+    xHII_av = B11*c1/(lamb1*dt)*(np.exp(lamb1*dt) - 1.) + B12*c2/(lamb2*dt)(np.exp(lamb2*dt) - 1.) + B13*c3/(lamb3*dt)*(np.exp(lamb3*dt) - 1.)
+    xHI_av = 1 . xHII_av
+    xHeII_av = B21*c1/(lamb1*dt)*(np.exp(lamb1*dt) - 1.) + B22*c2/(lamb2*dt)*(np.exp(lamb2*dt) - 1.) + B23*c3/(lamb3*dt)*(np.exp(lamb3*dt) - 1.)
+    xHeIII_av = B31*c1/(lamb1*dt)*(np.exp(lamb1*dt) - 1.) + B32*c2/(lamb2*dt)*(np.exp(lamb2*dt) - 1.) + B33*c3/(lamb3*dt)*(np.exp(lamb3*dt) - 1.)
+    xHeI_av = 1 - xHeII_av - xHeIII_av
+
+    return 0
     

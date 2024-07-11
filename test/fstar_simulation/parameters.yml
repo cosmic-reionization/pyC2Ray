@@ -140,6 +140,20 @@ Sources:
   accretion_model: 'EXP'
   # accreation rate parameter (see Schneider+ 2021)
   alpha_h: 0.79
+  # select the bursty star-formation model (can be 'instant' or 'integrate', it require accretion_model: 'EXP' or None to switch off) 
+  bursty_sfr: 'instant'
+  # index power-low of the bursty star-formation model mass relation
+  beta1: 0.1
+  # index power-low of the bursty star-formation model time relation
+  beta2: 0.2
+  # bursty star-formation time-scale at z=0
+  tB0: 100.
+  # fraction of the quiescent time-scale
+  tQ_frac: 0.2
+  # reference redshif for the bursty star-formation model
+  z0: 30.0
+  # introduce scatter into the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(M0, std))
+  scatter: 0
 
 # -----------------------
 # Cosmological Parameters
@@ -169,7 +183,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch2/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_instbursty/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk025/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)

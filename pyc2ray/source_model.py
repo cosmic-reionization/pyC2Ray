@@ -78,7 +78,7 @@ class StellarToHaloRelation:
 		return {'fstar': fstar, 'Mstar': Mstar}
 
 class EscapeFraction:
-	"""Modelling the escape of photons from the stars/galaxies inside dark matter haloes."""
+	""" Modelling the escape of photons from the stars/galaxies inside dark matter haloes."""
 	def __init__(self, f0_esc=0.1, Mp_esc=1e10, al_esc=0):
 
 		self.f0_esc = f0_esc
@@ -88,6 +88,83 @@ class EscapeFraction:
 	def deterministic(self, Mhalo):
 		fesc_mean = self.f0_esc*(Mhalo/self.Mp_esc)**self.al_esc
 		return {'fesc': fesc_mean}
+
+
+class BurstySFR:
+	""" Modelling bursty star formation"""
+	def __init__(self, beta1, beta2, tB0, tQ_frac, z0, alpha_h, cosmo, stochastic=False):
+		self.beta1 = beta1
+		self.beta2 = beta2
+		self.tB0 = tB0
+		self.tQ_frac = tQ_frac
+		self.z0 = z0
+		self.alpha_h = alpha_h
+		self.cosmo = cosmo
+		self.stochastic = stochastic
+
+		self.t0 = cosmo.age(z0).to('Myr').value
+
+	def time_burstiness(self, mass, z):
+		if(self.stochastic):
+			M0 = 10**np.random.normal(np.log10(M0), self.stochastic)
+		else:
+			M0 = mass/np.exp(-self.alpha_h*(z-self.z0))
+		
+		t = self.cosmo.age(z).to('Myr').value
+
+		# burstiness time [Myr]
+		tB = self.tB0*(M0/1e10)**self.beta1 * ((t - self.t0)*self.cosmo.H(z).to('1/Myr').value)**self.beta2
+
+		return tB
+
+	@np.vectorize
+	def _burstiness_timescale(t_age, tB, tQ):
+		""" of internal use for the integrated_burst_or_quiescent_galaxies method """
+		i_time = np.floor(t_age/(tB+tQ))
+
+		if(t_age <= i_time*(tB+tQ)+tB):
+			return 1
+		else:
+			return 0
+		
+	def integrated_burst_or_quiescent_galaxies(self, mass, z, zi, zf):
+		""" This case integrate the burst or quench time withing the time-step. It return a factor between 0 and 1 for quenched (value 0) or bursting (value 1). In bewteen values indicate that the sources are quencing for a period of time withing the time-step. """
+		# TODO: It is computationally expensive, for some reason, due to the quad_vec method.... to investiage
+		
+		# get burstiness and quencing time
+		tB = self.time_burstiness(mass, z)
+		tQ = self.tQ_frac * tB
+		
+		# get time interval limits
+		ti = cosmo.age(zi).to('Myr').value - self.t0
+		tf = cosmo.age(zf).to('Myr').value - self.t0
+		
+		# get time fraction that the galaxies are on
+		integr = lambda t : self.burstiness_timescale(t_age=t, tB=tB, tQ=tQ)
+		timefrac_on = quad_vec(integr, ti, tf)[0]/(tf-ti)
+
+		return timefrac_on
+
+	def instant_burst_or_quiescent_galaxies(self, mass, z):
+		""" This case is for instanteneous bursting or quenching. Do not account for the time integration. Mask the halo True (bursting) or False (quiescent). """
+		# get burstiness and quencing time
+		tB = self.time_burstiness(mass, z)
+		tQ = self.tQ_frac * tB
+		
+		# get time at the corresponding redshift
+		t_age = self.cosmo.age(z).to('Myr').value - self.t0
+		assert t_age.all() > 0. , "Selected parameter t0 is wrong. The value of z0 is lower then the redshift of the first source file (increase the value z0)."
+		
+		# find the index of the burst/quench cycle in which the time-step, t, is inside 
+		i_time = np.floor(t_age/(tB+tQ))
+		
+		# if True then the galaxy is bursting otherwise is quenching
+		burst_or_quench = (t_age <= i_time*(tB+tQ)+tB)
+		
+		#print(' A total of %.2f %% of galaxies have bursty star-formation.' %(100*np.count_nonzero(burst_mask)/burst_mask.size))
+		return burst_or_quench
+
+
 
 
 class Halo2Grid:

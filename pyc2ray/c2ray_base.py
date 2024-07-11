@@ -224,29 +224,27 @@ class C2Ray:
         # if the number of sources exceed the number of MPI processors then call the evolve designed for the MPI source splitting.
         # otherwise: all ranks are calling (independently) the evolve with no source splitting until the condition above is meet.
         if(NumSrc >= self.nprocs and self.mpi):
-            self.xh, self.phi_ion = evolve3D(
-                dt=dt, dr=self.dr,
-                src_flux=src_flux, src_pos=src_pos,
-                use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
-                use_mpi=self.mpi, comm=self.comm, rank=self.rank, nprocs=self.nprocs,
-                temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
-                photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
-                minlogtau=self.minlogtau, dlogtau=self.dlogtau,
-                R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
-                sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
-                logfile=self.logfile, quiet=False)
+            self.xh, self.phi_ion, self.coldens = evolve3D(dt=dt, dr=self.dr,
+                                                            src_flux=src_flux, src_pos=src_pos,
+                                                            use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
+                                                            use_mpi=self.mpi, comm=self.comm, rank=self.rank, nprocs=self.nprocs,
+                                                            temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
+                                                            photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
+                                                            minlogtau=self.minlogtau, dlogtau=self.dlogtau,
+                                                            R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
+                                                            sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
+                                                            logfile=self.logfile, quiet=False)
         else:
-            self.xh, self.phi_ion = evolve3D(
-                dt=dt, dr=self.dr,
-                src_flux=src_flux, src_pos=src_pos,
-                use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
-                use_mpi=False, comm=None, rank=0, nprocs=1, # mpi flag, comm, rank=0, nproc=1
-                temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
-                photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
-                minlogtau=self.minlogtau, dlogtau=self.dlogtau,
-                R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
-                sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
-                logfile=self.logfile, quiet=False)
+            self.xh, self.phi_ion, self.coldens = evolve3D(dt=dt, dr=self.dr,
+                                                            src_flux=src_flux, src_pos=src_pos,
+                                                            use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
+                                                            use_mpi=False, comm=None, rank=0, nprocs=1, # mpi flag, comm, rank=0, nproc=1
+                                                            temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
+                                                            photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
+                                                            minlogtau=self.minlogtau, dlogtau=self.dlogtau,
+                                                            R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
+                                                            sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
+                                                            logfile=self.logfile, quiet=False)
 
     def cosmo_evolve(self, dt):
         """Evolve cosmology over a timestep
@@ -326,9 +324,11 @@ class C2Ray:
             if(suffix.endswith('.dat')):
                 t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
                 t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
+                #t2c.save_cbin(filename=self.results_basename + "coldens" + suffix, data=self.coldens, bits=64, order='F')
             elif(suffix.endswith('.npy')):
                 np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
                 np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
+                #np.save(file=self.results_basename + "coldens" + suffix, arr=self.coldens)
 
             # print min, max and average quantities
             self.printlog('\n--- Reionization History ----')
@@ -341,12 +341,16 @@ class C2Ray:
 
             with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
                 if not (summary_exist):
-                    header = '# z\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
+                    header = '# z\ttot HI atoms\ttot phots\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
                     f.write(header)                
 
+                # mass-average neutral faction
                 massavrg_ion_frac = np.sum(self.xh*self.ndens)/np.sum(self.ndens)
 
-                text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
+                # calculate total number of neutral hydrogen atoms        
+                tot_nHI = np.sum(self.ndens * (1-self.xh) * self.dr**3)
+
+                text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_nHI, self.tot_phots, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
                 f.write(text)
         else:
             # this is for the other ranks
@@ -576,12 +580,14 @@ class C2Ray:
         if(self.rank == 0):    
             if(self._ld['Grid']['resume']):
                 title = "\n\nResuming"+title[8:]+"\n\n"
+                print(title)
                 with open(self.logfile,"r") as f: 
                     log = f.readlines()
                 with open(self.logfile,"w") as f: 
                     log.append(title)
                     f.write(''.join(log))
             else:
+                print(title)
                 with open(self.logfile,"w") as f: 
                     # Clear file and write header line
                     f.write(title+"\nLog file for pyC2Ray.\n\n") 
