@@ -1,5 +1,5 @@
 Tutorials
 =========
 
-Here you can find tutorials on how to use the project.
+Here you can find tutorials that will help you get started with ``pyc2ray``:
 
