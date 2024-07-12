@@ -8,7 +8,7 @@ sphinx:
 # Build settings
 build:
   os: ubuntu-22.04
-  image: "latest"
+  #image: "latest"
   tools:
      python: "3.9"
 
