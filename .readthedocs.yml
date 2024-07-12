@@ -5,6 +5,10 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
+# Build settings
+build:
+  image: "latest"
+
 python:
   install:
     - requirements: requirements.txt
