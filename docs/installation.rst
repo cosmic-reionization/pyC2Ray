@@ -18,6 +18,7 @@ Additionally, once built, ``pyc2ray`` requires the ``astropy`` and ``tools21cm``
 The tool to build the module is ``f2py``, provided by the ``numpy`` package. The build requires version 1.24.4 or higher, to check run ``f2py`` without any options. If the version is too old or the command doesn't exist, install the latest numpy version in your current virtual environment. To build the extension module, run
 
 .. code-block:: bash
+
         cd src/c2ray/
         make
         cp libc2ray.*.so ../../pyc2ray/lib
