@@ -80,4 +80,5 @@ Future Installation
 We are currently working to make the installation easier. In the fugure to install ``pyc2ray`` you will simply run:
 
 .. code-block:: bash
+
         pip install pyc2ray
