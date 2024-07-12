@@ -1,7 +1,7 @@
 Contributors
 ============
 
-The list of the current contributors that have contributed to developing and maintaining pyc2ray code. 
+The list of the peoples that have contributed to developing and maintaining ``pyc2ray`` code. 
 
 - Michele Bianco (ETHZ)
 - Patrick Hirling (EPFL)

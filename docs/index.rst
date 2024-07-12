@@ -10,6 +10,12 @@ The most time-consuming part of the code is calculating the hydrogen column dens
 The algorithm is written in *C++/CUDA* and wrapped in a *Python* interface that allows for easy and customized use of the code without compromising computational efficiency
 
 
+Reporting issues and contributing
+=================================
+If you find any bugs or unexpected behavior in the code, please feel free to open a Github issue_. The issue page is also good if you seek help or have suggestions for us.
+
+.. _issue: https://github.com/cosmic-reionization/pyC2Ray/issues
+
 Indices and tables
 ==================
 

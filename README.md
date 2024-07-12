@@ -90,4 +90,4 @@ If you find any bugs or unexpected behavior in the code, please feel free to ope
 
 ## AKNOWLEDGMENT
 
-This project was developed by [Patrick Hirling](https://github.com/phirling) as part of a practical workshop during his master's degree in astrophysics at EPFL. You can find the original version of the code, employed in his paper ([Hirling+ (2024)](https://arxiv.org/abs/2311.01492)), on his GitHub page: [pyc2ray](https://github.com/phirling/pyc2ray).
+This project was initially developed by [Patrick Hirling](https://github.com/phirling) as part of the astrophysics practical workshop supervised by Michele Bianco during his master's degree at EPFL. You can find the original version of the code, employed in his paper ([Hirling+ (2024)](https://arxiv.org/abs/2311.01492)), on his GitHub page: [pyc2ray](https://github.com/phirling/pyc2ray).
