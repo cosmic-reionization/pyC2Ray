@@ -76,6 +76,17 @@ class StellarToHaloRelation:
 		fstar = np.clip(a=np.exp(log_fstar), a_min=0, a_max=1)
 		Mstar = Mhalo*fstar
 		return {'fstar': fstar, 'Mstar': Mstar}
+	
+	def UV_magnitude(self, fstar, mdot):
+		# corresponding to AB magnitude system (Oke 1974)
+		M0 = 51.6	
+		
+		#calibrated for 1500 Å dust-corrected rest-frame UV luminosity in units [Msun * s * Hz / (yr erg)]
+		k_val = 1.15e-28
+		
+		M_UV = M0 - 2.5*(np.log10(fstar) + np.log10(self.Ob/self.Om) + np.log10(mdot) - np.log10(k_val))
+		return M_UV
+
 
 class EscapeFraction:
 	""" Modelling the escape of photons from the stars/galaxies inside dark matter haloes."""
@@ -89,6 +100,9 @@ class EscapeFraction:
 		fesc_mean = self.f0_esc*(Mhalo/self.Mp_esc)**self.al_esc
 		return {'fesc': fesc_mean}
 
+	def fesc_Muv(self, Mhalo, Mdot):
+		# TODO: follow Gelli+ (2024) model
+		return 0
 
 class BurstySFR:
 	""" Modelling bursty star formation"""

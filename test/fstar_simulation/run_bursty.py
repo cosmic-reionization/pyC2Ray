@@ -13,6 +13,9 @@ paramfile = sys.argv[1]             # Name of the parameter file
 # Create C2Ray object
 sim = pc2r.C2Ray_fstar(paramfile=paramfile)
 
+# copy parameter file into the output directory
+os.system('cp %s %s' %(paramfile, sim.results_basename))
+
 # Get redshift list (test case)
 idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float, unpack=True)
 

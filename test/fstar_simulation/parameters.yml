@@ -123,17 +123,17 @@ Sources:
   # efficiency Low-Mass Atomically Cooling Halo (LMACH)
   fgamma_lm: 0.
   # Double power law parameter - these are used only when fstar_kind: 'dpl'
-  Nion: 4.0
-  f0: 1.0 
+  Nion: 2000.0
+  f0: 0.1 
   Mt: 1e8 
   Mp: 1e10
   g1: -0.3
   g2: -0.3
   g3: 0
   g4: -0.0
-  # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor
+  # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Muv' for a UV dependent model (Gelli+ 2024)
   fesc_model: 'constant'
-  f0_esc: 1.0
+  f0_esc: 0.02
   Mp_esc: 1e10
   al_esc: -0.5
   # define the accreation model (can be 'constant' or 'EXP')
@@ -172,18 +172,12 @@ Cosmology:
   # Initial redshift of the simulation
   zred_0: 21.481530
 
-  # N.B. : Planck 18
-  #  h: 0.6766
-  #  Omega0: 0.30966
-  #  Omega_B: 0.04897
-  #  cmbtemp: 2.7255
-
 # ------------
 # Output setup
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_instbursty/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk025/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)

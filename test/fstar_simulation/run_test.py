@@ -44,7 +44,7 @@ for k in range(i_start, len(zred_array)-1):
     sim.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0' %idx_zred[k], z=zi)
 
     # Read source files
-    srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=zi) #, save_Mstar=sim.results_basename+'/sources')
+    srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=zi, dt=dt) #, save_Mstar=sim.results_basename+'/sources')
 
     #TODO: move this after time-loop and change for zf
     if(sim.rank == 0 and k != i_start):    

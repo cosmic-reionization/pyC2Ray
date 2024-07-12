@@ -62,7 +62,7 @@ class C2Ray_fstar(C2Ray):
             fesc = model_fesc.deterministic(mhalo)['fesc']
         elif kind.lower() == 'lognorm':
             model_fstar = StellarToHaloRelation(f0=self.fstar_pars['f0'], Mt=self.fstar_pars['Mt'], Mp=self.fstar_pars['Mp'], g1=self.fstar_pars['g1'], g2=self.fstar_pars['g2'], g3=self.fstar_pars['g3'], g4=self.fstar_pars['g4'], cosmo=self.cosmology)
-            std_fstar = np.power(mhalo/1e9, -1./3)
+            std_fstar = np.power(mhalo/self.fstar_pars['Mp'], -1./3)
             fstar = model_fstar.stochastic_lognormal(Mhalo=mhalo, sigma=std_fstar)['fstar']
             model_fesc = EscapeFraction(f0_esc=self.fstar_pars['f0_esc'], Mp_esc=self.fstar_pars['Mp_esc'], al_esc=self.fstar_pars['al_esc'])
             fesc = model_fesc.deterministic(mhalo)['fesc']
