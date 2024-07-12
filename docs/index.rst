@@ -1,3 +1,5 @@
+.. image:: fig/banner.jpg
+
 Welcome to pyC2Ray documentation!
 ======================================
 

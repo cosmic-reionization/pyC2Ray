@@ -1,5 +1,5 @@
 <div align="left">
-    <a name="logo"><img src="fig/banner.jpg" width="800"></img></a>
+    <a name="logo"><img src="docs/fig/banner.jpg" width="800"></img></a>
 </div>
 
 # pyC2Ray: A flexible and GPU-accelerated radiative transfer framework
@@ -68,7 +68,7 @@ The four tests performed in the paper are located in `paper_tests`, along with t
 ### Note on raytracing benchmark
 The raytracing benchmark (Figure 8 in the paper) might be an especially useful test to reproduce on your system. 
 <div align="left">
-   <a name="scaling"><img src="fig/scaling.jpg" width="800" height="auto"></img></a>
+   <a name="scaling"><img src="docs/fig/scaling.jpg" width="800" height="auto"></img></a>
 </div>
 
 The relevant script is located at `paper_tests/raytracing_benchmark/run_test.py`. This script is quite general, and allows you to measure the runtime of the GPU raytracing function for a varying number of sources, batch sizes and raytracing radii. The steps to reproduce exactly the test shown in the paper are outlined in the Jupyter Notebooks in `paper_tests/raytracing_benchmark/`. 
