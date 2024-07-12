@@ -13,7 +13,7 @@ Additionally, once built, ``pyc2ray`` requires the ``astropy`` and ``tools21cm``
 
 
 1. Build Fortran extension module (C2Ray)
-========================================
+""""""""""""""""""""""""""""""""""""""""
 
 The tool to build the module is ``f2py``, provided by the ``numpy`` package. The build requires version 1.24.4 or higher, to check run ``f2py`` without any options. If the version is too old or the command doesn't exist, install the latest numpy version in your current virtual environment. To build the extension module, run
 
@@ -25,7 +25,7 @@ The tool to build the module is ``f2py``, provided by the ``numpy`` package. The
 The last command line moves the resulting shared library file ``libc2ray.*.so`` to the previously created ``/pyc2ray/lib/`` directory.
 
 2. Build CUDA extension module (Asora)
-=====================================
+"""""""""""""""""""""""""""""""""""""
 .. code-block:: bash
         
         cd ../asora/
@@ -58,7 +58,7 @@ Finally, you can add ``pyc2ray`` path to your ``PYTHONPATH``.
         export PYTHONPATH="$PYC2RAY_PATH:$PYTHONPATH"
 
 3. Test the Install
-===================
+"""""""""""""""""""
 You can quickly double-check with the command line:
 
 .. code-block:: bash
@@ -76,7 +76,7 @@ This performs a RT simulation with a single source in a uniform volume, and chec
 
 
 Future Installation
-===================
+"""""""""""""""""""
 We are currently working to make the installation easier. In the fugure to install ``pyc2ray`` you will simply run:
 
 .. code-block:: bash
