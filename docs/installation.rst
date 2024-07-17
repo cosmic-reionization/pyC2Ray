@@ -15,6 +15,7 @@ You can modify and run your installation script from the same directory with the
 .. _link: https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts
 
 **Requirements**:
+
 - C Compiler
 - ``gfortran`` Fortran Compiler
 - ``nvcc`` CUDA compiler
