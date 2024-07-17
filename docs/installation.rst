@@ -1,7 +1,7 @@
 Installation
 ============
 
-Since the automatic build system isn't fully working yet, the extension modules must be compiled and placed in correct directories manually.
+Since the automatic build system (i.e.: ``pip install pyc2ray``) isn't fully working yet (work in progress), the extension modules must be compiled and placed in correct directories manually.
 
 However, a few example bash-shell scripts, that summarize the installation steps shown here below, can be found in the repository ``install_script/`` (link_).
 
@@ -19,12 +19,11 @@ You can modify and run your installation script from the same directory with the
 - C Compiler
 - ``gfortran`` Fortran Compiler
 - ``nvcc`` CUDA compiler
-- ``f2py`` $\geq$ 1.24.4, provided by ``numpy``
+- ``f2py>=1.24.4``, provided by ``numpy``
 
 
 1. GitHub Clone & Requirements
 """"""""""""""""""""""""""""""""""""""""
-
 Star by cloning the repository with the following command line:
 
 .. code-block:: bash
@@ -33,7 +32,7 @@ Star by cloning the repository with the following command line:
 
 We highly recommend the use of a virtual environement, as ``pyc2ray`` requires some specific packages to work, such as ``astropy`` and ``tools21cm``. 
 
-To install all the required python packages in an environement, use the the following command line:
+To install all the required python packages in an environement, use the the following command lines:
 
 .. code-block:: bash
         
@@ -46,8 +45,9 @@ This way will helps you to keep the required dependencies for different projects
 
 2. Build Fortran extension module
 """"""""""""""""""""""""""""""""""""""""
+The chemisty solver of ``pyc2ray`` is still in its original version written in Fortran90. Therefore, the build requires version ``f2py>=1.24.4``, provided by the ``numpy`` package. If the version of ``f2py`` is too old or the command doesn't exist, install the latest ``numpy`` version in your current virtual environment. 
 
-The tool to build the module is ``f2py``, provided by the ``numpy`` package. The build requires version 1.24.4 or higher, to check run ``f2py`` without any options. If the version is too old or the command doesn't exist, install the latest numpy version in your current virtual environment. To build the extension module, run
+To build the ``C2Ray`` Fortran extension module, run:
 
 .. code-block:: bash
 
