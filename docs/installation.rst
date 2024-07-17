@@ -3,13 +3,24 @@ Installation
 
 Since the automatic build system isn't fully working yet, the extension modules must be compiled and placed in correct directories manually.
 
-**Requirements**:
-* C Compiler
-* ``gfortran`` Fortran Compiler
-* ``nvcc`` CUDA compiler
-* ``f2py`` $\geq$ 1.24.4, provided by ``numpy``
+However, a few example bash-shell scripts, that summarize the installation steps shown here below, can be found in the repository ``install_script/`` (link_).
 
-Additionally, once built, ``pyc2ray`` requires the ``astropy`` and ``tools21cm`` python packages to work. A few example scripts, that summarize the installation steps shown here below, are given in the repository ``/install_script/``.
+You can modify and run your installation script from the same directory with the command line:
+
+.. code-block:: bash
+
+        cd install_script/
+        source example_install.sh
+
+.. _link: https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts
+
+**Requirements**:
+- C Compiler
+- ``gfortran`` Fortran Compiler
+- ``nvcc`` CUDA compiler
+- ``f2py`` $\geq$ 1.24.4, provided by ``numpy``
+
+Additionally, once built, ``pyc2ray`` requires the ``astropy`` and ``tools21cm`` python packages to work and use all its features. 
 
 
 1. Build Fortran extension module (C2Ray)
@@ -19,11 +30,12 @@ The tool to build the module is ``f2py``, provided by the ``numpy`` package. The
 
 .. code-block:: bash
 
+        mkdir pyc2ray/lib
         cd src/c2ray/
         make
         cp libc2ray.*.so ../../pyc2ray/lib
 
-The last command line moves the resulting shared library file ``libc2ray.*.so`` to the previously created ``/pyc2ray/lib/`` directory.
+The last command line moves the resulting shared library file ``libc2ray.*.so`` to the previously created ``pyC2Ray/pyc2ray/lib/`` directory.
 
 2. Build CUDA extension module (Asora)
 """""""""""""""""""""""""""""""""""""
@@ -66,7 +78,7 @@ You can quickly double-check with the command line:
         
         python -c "import pyc2ray as pc2r"
 
-If the build was successful it should not give any error message. Moreover, you can use of the test script in ``/test/unit_tests_hackathon/1_single_source`` and run
+If the build was successful it should not give any error message. Moreover, you can use of the test script in ``pyC2Ray/test/unit_tests_hackathon/1_single_source`` and run
 
 .. code-block:: bash
         
