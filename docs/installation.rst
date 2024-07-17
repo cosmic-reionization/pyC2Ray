@@ -21,10 +21,30 @@ You can modify and run your installation script from the same directory with the
 - ``nvcc`` CUDA compiler
 - ``f2py`` $\geq$ 1.24.4, provided by ``numpy``
 
-Additionally, once built, ``pyc2ray`` requires the ``astropy`` and ``tools21cm`` python packages to work and use all its features. 
 
+1. GitHub Clone & Requirements
+""""""""""""""""""""""""""""""""""""""""
 
-1. Build Fortran extension module (C2Ray)
+Star by cloning the repository with the following command line:
+
+.. code-block:: bash
+
+        git clone https://github.com/cosmic-reionization/pyC2Ray.git
+
+We highly recommend the use of a virtual environement, as ``pyc2ray`` requires some specific packages to work, such as ``astropy`` and ``tools21cm``. 
+
+To install all the required python packages in an environement, use the the following command line:
+
+.. code-block:: bash
+        
+        python -m venv pyc2ray-env
+        source activate pyc2ray-env/bin/activate
+        cd pyC2Ray/
+        python3 -m pip install requirements.txt
+
+This way will helps you to keep the required dependencies for different projects separated.
+
+2. Build Fortran extension module
 """"""""""""""""""""""""""""""""""""""""
 
 The tool to build the module is ``f2py``, provided by the ``numpy`` package. The build requires version 1.24.4 or higher, to check run ``f2py`` without any options. If the version is too old or the command doesn't exist, install the latest numpy version in your current virtual environment. To build the extension module, run
@@ -38,7 +58,7 @@ The tool to build the module is ``f2py``, provided by the ``numpy`` package. The
 
 The last command line moves the resulting shared library file ``libc2ray.*.so`` to the previously created ``pyC2Ray/pyc2ray/lib/`` directory.
 
-2. Build CUDA extension module (Asora)
+3. Build CUDA extension module
 """""""""""""""""""""""""""""""""""""
 .. code-block:: bash
         
@@ -71,7 +91,7 @@ Finally, you can add ``pyc2ray`` path to your ``PYTHONPATH``.
         PYC2RAY_PATH=$(pwd)
         export PYTHONPATH="$PYC2RAY_PATH:$PYTHONPATH"
 
-3. Test the Install
+4. Test the Install
 """""""""""""""""""
 You can quickly double-check with the command line:
 
