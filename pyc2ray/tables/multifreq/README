@@ -1,0 +1,3 @@
+The cross section element spectal index data are derived from Verner+ (1996) tables (see: https://arxiv.org/abs/astro-ph/9601009). The file contain the frequency and the power index for HI, HeI and HeII. The model follow a simple power law with
+	\sigma_X (\nu) = \sigma_{X,0} (\frac{\nu_{X,0}}{\nu})^\delta
+where \delta is the powe index of one of the elements.
