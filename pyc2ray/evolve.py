@@ -3,6 +3,7 @@ from .utils import printlog
 from .utils.sourceutils import format_sources
 from .load_extensions import load_c2ray, load_asora
 from .asora_core import cuda_is_init
+from .solver.chemistry import global_pass
 import time
 import sys
 
@@ -219,6 +220,7 @@ def evolve3D(dt, dr,
         # Since chemistry (ODE solving) is done on the CPU in Fortran, flattened CUDA arrays need to be reshaped
         if use_gpu:
             phi_ion = np.reshape(phi_ion_flat, (N,N,N))
+            coldensh_out = np.reshape(coldensh_out_flat, (N,N,N))
         else:
             printlog(f"Average number of subboxes: {nsubbox/NumSrc:n}, Total photon loss: {photonloss:.3e}",logfile,quiet)
 
@@ -238,6 +240,7 @@ def evolve3D(dt, dr,
             printlog("Doing Chemistry...",logfile,quiet,' ')
             # Apply the global rates to compute the updated ionization fraction
             conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
+            #xh_intermed, xh_av, conv_flag = global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
             printlog(f"took {(time.time()-tch0) : .1f} s.", logfile,quiet)
 
             # ----------------------------
@@ -296,4 +299,4 @@ def evolve3D(dt, dr,
         # braodcast final result
         comm.Bcast([xh_new, use_mpi.DOUBLE], root=0)    
 
-    return xh_new, phi_ion
+    return xh_new, phi_ion, coldensh_out

@@ -144,7 +144,7 @@ void do_all_sources_gpu(
 
         // Copy the accumulated ionization fraction back to the host
         auto error = cudaMemcpy(phi_ion,phi_dev,meshsize,cudaMemcpyDeviceToHost);
-
+        auto error2 = cudaMemcpy(coldensh_out,cdh_dev,meshsize,cudaMemcpyDeviceToHost);
     }
 
 
@@ -326,6 +326,7 @@ __global__ void evolve0D_gpu(
                                 // Add the computed ionization rate to the array ATOMICALLY since multiple blocks could be
                                 // writing to the same cell at the same time!
                                 atomicAdd(phi_ion + mem_offst_gpu(pos[0],pos[1],pos[2],m1),phi);
+                                //atomicAdd(coldensh_out + mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);
                             }                          
                         }
                     }

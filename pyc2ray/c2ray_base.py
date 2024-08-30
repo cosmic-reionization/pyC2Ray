@@ -14,7 +14,7 @@ from .utils.logutils import printlog
 from .evolve import evolve3D
 from .raytracing import do_raytracing
 from .asora_core import device_init, device_close, photo_table_to_device
-from .radiation import BlackBodySource, make_tau_table
+from .radiation import BlackBodySource, YggdrasilModel, make_tau_table
 from .sinks_model import SinksPhysics
 
 # ======================================================================
@@ -224,29 +224,27 @@ class C2Ray:
         # if the number of sources exceed the number of MPI processors then call the evolve designed for the MPI source splitting.
         # otherwise: all ranks are calling (independently) the evolve with no source splitting until the condition above is meet.
         if(NumSrc >= self.nprocs and self.mpi):
-            self.xh, self.phi_ion = evolve3D(
-                dt=dt, dr=self.dr,
-                src_flux=src_flux, src_pos=src_pos,
-                use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
-                use_mpi=self.mpi, comm=self.comm, rank=self.rank, nprocs=self.nprocs,
-                temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
-                photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
-                minlogtau=self.minlogtau, dlogtau=self.dlogtau,
-                R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
-                sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
-                logfile=self.logfile, quiet=False)
+            self.xh, self.phi_ion, self.coldens = evolve3D(dt=dt, dr=self.dr,
+                                                            src_flux=src_flux, src_pos=src_pos,
+                                                            use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
+                                                            use_mpi=self.mpi, comm=self.comm, rank=self.rank, nprocs=self.nprocs,
+                                                            temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
+                                                            photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
+                                                            minlogtau=self.minlogtau, dlogtau=self.dlogtau,
+                                                            R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
+                                                            sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
+                                                            logfile=self.logfile, quiet=False)
         else:
-            self.xh, self.phi_ion = evolve3D(
-                dt=dt, dr=self.dr,
-                src_flux=src_flux, src_pos=src_pos,
-                use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
-                use_mpi=False, comm=None, rank=0, nprocs=1, # mpi flag, comm, rank=0, nproc=1
-                temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
-                photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
-                minlogtau=self.minlogtau, dlogtau=self.dlogtau,
-                R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
-                sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
-                logfile=self.logfile, quiet=False)
+            self.xh, self.phi_ion, self.coldens = evolve3D(dt=dt, dr=self.dr,
+                                                            src_flux=src_flux, src_pos=src_pos,
+                                                            use_gpu=self.gpu, max_subbox=self.max_subbox, subboxsize=self.subboxsize, loss_fraction=self.loss_fraction,
+                                                            use_mpi=False, comm=None, rank=0, nprocs=1, # mpi flag, comm, rank=0, nproc=1
+                                                            temp=self.temp, ndens=self.ndens, xh=self.xh, clump=self.clumping_factor,
+                                                            photo_thin_table=self.photo_thin_table, photo_thick_table=self.photo_thick_table,
+                                                            minlogtau=self.minlogtau, dlogtau=self.dlogtau,
+                                                            R_max_LLS=self.R_max_LLS, convergence_fraction=self.convergence_fraction,
+                                                            sig=self.sig, bh00=self.bh00, albpow=self.albpow, colh0=self.colh0, temph0=self.temph0, abu_c=self.abu_c,
+                                                            logfile=self.logfile, quiet=False)
 
     def cosmo_evolve(self, dt):
         """Evolve cosmology over a timestep
@@ -326,9 +324,11 @@ class C2Ray:
             if(suffix.endswith('.dat')):
                 t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
                 t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
+                #t2c.save_cbin(filename=self.results_basename + "coldens" + suffix, data=self.coldens, bits=64, order='F')
             elif(suffix.endswith('.npy')):
                 np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
                 np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
+                #np.save(file=self.results_basename + "coldens" + suffix, arr=self.coldens)
 
             # print min, max and average quantities
             self.printlog('\n--- Reionization History ----')
@@ -341,12 +341,16 @@ class C2Ray:
 
             with open(self.results_basename+'PhotonCounts2.txt', 'a') as f:
                 if not (summary_exist):
-                    header = '# z\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
+                    header = '# z\ttot HI atoms\ttot phots\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n'
                     f.write(header)                
 
+                # mass-average neutral faction
                 massavrg_ion_frac = np.sum(self.xh*self.ndens)/np.sum(self.ndens)
 
-                text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
+                # calculate total number of neutral hydrogen atoms        
+                tot_nHI = np.sum(self.ndens * (1-self.xh) * self.dr**3)
+
+                text = '%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n' %(z, tot_nHI, self.tot_phots, np.mean(self.ndens), np.mean(self.phi_ion), self.R_max_LLS/self.N*self.boxsize, np.mean(self.xh), massavrg_ion_frac)
                 f.write(text)
         else:
             # this is for the other ranks
@@ -497,33 +501,43 @@ class C2Ray:
                 self.printlog(f"Using Black-Body sources with effective temperature T = {radsource.temp :.1e} K and Radius {(radsource.R_star/c.R_sun.to('cm')).value : .3e} rsun")
                 self.printlog(f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz")
                 self.printlog(f"This is Energy:           {freq_min/ev2fr:.3e} to {freq_max/ev2fr:.3e} eV")
+        elif self.SourceType == 'powerlaw':
+            # TODO: power law spectra is already implemented in radiation folder 
+            pass
+        elif self.SourceType == 'Zackrisson2011':
+            freq_min = ion_freq_HI
+            freq_max = 10*ion_freq_HI   # maximum frequency in Zackrisson tables
 
-            # Integrate table
-            self.printlog("Integrating photoionization rates tables...")
-            self.photo_thin_table, self.photo_thick_table = radsource.make_photo_table(self.tau,freq_min,freq_max,1e48)
-            
-            # WIP: Heating rates
-            # 30.11.23 P.Hirling: The heating tables can be calculated, and used
-            # with the standalone CPU raytracing method to calculate photo-heating rates
-            # for the whole grid. However, at this time, the chemistry solver doesn't
-            # use these rates.
-            # TODO:
-            # 1. Add heating rate computation to ASORA (GPU raytracing)
-            # 2. Add heating (thermal) to chemistry module
-            if self.compute_heating_rates:
-                if(self.rank == 0):
-                    self.printlog("Integrating photoheating rates tables...")
-                self.heat_thin_table, self.heat_thick_table = radsource.make_heat_table(self.tau,freq_min,freq_max,1e48) # nb integration bounds are given in log10(freq/freq_HI)
-            else:
-                if(self.rank == 0):
-                    self.printlog("INFO: No heating rates")
-                self.heat_thin_table = np.zeros(self.NumTau+1)
-                self.heat_thick_table = np.zeros(self.NumTau+1)
+            self.cs_pl_idx_h = self._ld['BlackBodySource']['cross_section_pl_index']
+            fname = self._ld['Photo']['sed_table']
+            radsource = YggdrasilModel(tabname=fname, grey=self.grey, freq0=ion_freq_HI, pl_index=self.cs_pl_idx_h, S_star_ref=1e48)
 
-        # Here you could add another source type, e.g. a monochromatic, power-law,...
-        # Define a class in the radiation submodule and initialize it here
+            # Print info
+            if(self.rank == 0):
+                self.printlog(f"Using Yggdrasil Models for SED, Zackrisson et al (2011), for PopIII or PopII sources")
+                self.printlog(f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz")
+                self.printlog(f"This is Energy:           {freq_min/ev2fr:.3e} to {freq_max/ev2fr:.3e} eV")
         else:
             raise NameError("Unknown source type : ",self.SourceType)
+
+        # Integrate table
+        self.printlog("Integrating photoionization rates tables...")
+        self.photo_thin_table, self.photo_thick_table = radsource.make_photo_table(self.tau, freq_min, freq_max, 1e48)
+        
+        # WIP: Heating rates
+        # 30.11.23 P.Hirling: The heating tables can be calculated, and used with the standalone CPU raytracing method to calculate photo-heating rates for the whole grid. However, at this time, the chemistry solver doesn't use these rates.
+        # TODO:
+        # 1. Add heating rate computation to ASORA (GPU raytracing)
+        # 2. Add heating (thermal) to chemistry module
+        if self.compute_heating_rates:
+            if(self.rank == 0):
+                self.printlog("Integrating photoheating rates tables...")
+            self.heat_thin_table, self.heat_thick_table = radsource.make_heat_table(self.tau, freq_min, freq_max, 1e48) # nb integration bounds are given in log10(freq/freq_HI)
+        else:
+            if(self.rank == 0):
+                self.printlog("INFO: No heating rates")
+            self.heat_thin_table = np.zeros(self.NumTau+1)
+            self.heat_thick_table = np.zeros(self.NumTau+1)
         
         # Copy radiation table to GPU
         if self.gpu:
@@ -566,12 +580,14 @@ class C2Ray:
         if(self.rank == 0):    
             if(self._ld['Grid']['resume']):
                 title = "\n\nResuming"+title[8:]+"\n\n"
+                print(title)
                 with open(self.logfile,"r") as f: 
                     log = f.readlines()
                 with open(self.logfile,"w") as f: 
                     log.append(title)
                     f.write(''.join(log))
             else:
+                print(title)
                 with open(self.logfile,"w") as f: 
                     # Clear file and write header line
                     f.write(title+"\nLog file for pyC2Ray.\n\n") 

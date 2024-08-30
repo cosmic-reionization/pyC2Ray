@@ -16,7 +16,8 @@ from .utils.other_utils import get_extension_in_folder, get_redshifts_from_outpu
 from .utils import get_source_redshifts
 from .c2ray_base import C2Ray, YEAR, Mpc, msun2g, ev2fr, ev2k
 
-from .source_model import *
+from .source_model import SourceModel, StellarToHaloRelation, BurstySFR, EscapeFraction, Halo2Grid, m_p
+from scipy.stats import binned_statistic_dd
 
 __all__ = ['C2Ray_fstar']
 
@@ -28,7 +29,7 @@ __all__ = ['C2Ray_fstar']
 # ======================================================================
 
 class C2Ray_fstar(C2Ray):
-    def __init__(self,paramfile,Nmesh,use_gpu,use_mpi):
+    def __init__(self,paramfile):
         """Basis class for a C2Ray Simulation
 
         Parameters
@@ -41,7 +42,7 @@ class C2Ray_fstar(C2Ray):
             Whether to use the GPU-accelerated ASORA library for raytracing
 
         """
-        super().__init__(paramfile, Nmesh, use_gpu, use_mpi)
+        super().__init__(paramfile)
         if(self.rank == 0):
             self.printlog('Running: "C2Ray for %d Mpc/h volume"' %self.boxsize)
 
@@ -52,27 +53,24 @@ class C2Ray_fstar(C2Ray):
     def fstar_model(self, mhalo):
         kind = self.fstar_kind
         if kind.lower() in ['fgamma', 'f_gamma', 'mass_independent']: 
-            fstar = (self.cosmology.Ob0/self.cosmology.Om0)
-        elif kind.lower() in ['dpl', 'mass_dependent']:
-            model = SourceModel(
-                        Nion=self.fstar_dpl['Nion'],
-                        f0=self.fstar_dpl['f0'], 
-                        Mt=self.fstar_dpl['Mt'], 
-                        Mp=self.fstar_dpl['Mp'],
-                        g1=self.fstar_dpl['g1'], 
-                        g2=self.fstar_dpl['g2'], 
-                        g3=self.fstar_dpl['g3'], 
-                        g4=self.fstar_dpl['g4'],
-                        f0_esc=self.fstar_dpl['f0_esc'],
-                        Mp_esc=self.fstar_dpl['Mp_esc'],
-                        al_esc=self.fstar_dpl['al_esc'])
-            fstar = model.f_star.deterministic(mhalo)['fstar']
-            fesc = model.f_esc.deterministic(mhalo)['fesc']
+            fstar = self.fstar_pars['f0'] * (self.cosmology.Ob0/self.cosmology.Om0)
+            fesc = self.fstar_pars['f0_esc']
+        elif kind.lower() == 'dpl':
+            model_star = StellarToHaloRelation(f0=self.fstar_pars['f0'], Mt=self.fstar_pars['Mt'], Mp=self.fstar_pars['Mp'], g1=self.fstar_pars['g1'], g2=self.fstar_pars['g2'], g3=self.fstar_pars['g3'], g4=self.fstar_pars['g4'], cosmo=self.cosmology)
+            fstar = model_star.deterministic(mhalo)['fstar']
+            model_fesc = EscapeFraction(f0_esc=self.fstar_pars['f0_esc'], Mp_esc=self.fstar_pars['Mp_esc'], al_esc=self.fstar_pars['al_esc'])
+            fesc = model_fesc.deterministic(mhalo)['fesc']
+        elif kind.lower() == 'lognorm':
+            model_fstar = StellarToHaloRelation(f0=self.fstar_pars['f0'], Mt=self.fstar_pars['Mt'], Mp=self.fstar_pars['Mp'], g1=self.fstar_pars['g1'], g2=self.fstar_pars['g2'], g3=self.fstar_pars['g3'], g4=self.fstar_pars['g4'], cosmo=self.cosmology)
+            std_fstar = np.power(mhalo/self.fstar_pars['Mp'], -1./3)
+            fstar = model_fstar.stochastic_lognormal(Mhalo=mhalo, sigma=std_fstar)['fstar']
+            model_fesc = EscapeFraction(f0_esc=self.fstar_pars['f0_esc'], Mp_esc=self.fstar_pars['Mp_esc'], al_esc=self.fstar_pars['al_esc'])
+            fesc = model_fesc.deterministic(mhalo)['fesc']
         else:
             print(f'{kind} fstar model is not implemented.')
         return fstar, fesc
 
-    def ionizing_flux(self, file, z, save_Mstar=False): # >:( trgeoip
+    def ionizing_flux(self, file, z, dt=None, save_Mstar=False): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
         Parameters
         ----------
@@ -83,27 +81,43 @@ class C2Ray_fstar(C2Ray):
         kind: str
             The kind of source model to use.
         
-        Returns
+        Returns<
         -------
         srcpos : array
             Grid positions of the sources formatted in a suitable way for the chosen raytracing algorithm
         normflux : array
             Normalization of the flux of each source (relative to S_star)
         """
-        box_len, n_grid = self.boxsize, self.N
-        
-        srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, box_len)
+        # read halo list       
+        srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, self.boxsize)
+
+        # get stellar-to-halo ratio and escaping fraction
         fstar, fesc = self.fstar_model(srcmass_msun)
+
+        if(self.bursty_model == 'instant' or self.bursty_model == 'integrate'):
+            burst = BurstySFR(beta1=self.bursty_pars['beta1'], beta2=self.bursty_pars['beta2'], tB0=self.bursty_pars['tB0'], tQ_frac=self.bursty_pars['tQ_frac'], z0=self.bursty_pars['z0'], alpha_h=self.alph_h, cosmo=self.cosmology, stochastic=self.bursty_pars['scatter'])
+            burst_mask = burst.instant_burst_or_quiescent_galaxies(mass=srcmass_msun, z=z)
+
+            nr_switchon = np.count_nonzero(burst_mask)
+            self.perc_switchon = 100*nr_switchon/burst_mask.size
+            self.printlog(' A total of %.2f %% of galaxies (%d out of %d) have bursty star-formation.' %(self.perc_switchon, nr_switchon, burst_mask.size))
+
+            # mask the sources that are switched off
+            srcpos_mpc, srcmass_msun = srcpos_mpc[burst_mask], srcmass_msun[burst_mask]
+            fstar, fesc = fstar[burst_mask], fesc[burst_mask]
+
+        # get stellar mass
         mstar_msun = fesc*fstar*srcmass_msun
-
-        h = self.cosmology.h
-        hg = Halo2Grid(box_len=box_len/h, n_grid=n_grid)
-        hg.set_halo_pos(srcpos_mpc, unit='mpc')
-        hg.set_halo_mass(mstar_msun, unit='Msun')
-
-        binned_mstar, bin_edges, bin_num = hg.value_on_grid(hg.pos_grid, mstar_msun)
-        srcpos, srcmstar = hg.halo_value_on_grid(mstar_msun, binned_value=binned_mstar)
         
+        # sum together masses into a mesh grid
+        mesh_bin = np.linspace(0, self.boxsize/self.cosmology.h, self.N+1)
+        binned_mass, bin_edges, bin_num = binned_statistic_dd(srcpos_mpc, mstar_msun, statistic='sum', bins=[mesh_bin, mesh_bin, mesh_bin])
+        
+        # get a list of the source positon and mass
+        srcpos = np.argwhere(binned_mass>0) 
+        srcmstar = binned_mass[binned_mass>0]
+
+        """
         if save_Mstar:
             folder_path = save_Mstar
             fname_hdf5 = folder_path+f'/{z:.3f}-Mstar_sources.hdf5'
@@ -123,17 +137,25 @@ class C2Ray_fstar(C2Ray):
                 f.attrs['h'] = self.cosmology.h
                 f.attrs['numhalo'] = srcmstar.shape[0]
                 f.attrs['units'] = 'cMpc   Msun'
-        
+        """
         S_star_ref = 1e48
 
         # source life-time in cgs
-        ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
+        if(self.acc_model == 'EXP'):
+            ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
+        elif(self.acc_model == 'constant'):
+            ts = dt
 
         # normalize flux
-        normflux = msun2g * self.fstar_dpl['Nion'] * srcmstar / (m_p * ts * S_star_ref)
+        normflux = msun2g * self.fstar_pars['Nion'] * srcmstar / (m_p * ts * S_star_ref)
+
+        # calculate total number of ionizing photons
+        self.tot_phots = np.sum(normflux * dt * S_star_ref)
+
         if(self.rank == 0):
             self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
             self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
+            self.printlog(' Total number of ionizaing photons : %e' %self.tot_phots)
             self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
             self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
         
@@ -178,7 +200,6 @@ class C2Ray_fstar(C2Ray):
             srcpos_mpc[srcpos_mpc > self.boxsize] = self.boxsize - srcpos_mpc[srcpos_mpc > self.boxsize]
             srcpos_mpc[srcpos_mpc < 0.] = self.boxsize + srcpos_mpc[srcpos_mpc < 0.]
             srcpos_mpc /= self.cosmology.h # Mpc
-        print(halo_file)
         return srcpos_mpc, srcmass_msun
         
     def read_density(self, fbase, z=None):
@@ -194,7 +215,7 @@ class C2Ray_fstar(C2Ray):
         """
         file = self.density_basename+fbase
         rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
-        self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 /self.cosmology.Om0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+z)**3
+        self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+z)**3
         if(self.rank == 0):
             self.printlog('\n---- Reading density file:\n  %s' %file)
             self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
@@ -262,12 +283,15 @@ class C2Ray_fstar(C2Ray):
         """
         self.fstar_kind = self._ld['Sources']['fstar_kind']
         if(self.fstar_kind == 'fgamma'):
-            self.fgamma_hm = self._ld['Sources']['fgamma_hm']
-            self.fgamma_lm = self._ld['Sources']['fgamma_lm']
+            self.fstar_pars = {'Nion': self._ld['Sources']['Nion'],
+                              'f0': self._ld['Sources']['fgamma_hm'],
+                              'f0_esc': self._ld['Sources']['f0_esc']}
+            #self.fgamma_lm = self._ld['Sources']['fgamma_lm']
             if(self.rank == 0):
-                self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
-        elif(self.fstar_kind == 'dpl'):
-            self.fstar_dpl = {
+                #self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
+                self.printlog(f"Using UV model with fgamma_hm = {self.fstar_pars['f0']:.1f}, Nion = {self.fstar_pars['Nion']:.1f}")
+        elif(self.fstar_kind == 'dpl' or self.fstar_kind == 'lognorm'):
+            self.fstar_pars = {
                             'Nion': self._ld['Sources']['Nion'],
                             'f0': self._ld['Sources']['f0'],
                             'Mt': self._ld['Sources']['Mt'], 
@@ -281,7 +305,18 @@ class C2Ray_fstar(C2Ray):
                             'al_esc': self._ld['Sources']['al_esc']
                             }
             if(self.rank == 0):
-                self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_dpl}.")
+                self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_pars}.")
 
-            self.acc_model = self._ld['Sources']['accretion_model']
-            self.alph_h = self._ld['Sources']['alpha_h']
+        self.acc_model = self._ld['Sources']['accretion_model']
+        self.alph_h = self._ld['Sources']['alpha_h']
+
+        self.bursty_model = self._ld['Sources']['bursty_sfr']
+        if(self.bursty_model == 'instant' or self.bursty_model == 'integrate'):
+            self.bursty_pars = {
+                                'beta1': self._ld['Sources']['beta1'],
+                                'beta2': self._ld['Sources']['beta2'],
+                                'tB0': self._ld['Sources']['tB0'],
+                                'tQ_frac': self._ld['Sources']['tQ_frac'],
+                                'z0': self._ld['Sources']['z0'],
+                                'scatter': self._ld['Sources']['scatter']
+                                }
