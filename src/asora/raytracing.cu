@@ -108,8 +108,7 @@ void do_all_sources_gpu(
         // CUDA Block size: more of a tuning parameter (see above), in practice anything ~128 is fine
         dim3 bs(CUDA_BLOCK_SIZE);
 
-        // Here we fill the ionization rate array with zero before raytracing all sources. The LOCALRATES flag
-        // is for debugging purposes and will be removed later on
+        // Here we fill the ionization rate array with zero before raytracing all sources. The LOCALRATES flag is for debugging purposes and will be removed later on
         cudaMemset(phi_dev,0,meshsize);
 
         // Copy current ionization fraction to the device
@@ -187,8 +186,7 @@ __global__ void evolve0D_gpu(
     // Source number = Start of batch + block number (each block does one source)
     int ns = ns_start + blockIdx.x;
 
-    // Offset pointer to the outgoing column density array used for interpolation (each block
-    // needs its own copy of the array)
+    // Offset pointer to the outgoing column density array used for interpolation (each block needs its own copy of the array)
     int cdh_offset = blockIdx.x * m1 * m1 * m1;
 
     // Ensure the source index is valid
@@ -197,8 +195,7 @@ __global__ void evolve0D_gpu(
         // (A) Loop over ASORA q-shells
         for (int q = 0 ; q <= q_max ; q++)
         {   
-            // We figure out the number of cells in the shell and determine how many passes
-            // the block needs to take to treat all of them
+            // We figure out the number of cells in the shell and determine how many passes the block needs to take to treat all of them
             int num_cells = 4*q*q + 2;
             int Npass = num_cells / blockDim.x + 1;
 
@@ -223,8 +220,7 @@ __global__ void evolve0D_gpu(
                 // Ensure the thread maps to a valid cell
                 if (s < s_end)
                 {
-                    // Determine if cell is in top or bottom part of the shell (the mapping is slightly
-                    // different due to the part that is on the same z-plane as the source)
+                    // Determine if cell is in top or bottom part of the shell (the mapping is slightly different due to the part that is on the same z-plane as the source)
                     if (s < s_end_top)
                     {
                         sgn = 1;
@@ -309,7 +305,6 @@ __global__ void evolve0D_gpu(
 
                             // Compute outgoing column density and add to array for subsequent interpolations
                             double cdho = coldensh_in + nHI_p * path;
-                            //coldensh_out[cdh_offset + mem_offst_gpu(pos[0],pos[1],pos[2],m1)] = cdho;
                             
                             // Compute photoionization rates from column density. WARNING: for now this is limited to the grey-opacity test case source
                             if ((coldensh_in <= MAX_COLDENSH) && (dist2/(dr*dr) <= Rmax_LLS*Rmax_LLS))
@@ -323,8 +318,7 @@ __global__ void evolve0D_gpu(
                                 // (part of the photon-conserving rate prescription)
                                 phi /= nHI_p;
 
-                                // Add the computed ionization rate to the array ATOMICALLY since multiple blocks could be
-                                // writing to the same cell at the same time!
+                                // Add the computed ionization rate and the column density to the array ATOMICALLY since multiple blocks could be writing to the same cell at the same time!
                                 atomicAdd(phi_ion + mem_offst_gpu(pos[0],pos[1],pos[2],m1),phi);
                                 atomicAdd(coldensh_out + mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);
                             }                          

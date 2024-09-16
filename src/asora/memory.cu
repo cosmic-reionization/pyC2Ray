@@ -56,7 +56,7 @@ void device_init(const int & N, const int & num_src_par)
 
     // Byte-size of grid data
     long unsigned int bytesize = N*N*N*sizeof(double);
-    std::cout << bytesize << std::endl;
+    //std::cout << bytesize << std::endl;
 
     // Set the source batch size, i.e. the number of sources done in parallel (on the same GPU)
     NUM_SRC_PAR = num_src_par;
