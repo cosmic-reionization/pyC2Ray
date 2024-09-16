@@ -309,7 +309,7 @@ __global__ void evolve0D_gpu(
 
                             // Compute outgoing column density and add to array for subsequent interpolations
                             double cdho = coldensh_in + nHI_p * path;
-                            coldensh_out[cdh_offset + mem_offst_gpu(pos[0],pos[1],pos[2],m1)] = cdho;
+                            //coldensh_out[cdh_offset + mem_offst_gpu(pos[0],pos[1],pos[2],m1)] = cdho;
                             
                             // Compute photoionization rates from column density. WARNING: for now this is limited to the grey-opacity test case source
                             if ((coldensh_in <= MAX_COLDENSH) && (dist2/(dr*dr) <= Rmax_LLS*Rmax_LLS))
@@ -326,7 +326,7 @@ __global__ void evolve0D_gpu(
                                 // Add the computed ionization rate to the array ATOMICALLY since multiple blocks could be
                                 // writing to the same cell at the same time!
                                 atomicAdd(phi_ion + mem_offst_gpu(pos[0],pos[1],pos[2],m1),phi);
-                                //atomicAdd(coldensh_out + mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);
+                                atomicAdd(coldensh_out + mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);
                             }                          
                         }
                     }
@@ -543,17 +543,7 @@ __device__ void cinterp_gpu(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+/*
 
 // ==========================================================================================================
 // OLD OR EXPERIMENTAL CODE. KEPT AS REFERENCE BUT UNUSED
@@ -971,3 +961,5 @@ __global__ void evolve0D_gpu_old(
         }
     }
 }
+
+*/
