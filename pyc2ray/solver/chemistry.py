@@ -111,12 +111,14 @@ def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping)
 
 
 # TODO: here you can plug at the place of the doric in the do_chemistry (making the right changes)
-def friedrich(xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI, phi_HeII, NH, NHeI, NHeII, X, Y):
+def friedrich(NH, NHe, xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI, phi_HeII, NH, NHe, NHeII, X, Y):
     """
         Chemistry equation solver for H and He.
 
         Inputs:
-            - xHI_old (flota):      hydrogen ionized fraction of the cell
+            - NH (float):           hydrogen column density
+            - NHe (float):          helium column density
+            - xHI_old (float):      hydrogen ionized fraction of the cell
             - xHeI_old (float):     helium first ionized fraction of the cell
             - xHeII_old (float):    helium second ionized fraction of the cell
             - dt (float):           time step in cgs units
@@ -158,15 +160,15 @@ def friedrich(xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI,
     
     # opt depth of HeI at HeI ion threshold
     sigma_HeI_at_ion_freq = 7.430e-18   # HeI cross section at its ionzing frequency
-    tau_He_heth = NHeI*sigma_HeI_at_ion_freq 
+    tau_He_heth = NHe*sigma_HeI_at_ion_freq 
     
-    # opt depth of H  at he+Lya (40.817eV)
+    # opt depth of H at he+Lya (40.817eV)
     sigma_H_heLya = 9.907e-22   # HI cross-section at HeII Lya
     tau_H_heLya = NH*sigma_H_heLya
     
     # opt depth of He at he+Lya (40.817eV)
     sigma_He_heLya = 1.301e-20
-    tau_He_heLya= NHeI*sigma_He_heLya
+    tau_He_heLya= NHe*sigma_He_heLya
     
     # opt depth of H at HeII ion threshold
     sigma_H_he2 = 1.230695924714239e-19  # HI cross-section at HeII ionization threshold
@@ -174,7 +176,7 @@ def friedrich(xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI,
     
     # opt depth of HeI at HeII ion threshold
     sigma_He_he2 = 1.690780687052975e-18    # HeI cross-section at HeII ionization threshold
-    tau_He_he2th = NHeI*sigma_He_he2
+    tau_He_he2th = NHe*sigma_He_he2
     
     # opt depth of HeII at HeII ion threshold
     sigma_HeII_at_ion_freq = 1.589e-18  # HeII cross section at its ionzing frequency
