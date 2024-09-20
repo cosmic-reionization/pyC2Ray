@@ -23,6 +23,8 @@ __device__ void linthrd2cart(const int &,const int &,int&,int&);
 void do_all_sources_gpu(
     const double & R,
     double* coldensh_out,
+    double* coldenshei_out,
+    double* coldensheii_out,
     const double & sig,
     const double & dr,
     double* ndens,
@@ -48,6 +50,8 @@ __global__ void evolve0D_gpu(
     int* src_pos,
     double* src_flux,
     double* coldensh_out,
+    double* coldenshei_out,
+    double* coldensheii_out,
     const double sig,
     const double dr,
     const double* ndens,

@@ -79,7 +79,14 @@ return __longlong_as_double(old);
 void do_all_sources_gpu(
     const double & R,
     double* coldensh_out_hi,
-    const double & sig,
+    double* coldensh_out_hei,
+    double* coldensh_out_heii,
+    const double* sig_hi,       // These now are arrays of the cross section for the three elements
+    const double* sig_hei,
+    const double* sig_heii,
+    const int & NumBin1,        // and these are the size of the frequency sub-bins (in the original paper this was 1, 26 and 20)
+    const int & NumBin2,
+    const int & NumBin3,
     const double & dr,
     double* ndens,
     double* xHI_av,
@@ -97,6 +104,9 @@ void do_all_sources_gpu(
         
         // Byte-size of grid data
         int meshsize = m1*m1*m1*sizeof(double);
+
+        // Number of frequency bins
+        int NumFreq = NumBin1 + NumBin2 + NumBin3;
 
         //std::cout << "R: " << R << std::endl;
         // Determine how large the octahedron should be, based on the raytracing radius. Currently, this is set s.t. the radius equals the distance from the source to the middle of the faces of the octahedron. To raytrace the whole box, the octahedron bust be 1.5*N in size
@@ -130,9 +140,20 @@ void do_all_sources_gpu(
         for (int ns = 0; ns < NumSrc; ns += NUM_SRC_PAR)
         {   
             // Raytrace the current batch of sources in parallel
-            // TODO: need to add varible for HeI and HeII (see header of the "evolve0D_gpu")
-            evolve0D_gpu<<<gs,bs>>>(R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, sig, dr, n_dev, xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev, phi_HeI_dev, phi_HeII_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
- 
+            // TODO: decide if you want to do a loop over the sig (cross section) or not
+            //evolve0D_gpu<<<gs,bs>>>(R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, cdhei_dev, cdheii_dev, sig_hi_dev, sig_hei_dev, sig_heii_dev, dr, n_dev, xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev, phi_HeI_dev, phi_HeII_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
+            
+            // TODO: do evolve0D only for hydrogen. Maybe create 3 evolve0D for the bin 0 (only HII), bin 1 (HII and HeII) and bin 2 (HII, HeII and HeIII)
+            
+            for (int nf = 0; nf < NumFreq; nf += 1)
+            {
+                if(nf == 0){
+
+                }else if(nf >= )
+                //int ifreq = ;
+                evolve0D_gpu<<<gs,bs>>>(R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev, cdhei_dev, cdheii_dev, sig_hi_dev, sig_hei_dev, sig_heii_dev, dr, n_dev, xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev, phi_HeI_dev, phi_HeII_dev, m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
+            };
+
             // Check for errors
             auto error = cudaGetLastError();
             if(error != cudaSuccess) {
@@ -140,15 +161,18 @@ void do_all_sources_gpu(
                                         + std::string(cudaGetErrorName(error)) + " - "
                                         + std::string(cudaGetErrorString(error)));
             }
-
+            
             // Sync device to be sure (is this required ??)
             cudaDeviceSynchronize();
         }
 
-        // Copy the accumulated ionization fraction back to the host
+        // Copy the accumulated ionization fraction and column density back to the host
         auto error1 = cudaMemcpy(phi_ion_HI, phi_HI_dev, meshsize, cudaMemcpyDeviceToHost);
         auto error2 = cudaMemcpy(phi_ion_HeI, phi_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
         auto error3 = cudaMemcpy(phi_ion_HeII, phi_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
+        auto error4 = cudaMemcpy(coldensh_out_hi, cdh_dev, meshsize, cudaMemcpyDeviceToHost);
+        auto error5 = cudaMemcpy(coldensh_out_hei, cdhei_dev, meshsize, cudaMemcpyDeviceToHost);
+        auto error6 = cudaMemcpy(coldensh_out_heii, cdheii_dev, meshsize, cudaMemcpyDeviceToHost);
 
     }
 
@@ -166,7 +190,11 @@ __global__ void evolve0D_gpu(
     int* src_pos,
     double* src_flux,
     double* coldensh_out_hi,
-    const double sig,
+    double* coldensh_out_hei,
+    double* coldensh_out_heii,
+    double sig_hi,    // These now are arrays of the cross section for the three elements at different frequency
+    double sig_hei,
+    double sig_heii,
     const double dr,
     const double* ndens,
     const double* xHI_av,
@@ -192,7 +220,7 @@ __global__ void evolve0D_gpu(
     4. After each shell, the threads are synchronized to ensure that causality is respected
     */
 
-    //TODO: later need to import this from parameter.yalm
+    //TODO: later need to import this from parameters.ylm
     double abu_he_mass = 0.2486;
 
     // Source number = Start of batch + block number (each block does one source)
@@ -281,15 +309,15 @@ __global__ void evolve0D_gpu(
                             pos[1] = modulo_gpu(j,m1);
                             pos[2] = modulo_gpu(k,m1);
 
-                            // Get local ionization fraction & Hydrogen density
+                            // Get local ionization fraction & Hydrogen number density
                             xh_av_p = xHI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
                             nHI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 - abu_he_mass) * (1.0 - xh_av_p);
 
-                            // Get local ionization fraction & Helium I density
+                            // Get local ionization fraction & Helium I number density
                             xhei_av_p = xHeI_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
                             nHeI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * abu_he_mass * xhei_av_p;
 
-                            // Get local ionization fraction & Helium II density
+                            // Get local ionization fraction & Helium II number density
                             xheii_av_p = xHeII_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
                             nHeII_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * abu_he_mass * xheii_av_p;
 
@@ -310,8 +338,10 @@ __global__ void evolve0D_gpu(
                             // If its another cell, do interpolation to find incoming column density
                             else
                             {
-                                cinterp_gpu(i, j, k, i0, j0, k0, coldens_in_hi, path, coldensh_out_hi + cdh_offset, sig, m1);
-                                // TODO: can we simply add two copy of the above line? but passing the He coldens_out?
+                                cinterp_gpu(i, j, k, i0, j0, k0, coldens_in_hi, path, coldensh_out_hi + cdh_offset, sig_hi, m1);
+                                cinterp_gpu(i, j, k, i0, j0, k0, coldens_in_hei, path, coldensh_out_hei + cdh_offset, sig_hei, m1);
+                                cinterp_gpu(i, j, k, i0, j0, k0, coldens_in_heii, path, coldensh_out_heii + cdh_offset, sig_heii, m1);
+
                                 path *= dr;
                                 // Find the distance to the source
                                 xs = dr*(i-i0);
@@ -332,14 +362,12 @@ __global__ void evolve0D_gpu(
                             double coldens_in_tot = coldens_in_hi + coldens_in_hei + coldens_in_heii;
 
                             // Compute optical depth
-                            double tau_out_hi = cdo_hi * sig;
-                            double tau_out_hei = cdo_hei * sig;
-                            double tau_out_heii = cdo_heii * sig;
+                            double tau_out_hi = cdo_hi * sig_hi;
+                            double tau_out_hei = cdo_hei * sig_hei;
+                            double tau_out_heii = cdo_heii * sig_heii;
 
                             // total optical depth
                             double tau_out_tot = tau_out_hi + tau_out_hei + tau_out_heii;
-
-                            //coldensh_out_hi[cdh_offset + mem_offst_gpu(pos[0],pos[1],pos[2],m1)] = cdo_hi;
                             
                             // Compute photoionization rates from column density. WARNING: for now this is limited to the grey-opacity test case source
                             if ((coldens_in_hi <= MAX_COLDENSH) && (dist2/(dr*dr) <= Rmax_LLS*Rmax_LLS))
@@ -358,6 +386,12 @@ __global__ void evolve0D_gpu(
                                 atomicAdd(phi_ion_HI + mem_offst_gpu(pos[0],pos[1],pos[2], m1), phi_HI);
                                 atomicAdd(phi_ion_HeI + mem_offst_gpu(pos[0],pos[1],pos[2], m1), phi_HeI);
                                 atomicAdd(phi_ion_HeII + mem_offst_gpu(pos[0],pos[1],pos[2], m1), phi_HeII);
+                                
+                                // Add the computed column density for the three species to the array ATOMICALLY 
+                                atomicAdd(coldensh_out_hi + mem_offst_gpu(pos[0],pos[1],pos[2],m1), cdo_hi);
+                                atomicAdd(coldensh_out_hei + mem_offst_gpu(pos[0],pos[1],pos[2],m1), cdo_hei);
+                                atomicAdd(coldensh_out_heii + mem_offst_gpu(pos[0],pos[1],pos[2],m1), cdo_heii);
+
                             }                          
                         }
                     }
@@ -383,7 +417,7 @@ __device__ void cinterp_gpu(
     double & cdensi,
     double & path,
     double* coldensh_out,
-    const double sigma_HI_at_ion_freq,
+    const double sigma_at_freq,     // This is now considered for any elements
     const int & m1)
 {
     int idel,jdel,kdel;
@@ -450,10 +484,10 @@ __device__ void cinterp_gpu(
         c4=     coldensh_out[mem_offst_gpu(ip,jp,kmp,m1)];
 
         // extra weights for better fit to analytical solution
-        w1=   s1*weightf_gpu(c1,sigma_HI_at_ion_freq);
-        w2=   s2*weightf_gpu(c2,sigma_HI_at_ion_freq);
-        w3=   s3*weightf_gpu(c3,sigma_HI_at_ion_freq);
-        w4=   s4*weightf_gpu(c4,sigma_HI_at_ion_freq);
+        w1=   s1*weightf_gpu(c1,sigma_at_freq);
+        w2=   s2*weightf_gpu(c2,sigma_at_freq);
+        w3=   s3*weightf_gpu(c3,sigma_at_freq);
+        w4=   s4*weightf_gpu(c4,sigma_at_freq);
         
         // column density at the crossing point
         cdensi   =(c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4   )/(w1+w2+w3+w4);
@@ -498,10 +532,10 @@ __device__ void cinterp_gpu(
         c4=  coldensh_out[mem_offst_gpu(ip,jmp,kp,m1)];
 
         // extra weights for better fit to analytical solution
-        w1=s1*weightf_gpu(c1,sigma_HI_at_ion_freq);
-        w2=s2*weightf_gpu(c2,sigma_HI_at_ion_freq);
-        w3=s3*weightf_gpu(c3,sigma_HI_at_ion_freq);
-        w4=s4*weightf_gpu(c4,sigma_HI_at_ion_freq);
+        w1=s1*weightf_gpu(c1,sigma_at_freq);
+        w2=s2*weightf_gpu(c2,sigma_at_freq);
+        w3=s3*weightf_gpu(c3,sigma_at_freq);
+        w4=s4*weightf_gpu(c4,sigma_at_freq);
 
         cdensi=   (c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4   )/(w1+w2+w3+w4);
 
@@ -543,10 +577,10 @@ __device__ void cinterp_gpu(
         c4=  coldensh_out[mem_offst_gpu(imp,jp,kp,m1)];
 
         // extra weights for better fit to analytical solution
-        w1   =s1*weightf_gpu(c1,sigma_HI_at_ion_freq);
-        w2   =s2*weightf_gpu(c2,sigma_HI_at_ion_freq);
-        w3   =s3*weightf_gpu(c3,sigma_HI_at_ion_freq);
-        w4   =s4*weightf_gpu(c4,sigma_HI_at_ion_freq);
+        w1   =s1*weightf_gpu(c1,sigma_at_freq);
+        w2   =s2*weightf_gpu(c2,sigma_at_freq);
+        w3   =s3*weightf_gpu(c3,sigma_at_freq);
+        w4   =s4*weightf_gpu(c4,sigma_at_freq);
 
         cdensi   =(c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4   )/(w1+w2+w3+w4);
 

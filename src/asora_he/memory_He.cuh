@@ -15,8 +15,13 @@ void photo_table_to_device(double*,double*,const int &);
 // Copy source positions & fluxes to device memory
 void source_data_to_device(int*, double*, const int &);
 
+// Copy cross section array to device memory
+void crossect_to_device(double*,const int &);
+
 // Pointers to device memory
 extern double * cdh_dev;
+extern double * cdhei_dev;
+extern double * cdheii_dev;
 extern double * n_dev;
 extern double * xHI_dev;
 extern double * xHeI_dev;
@@ -28,6 +33,9 @@ extern double * photo_thin_table_dev;
 extern double * photo_thick_table_dev;
 extern int * src_pos_dev;
 extern double * src_flux_dev;
+extern double * sig_hi_dev;
+extern double * sig_hei_dev;
+extern double * sig_heii_dev;
 
 // Number of sources done in parallel ("source batch size")
 extern int NUM_SRC_PAR;

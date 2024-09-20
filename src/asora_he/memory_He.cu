@@ -18,6 +18,8 @@
 // accessed on the device when computing ionization rates.
 // ========================================================================
 double* cdh_dev;                 // Outgoing column density of the cells
+double* cdhei_dev;                 // Outgoing column density of the cells
+double* cdheii_dev;                 // Outgoing column density of the cells
 double* n_dev;                   // Density
 double* xHI_dev;                   // Time-averaged ionized fraction
 double* xHeI_dev;                   // Time-averaged ionized fraction
@@ -67,6 +69,8 @@ void device_init(const int & N, const int & num_src_par)
 
     // Allocate memory
     cudaMalloc(&cdh_dev,NUM_SRC_PAR * bytesize);
+    cudaMalloc(&cdhei_dev,NUM_SRC_PAR * bytesize);
+    cudaMalloc(&cdheii_dev,NUM_SRC_PAR * bytesize);
     cudaMalloc(&n_dev, bytesize);
     cudaMalloc(&xHI_dev, bytesize);
     cudaMalloc(&xHeI_dev, bytesize);
@@ -104,6 +108,7 @@ void photo_table_to_device(double* thin_table,double* thick_table,const int & Nu
     cudaMalloc(&photo_thick_table_dev,NumTau*sizeof(double));
     cudaMemcpy(photo_thick_table_dev,thick_table,NumTau*sizeof(double),cudaMemcpyHostToDevice);
 }
+
 void source_data_to_device(int* pos, double* flux, const int & NumSrc)
 {   
     // Free arrays from previous evolve call
@@ -128,6 +133,8 @@ void device_close()
 {   
     printf("Deallocating device memory...\n");
     cudaFree(cdh_dev);
+    cudaFree(cdhei_dev);
+    cudaFree(cdheii_dev);
     cudaFree(n_dev);
     cudaFree(xHI_dev);
     cudaFree(xHeI_dev);

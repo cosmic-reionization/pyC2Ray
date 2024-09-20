@@ -1,6 +1,6 @@
 from .c2ray_base import C2Ray, YEAR, Mpc
 from .utils.sourceutils import read_test_sources
-import numpy as np
+import numpy as np, os
 import pickle as pkl
 
 __all__ = ['C2Ray_Test']
@@ -177,6 +177,9 @@ class C2Ray_Test(C2Ray):
         """ Set up output & log file
         """
         self.results_basename = self._ld['Output']['results_basename']
+        if(self.rank == 0) and not os.path.exists(self.results_basename):
+            os.mkdir(self.results_basename)
+
         self.logfile = self.results_basename + self._ld['Output']['logfile']
         title = '                 _________   ____            \n    ____  __  __/ ____/__ \ / __ \____ ___  __\n   / __ \/ / / / /    __/ // /_/ / __ `/ / / /\n  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / \n / .___/\__, /\____//____/_/ |_|\__,_/\__, /  \n/_/    /____/                        /____/   \n'
         if(self.rank == 0):
