@@ -7,15 +7,23 @@
 
 The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as a python extension module, while the new raytracing library, _ASORA_, is implemented in C++ using CUDA. Both are native python C-extensions and can be directly accessed from any python script.
 
+Visit the [ReadTheDocs of `pyc2ray`](https://pyc2ray.readthedocs.io) for the full documentation, tutorials and installation instructions and more.
+
 ## Installation
-Since the automatic build system isn't fully working yet, the extension modules must be compiled and placed in correct directories manually. <!-- After cloning the repository, create the `/lib/` directory inside `/pyc2ray/` (from the root of the repository). -->
+Since the automatic build system isn't fully working yet, the extension modules must be compiled and placed in correct directories manually.
 
 **Requirements**:
 - C Compiler
 - `gfortran` Fortran Compiler
 - `nvcc` CUDA compiler
 - `f2py` $\geq$ 1.24.4, provided by `numpy`
+- `astropy` and `tools21cm` python packages. 
 
+Please see our [documentation](https://pyc2ray.readthedocs.io/en/latest/installation.html) for a step-by-step instructions on how to install `pyc2ray`.
+
+A few example scripts, that summarize the installation steps, can be found in the repository [`/install_script/`](https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts).
+
+<!--
 Additionally, once built, `pyc2ray` requires the `astropy` and `tools21cm` python packages to work. A few example scripts, that summarize the installation steps shown here below, are given in the repository `/install_script/`.
 
 ### 1. Build Fortran extension module (C2Ray)
@@ -75,6 +83,7 @@ The relevant script is located at `paper_tests/raytracing_benchmark/run_test.py`
 
 ## Usage
 A `pyc2ray` simulation is set up by creating an instance of a subclass of `C2Ray`. A few examples are provided, but in principle the idea is to create a new subclass and tailor it for the specific requirements of the simulation you wish to perform. The core functions (e.g. time evolution, raytracing, chemistry) are defined in the `C2Ray` base class, while auxilary methods specific to your use case are free to be overloaded as you wish.
+-->
 
 ## TODO list
 Here we list a series of numerical and astrophysical implementations we would like to include in futre version of `pyc2ray`.
