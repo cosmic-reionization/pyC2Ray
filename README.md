@@ -3,14 +3,14 @@
 </div>
 
 # pyC2Ray: A flexible and GPU-accelerated radiative transfer framework
-`pyc2ray` is the updated version of [C2Ray](https://github.com/garrelt/C2-Ray3Dm/tree/factorization) [(G. Mellema, I.T. Illiev, A. Alvarez & P.R. Shapiro, 2006)](https://ui.adsabs.harvard.edu/abs/2006NewA...11..374M/abstract), an astrophysical radiative transfer code widely used to simulate the Epoch of Reionization (EoR). `pyc2ray` features a new raytracing method developed for GPUs, named <b>A</b>ccelerated <b>S</b>hort-characteristics <b>O</b>cthaedral <b>RA</b>ytracing (<b>ASORA</b>). `pyc2ray` has a modern python interface that allows easy and customizable use of the code without compromising computational efficiency. A full description of the update and new ray-tracing method can be found at [Hirling, Bianco, Giri, Iliev, Mellema & Kneib (2024)](https://arxiv.org/abs/2311.01492).
+`pyc2ray` is the updated version of [C2Ray](https://github.com/garrelt/C2-Ray3Dm/tree/factorization) [(G. Mellema, I.T. Illiev, A. Alvarez & P.R. Shapiro, 2006)](https://ui.adsabs.harvard.edu/abs/2006NewA...11..374M/abstract), an astrophysical radiative transfer code widely used to simulate the Epoch of Reionization (EoR). `pyc2ray` features a new raytracing method developed for GPUs, named <b>A</b>ccelerated <b>S</b>hort-characteristics <b>O</b>cthaedral <b>RA</b>ytracing (<b>ASORA</b>). `pyc2ray` has a modern python interface that allows easy and customizable use of the code without compromising computational efficiency. A full description of the update and new raytracing method can be found at [Hirling, Bianco, Giri, Iliev, Mellema & Kneib (2024)](https://arxiv.org/abs/2311.01492).
 
-The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as a python extension module, while the new raytracing library, _ASORA_, is implemented in C++ using CUDA. Both are native python C-extensions and can be directly accessed from any python script.
+The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as a Python extension module, while the new raytracing library, _ASORA_, is implemented in C++ using CUDA. Both are native Python C extensions and can be directly accessed from any Python script.
 
-Visit the [ReadTheDocs of `pyc2ray`](https://pyc2ray.readthedocs.io) for the full documentation, tutorials and installation instructions and more.
+Visit the [ReadTheDocs of `pyc2ray`](https://pyc2ray.readthedocs.io) for the complete documentation, tutorials, installation instructions, and more.
 
 ## Installation
-Since the automatic build system isn't fully working yet, the extension modules must be compiled and placed in correct directories manually.
+Since the automatic build system is not fully working, the extension modules must be manually compiled and placed in the correct directories.
 
 **Requirements**:
 - C Compiler
@@ -19,9 +19,9 @@ Since the automatic build system isn't fully working yet, the extension modules 
 - `f2py` $\geq$ 1.24.4, provided by `numpy`
 - `astropy` and `tools21cm` python packages. 
 
-Please see our [documentation](https://pyc2ray.readthedocs.io/en/latest/installation.html) for a step-by-step instructions on how to install `pyc2ray`.
+Please see our [documentation](https://pyc2ray.readthedocs.io/en/latest/installation.html) for step-by-step instructions on how to install `pyc2ray`.
 
-A few example scripts, that summarize the installation steps, can be found in the repository [`/install_script/`](https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts).
+A few example scripts summarizing the installation steps can be found in the repository [`/install_script/`](https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts).
 
 <!--
 Additionally, once built, `pyc2ray` requires the `astropy` and `tools21cm` python packages to work. A few example scripts, that summarize the installation steps shown here below, are given in the repository `/install_script/`.
