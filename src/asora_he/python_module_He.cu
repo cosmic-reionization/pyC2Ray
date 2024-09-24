@@ -23,7 +23,14 @@ extern "C"
     {
         double R;
         PyArrayObject * coldensh_out;
-        double sig;
+        PyArrayObject * coldenshei_out;
+        PyArrayObject * coldensheii_out;
+        PyArrayObject * crossec_h;
+        PyArrayObject * crossec_hei;
+        PyArrayObject * crossec_heii;
+        int nbin1;
+        int nbin2;
+        int nbin3;
         double dr;
         PyArrayObject * ndens;
         PyArrayObject * xHI_av;
@@ -37,11 +44,18 @@ extern "C"
         double minlogtau;
         double dlogtau;
         int NumTau;
-
-        if (!PyArg_ParseTuple(args,"dOddOOOOOOOiiddi",
+        
+        if (!PyArg_ParseTuple(args,"dOOOOOOiiidOOOOOOOiiddi", 
         &R,
         &coldensh_out,
-        &sig,
+        &coldenshei_out,
+        &coldensheii_out,
+        &crossec_h,
+        &crossec_hei,
+        &crossec_heii,   
+        &nbin1,
+        &nbin2,
+        &nbin3,    
         &dr,
         &ndens,
         &xHI_av,
@@ -62,10 +76,20 @@ extern "C"
         {
             PyErr_SetString(PyExc_TypeError,"coldensh_out must be Array of type double");
             return NULL;
+        }else if(!PyArray_Check(coldenshei_out) || PyArray_TYPE(coldenshei_out) != NPY_DOUBLE)
+        {
+            PyErr_SetString(PyExc_TypeError,"coldenshei_out must be Array of type double");
+            return NULL;
+        }else if(!PyArray_Check(coldensheii_out) || PyArray_TYPE(coldensheii_out) != NPY_DOUBLE)
+        {
+            PyErr_SetString(PyExc_TypeError,"coldensheii_out must be Array of type double");
+            return NULL;
         }
 
         // Get Array data
-        double * coldensh_out_data = (double*)PyArray_DATA(coldensh_out);
+        double * coldensh_out_hi = (double*)PyArray_DATA(coldensh_out);
+        double * coldensh_out_hei = (double*)PyArray_DATA(coldenshei_out);
+        double * coldensh_out_heii = (double*)PyArray_DATA(coldensheii_out);
         double * ndens_data = (double*)PyArray_DATA(ndens);
         double * phi_ion_HI_data = (double*)PyArray_DATA(phi_ion_HI);
         double * phi_ion_HeI_data = (double*)PyArray_DATA(phi_ion_HeI);
@@ -73,8 +97,11 @@ extern "C"
         double * xh_av_HI_data = (double*)PyArray_DATA(xHI_av);
         double * xh_av_HeI_data = (double*)PyArray_DATA(xHeI_av);
         double * xh_av_HeII_data = (double*)PyArray_DATA(xHeII_av);
+        double * crossec_h_data = (double*)PyArray_DATA(crossec_h);
+        double * crossec_hei_data = (double*)PyArray_DATA(crossec_hei);
+        double * crossec_heii_data = (double*)PyArray_DATA(crossec_heii);
 
-        do_all_sources_gpu(R, coldensh_out_data, sig, dr, ndens_data, xh_av_HI_data, xh_av_HeI_data, xh_av_HeII_data, phi_ion_HI_data, phi_ion_HeI_data, phi_ion_HeII_data, NumSrc, m1, minlogtau, dlogtau, NumTau);
+        do_all_sources_gpu(R, coldensh_out_hi, coldensh_out_hei, coldensh_out_heii, crossec_h_data, crossec_hei_data, crossec_heii_data, nbin1, nbin2, nbin3, dr, ndens_data, xh_av_HI_data, xh_av_HeI_data, xh_av_HeII_data, phi_ion_HI_data, phi_ion_HeI_data, phi_ion_HeII_data, NumSrc, m1, minlogtau, dlogtau, NumTau);
 
         return Py_None;
     }
@@ -127,14 +154,15 @@ extern "C"
     asora_photo_table_to_device(PyObject *self, PyObject *args)
     {
         int NumTau;
+        int NumFreq;
         PyArrayObject * thin_table;
         PyArrayObject * thick_table;
-        if (!PyArg_ParseTuple(args,"OOi",&thin_table,&thick_table,&NumTau))
+        if (!PyArg_ParseTuple(args,"OOii",&thin_table,&thick_table,&NumTau,&NumFreq))
             return NULL;
 
         double * thin_table_data = (double*)PyArray_DATA(thin_table);
         double * thick_table_data = (double*)PyArray_DATA(thick_table);
-        photo_table_to_device(thin_table_data,thick_table_data,NumTau);
+        photo_table_to_device(thin_table_data,thick_table_data,NumTau,NumFreq);
 
         return Py_None;
     }
@@ -176,8 +204,7 @@ extern "C"
         PyModuleDef_HEAD_INIT,
         "libasora_He",   /* name of module */
         "CUDA C++ implementation of the short-characteristics RT", /* module documentation, may be NULL */
-        -1,       /* size of per-interpreter state of the module,
-                    or -1 if the module keeps state in global variables. */
+        -1,       /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
         asoraMethods
     };
 

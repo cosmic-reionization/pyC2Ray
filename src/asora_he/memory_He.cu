@@ -99,14 +99,14 @@ void density_to_device(double* ndens,const int & N)
     cudaMemcpy(n_dev,ndens,N*N*N*sizeof(double),cudaMemcpyHostToDevice);
 }
 
-void photo_table_to_device(double* thin_table,double* thick_table,const int & NumTau)
+void photo_table_to_device(double* thin_table,double* thick_table,const int & NumTau,const int & NumFreq)
 {
     // Copy thin table
-    cudaMalloc(&photo_thin_table_dev,NumTau*sizeof(double));
-    cudaMemcpy(photo_thin_table_dev,thin_table,NumTau*sizeof(double),cudaMemcpyHostToDevice);
+    cudaMalloc(&photo_thin_table_dev,int(NumTau*NumFreq)*sizeof(double));
+    cudaMemcpy(photo_thin_table_dev,thin_table,int(NumTau*NumFreq)*sizeof(double),cudaMemcpyHostToDevice);
     // Copy thick table
-    cudaMalloc(&photo_thick_table_dev,NumTau*sizeof(double));
-    cudaMemcpy(photo_thick_table_dev,thick_table,NumTau*sizeof(double),cudaMemcpyHostToDevice);
+    cudaMalloc(&photo_thick_table_dev,int(NumTau*NumFreq)*sizeof(double));
+    cudaMemcpy(photo_thick_table_dev,thick_table,int(NumTau*NumFreq)*sizeof(double),cudaMemcpyHostToDevice);
 }
 
 void source_data_to_device(int* pos, double* flux, const int & NumSrc)
