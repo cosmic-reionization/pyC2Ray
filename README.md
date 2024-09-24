@@ -7,7 +7,7 @@
 
 The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as a Python extension module, while the new raytracing library, _ASORA_, is implemented in C++ using CUDA. Both are native Python C extensions and can be directly accessed from any Python script.
 
-Visit the [ReadTheDocs of `pyc2ray`](https://pyc2ray.readthedocs.io) for the complete documentation, tutorials, installation instructions, and more.
+Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the complete documentation, tutorials, installation instructions, and more.
 
 ## Installation
 Since the automatic build system is not fully working, the extension modules must be manually compiled and placed in the correct directories.
@@ -99,4 +99,4 @@ If you find any bugs or unexpected behavior in the code, please feel free to ope
 
 ## AKNOWLEDGMENT
 
-This project was initially developed by [Patrick Hirling](https://github.com/phirling) as part of the astrophysics practical workshop supervised by Michele Bianco during his master's degree at EPFL. You can find the original version of the code, employed in his paper ([Hirling+ (2024)](https://arxiv.org/abs/2311.01492)), on his GitHub page: [pyc2ray](https://github.com/phirling/pyc2ray).
+This project was initially developed by [Patrick Hirling](https://github.com/phirling) as part of the astrophysics practical workshop supervised by Michele Bianco during his master's degree at EPFL. You can find the original version of the code on his GitHub page: [asora](https://github.com/phirling/pyc2ray).
