@@ -97,7 +97,7 @@ void device_init(const int & N, const int & num_src_par, const int & num_freq)
     else {
         //TODO: add message that tells also how many frequencies ...
         std::cout << "Succesfully allocated " << (3*bytsize_freq+ (7 + 3*NUM_SRC_PAR)*bytsize_grid)/1e6 << " Mb of device memory for grid of size N = " << N;
-        std::cout << ", with source batch size " << NUM_SRC_PAR << " and number of frequency" << NUM_FREQ << std::endl;
+        std::cout << ", with source batch size " << NUM_SRC_PAR << " and " << NUM_FREQ << " frequency bins." << std::endl;
     }
 }
 
