@@ -25,9 +25,9 @@ extern "C"
         PyArrayObject * coldensh_out;
         PyArrayObject * coldenshei_out;
         PyArrayObject * coldensheii_out;
-        PyArrayObject * crossec_h;
-        PyArrayObject * crossec_hei;
-        PyArrayObject * crossec_heii;
+        PyArrayObject * sig_hi;
+        PyArrayObject * sig_hei;
+        PyArrayObject * sig_heii;
         int nbin1;
         int nbin2;
         int nbin3;
@@ -39,20 +39,23 @@ extern "C"
         PyArrayObject * phi_ion_HI;
         PyArrayObject * phi_ion_HeI;
         PyArrayObject * phi_ion_HeII;
+        PyArrayObject * phi_heat_HI;
+        PyArrayObject * phi_heat_HeI;
+        PyArrayObject * phi_heat_HeII;
         int NumSrc;
         int m1;
         double minlogtau;
         double dlogtau;
         int NumTau;
         
-        if (!PyArg_ParseTuple(args,"dOOOOOOiiidOOOOOOOiiddi", 
+        if (!PyArg_ParseTuple(args,"dOOOOOOiiidOOOOOOOOOOiiddi", 
         &R,
         &coldensh_out,
         &coldenshei_out,
         &coldensheii_out,
-        &crossec_h,
-        &crossec_hei,
-        &crossec_heii,   
+        &sig_hi,
+        &sig_hei,
+        &sig_heii,   
         &nbin1,
         &nbin2,
         &nbin3,    
@@ -64,6 +67,9 @@ extern "C"
         &phi_ion_HI,
         &phi_ion_HeI,
         &phi_ion_HeII,
+        &phi_heat_HI,
+        &phi_heat_HeI,
+        &phi_heat_HeII,
         &NumSrc,
         &m1,
         &minlogtau,
@@ -94,14 +100,17 @@ extern "C"
         double * phi_ion_HI_data = (double*)PyArray_DATA(phi_ion_HI);
         double * phi_ion_HeI_data = (double*)PyArray_DATA(phi_ion_HeI);
         double * phi_ion_HeII_data = (double*)PyArray_DATA(phi_ion_HeII);
+        double * phi_heat_HI_data = (double*)PyArray_DATA(phi_heat_HI);
+        double * phi_heat_HeI_data = (double*)PyArray_DATA(phi_heat_HeI);
+        double * phi_heat_HeII_data = (double*)PyArray_DATA(phi_heat_HeII);
         double * xh_av_HI_data = (double*)PyArray_DATA(xHI_av);
         double * xh_av_HeI_data = (double*)PyArray_DATA(xHeI_av);
         double * xh_av_HeII_data = (double*)PyArray_DATA(xHeII_av);
-        double * crossec_h_data = (double*)PyArray_DATA(crossec_h);
-        double * crossec_hei_data = (double*)PyArray_DATA(crossec_hei);
-        double * crossec_heii_data = (double*)PyArray_DATA(crossec_heii);
+        double * sig_hi_data = (double*)PyArray_DATA(sig_hi);
+        double * sig_hei_data = (double*)PyArray_DATA(sig_hei);
+        double * sig_heii_data = (double*)PyArray_DATA(sig_heii);
 
-        do_all_sources_gpu(R, coldensh_out_hi, coldensh_out_hei, coldensh_out_heii, crossec_h_data, crossec_hei_data, crossec_heii_data, nbin1, nbin2, nbin3, dr, ndens_data, xh_av_HI_data, xh_av_HeI_data, xh_av_HeII_data, phi_ion_HI_data, phi_ion_HeI_data, phi_ion_HeII_data, NumSrc, m1, minlogtau, dlogtau, NumTau);
+        do_all_sources_gpu(R, coldensh_out_hi, coldensh_out_hei, coldensh_out_heii, sig_hi_data, sig_hei_data, sig_heii_data, nbin1, nbin2, nbin3, dr, ndens_data, xh_av_HI_data, xh_av_HeI_data, xh_av_HeII_data, phi_ion_HI_data, phi_ion_HeI_data, phi_ion_HeII_data, phi_heat_HI_data, phi_heat_HeI_data, phi_heat_HeII_data, NumSrc, m1, minlogtau, dlogtau, NumTau);
 
         return Py_None;
     }
@@ -114,9 +123,10 @@ extern "C"
     {
         int N;
         int num_src_par;
-        if (!PyArg_ParseTuple(args,"ii",&N,&num_src_par))
+        int num_freq;
+        if (!PyArg_ParseTuple(args,"iii",&N,&num_src_par,&num_freq))
             return NULL;
-        device_init(N,num_src_par);
+        device_init(N,num_src_par,num_freq);
         return Py_None;
     }
 
@@ -151,18 +161,22 @@ extern "C"
     // Copy radiation table to GPU
     // ========================================================================
     static PyObject *
-    asora_photo_table_to_device(PyObject *self, PyObject *args)
+    asora_tables_to_device(PyObject *self, PyObject *args)
     {
         int NumTau;
         int NumFreq;
-        PyArrayObject * thin_table;
-        PyArrayObject * thick_table;
-        if (!PyArg_ParseTuple(args,"OOii",&thin_table,&thick_table,&NumTau,&NumFreq))
+        PyArrayObject * photo_thin_table;
+        PyArrayObject * photo_thick_table;
+        PyArrayObject * heat_thin_table;
+        PyArrayObject * heat_thick_table;
+        if (!PyArg_ParseTuple(args,"OOOOii",&photo_thin_table, &photo_thick_table, &heat_thin_table, &heat_thick_table, &NumTau, &NumFreq))
             return NULL;
 
-        double * thin_table_data = (double*)PyArray_DATA(thin_table);
-        double * thick_table_data = (double*)PyArray_DATA(thick_table);
-        photo_table_to_device(thin_table_data,thick_table_data,NumTau,NumFreq);
+        double * photo_thin_table_data = (double*)PyArray_DATA(photo_thin_table);
+        double * photo_thick_table_data = (double*)PyArray_DATA(photo_thick_table);
+        double * heat_thin_table_data = (double*)PyArray_DATA(heat_thin_table);
+        double * heat_thick_table_data = (double*)PyArray_DATA(heat_thick_table);
+        tables_to_device(photo_thin_table_data, photo_thick_table_data, heat_thin_table_data, heat_thick_table_data, NumTau, NumFreq);
 
         return Py_None;
     }
@@ -195,7 +209,7 @@ extern "C"
         {"device_init",  asora_device_init, METH_VARARGS,"Free GPU memory"},
         {"device_close",  asora_device_close, METH_VARARGS,"Free GPU memory"},
         {"density_to_device",  asora_density_to_device, METH_VARARGS,"Copy density field to GPU"},
-        {"photo_table_to_device",  asora_photo_table_to_device, METH_VARARGS,"Copy radiation table to GPU"},
+        {"tables_to_device",  asora_tables_to_device, METH_VARARGS,"Copy radiation table to GPU"},
         {"source_data_to_device",  asora_source_data_to_device, METH_VARARGS,"Copy radiation table to GPU"},
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };

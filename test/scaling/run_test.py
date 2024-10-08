@@ -69,8 +69,6 @@ elif((args.batchsize == None) and (args.numsrc == None)):
     raise ValueError('Either -batchsize or -numreps must be fixed (int).')
 
 
-
-
 timings = np.empty(len(nsrc_range))
 
 for k, nsrc in enumerate(nsrc_range):

@@ -38,16 +38,16 @@ cross_section_HeI_powerlaw_index[NumBndin1+NumBndin2:] = np.array([2.1612, 2.200
 cross_section_HeII_powerlaw_index[NumBndin1+NumBndin2:] = np.array([2.6930, 2.7049, 2.7213, 2.7503, 2.7906, 2.8300, 2.8711, 2.9121, 2.9577, 3.0041, 3.0522, 3.1069, 3.1612, 3.2051, 3.2448, 3.2796, 3.3027, 3.3258, 3.3472, 3.3805])
 
 # Cross section Hydrogen
-sigma_HI_at_ion_freq = 5.475e-14*u.cm**2        # TODO: these values are taken from Verner but they seem to be wrong!?!?!
+sigma_HI_at_ion_freq = 6.3e-18*u.cm**2        # TODO: the values taken from Verner seem to be wrong!?!?!
 cross_section_HI = sigma_HI_at_ion_freq*(freq_min/ion_freq_HI)**-cross_section_HI_powerlaw_index
 
 # Cross section Helium I
-sigma_HeI_at_ion_freq = 9.492e-16*u.cm**2
+sigma_HeI_at_ion_freq = 7.5e-18*u.cm**2
 cross_section_HeI = sigma_HeI_at_ion_freq*(freq_min/ion_freq_HeI)**-cross_section_HeI_powerlaw_index
 cross_section_HeI[freq_min<ion_freq_HeI] = 0.0
 
 # Cross section Helium II
-sigma_HeII_at_ion_freq = 1.369e-14*u.cm**2
+sigma_HeII_at_ion_freq = 1.6e-18*u.cm**2
 cross_section_HeII = sigma_HeII_at_ion_freq*(freq_min/ion_freq_HeII)**-cross_section_HeII_powerlaw_index
 cross_section_HeII[freq_min<ion_freq_HeII] = 0.0
 
