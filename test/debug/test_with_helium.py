@@ -3,7 +3,7 @@ import numpy as np, matplotlib.pyplot as plt
 import astropy.units as u
 import astropy.constants as cst
 
-import libasora_He as asora_he
+from pyc2ray.lib import libasora_He as asora_he
 
 # min and max frequency of the integral
 freq_min, freq_max = (13.598*u.eV/cst.h).to('Hz').value, (54.416*u.eV/cst.h).to('Hz').value
@@ -43,7 +43,7 @@ boxsize, N = 1.0*u.Mpc, 3
 dr = (boxsize/N).cgs.value
 
 # number of sources done in parallel on the GPU
-source_batch_size = 8
+source_batch_size = 1
 
 # max distance (in pixel size) that the raytracing is computed
 r_RT = 3.0

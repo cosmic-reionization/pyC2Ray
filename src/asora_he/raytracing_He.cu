@@ -462,7 +462,7 @@ __device__ void cinterp_gpu(
     double & cdensi,
     double & path,
     double* coldensh_out,
-    const double sigma_at_freq,     // This is now considered for any elements
+    const double sigma_at_freq,     // This is now considered for any elements at any frequency
     const int & m1)
 {
     int idel,jdel,kdel;
@@ -475,67 +475,62 @@ __device__ void cinterp_gpu(
     double w1,w2,w3,w4;
     double di,dj,dk;
 
-    // calculate the distance between the source point (i0,j0,k0) and 
-    // the destination point (i,j,k)
-    idel=i-i0;
-    jdel=j-j0;
-    kdel=k-k0;
-    idela=abs(idel);
-    jdela=abs(jdel);
-    kdela=abs(kdel);
+    // calculate the distance between the source point (i0,j0,k0) and the destination point (i,j,k)
+    idel = i-i0;
+    jdel = j-j0;
+    kdel = k-k0;
+    idela = abs(idel);
+    jdela = abs(jdel);
+    kdela = abs(kdel);
     
     // Find coordinates of points closer to source
-    sgni=sign_gpu(idel);
-    sgnj=sign_gpu(jdel);
-    sgnk=sign_gpu(kdel);
-    im=i-sgni;
-    jm=j-sgnj;
-    km=k-sgnk;
-    di=double(idel);
-    dj=double(jdel);
-    dk=double(kdel);
+    sgni = sign_gpu(idel);
+    sgnj = sign_gpu(jdel);
+    sgnk = sign_gpu(kdel);
+    im = i-sgni;
+    jm = j-sgnj;
+    km = k-sgnk;
+    di = double(idel);
+    dj = double(jdel);
+    dk = double(kdel);
 
     // Z plane (bottom and top face) crossing
-    // we find the central (c) point (xc,xy) where the ray crosses 
-    // the z-plane below or above the destination (d) point, find the 
-    // column density there through interpolation, and add the contribution
-    // of the neutral material between the c-point and the destination
-    // point.
+    // we find the central (c) point (xc,xy) where the ray crosses the z-plane below or above the destination (d) point, find the column density there through interpolation, and add the contribution of the neutral material between the c-point and the destination point.
     if (kdela >= jdela && kdela >= idela) {
         // alam is the parameter which expresses distance along the line s to d
         // add 0.5 to get to the interface of the d cell.
-        alam=(double(km-k0)+sgnk*0.5)/dk;
+        alam = (double(km-k0)+sgnk*0.5)/dk;
             
-        xc=alam*di+double(i0); // x of crossing point on z-plane 
-        yc=alam*dj+double(j0); // y of crossing point on z-plane
+        xc = alam*di+double(i0); // x of crossing point on z-plane 
+        yc = alam*dj+double(j0); // y of crossing point on z-plane
         
-        dx=2.0*abs(xc-(double(im)+0.5*sgni)); // distances from c-point to
-        dy=2.0*abs(yc-(double(jm)+0.5*sgnj)); // the corners.
+        dx = 2.0*abs(xc-(double(im)+0.5*sgni)); // distances from c-point to
+        dy = 2.0*abs(yc-(double(jm)+0.5*sgnj)); // the corners.
         
-        s1=(1.-dx)*(1.-dy);    // interpolation weights of
-        s2=(1.-dy)*dx;         // corner points to c-point
-        s3=(1.-dx)*dy;
-        s4=dx*dy;
+        s1 = (1.-dx)*(1.-dy);    // interpolation weights of
+        s2 = (1.-dy)*dx;         // corner points to c-point
+        s3 = (1.-dx)*dy;
+        s4 = dx*dy;
 
-        ip  = modulo_gpu(i  ,m1);
-        imp = modulo_gpu(im ,m1);
-        jp  = modulo_gpu(j  ,m1);
-        jmp = modulo_gpu(jm ,m1);
-        kmp = modulo_gpu(km ,m1);
+        ip = modulo_gpu(i, m1);
+        imp = modulo_gpu(im, m1);
+        jp = modulo_gpu(j, m1);
+        jmp = modulo_gpu(jm, m1);
+        kmp = modulo_gpu(km, m1);
         
-        c1=     coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
-        c2=     coldensh_out[mem_offst_gpu(ip,jmp,kmp,m1)];
-        c3=     coldensh_out[mem_offst_gpu(imp,jp,kmp,m1)];
-        c4=     coldensh_out[mem_offst_gpu(ip,jp,kmp,m1)];
+        c1 = coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
+        c2 = coldensh_out[mem_offst_gpu(ip,jmp,kmp,m1)];
+        c3 = coldensh_out[mem_offst_gpu(imp,jp,kmp,m1)];
+        c4 = coldensh_out[mem_offst_gpu(ip,jp,kmp,m1)];
 
         // extra weights for better fit to analytical solution
-        w1=   s1*weightf_gpu(c1,sigma_at_freq);
-        w2=   s2*weightf_gpu(c2,sigma_at_freq);
-        w3=   s3*weightf_gpu(c3,sigma_at_freq);
-        w4=   s4*weightf_gpu(c4,sigma_at_freq);
+        w1 = s1*weightf_gpu(c1,sigma_at_freq);
+        w2 = s2*weightf_gpu(c2,sigma_at_freq);
+        w3 = s3*weightf_gpu(c3,sigma_at_freq);
+        w4 = s4*weightf_gpu(c4,sigma_at_freq);
         
         // column density at the crossing point
-        cdensi   =(c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4   )/(w1+w2+w3+w4);
+        cdensi = (c1*w1 + c2*w2 + c3*w3 + c4*w4)/(w1 + w2 + w3 + w4);
 
         // Take care of diagonals
         if (kdela == 1 && (idela == 1||jdela == 1))
@@ -551,38 +546,38 @@ __device__ void cinterp_gpu(
         }
 
         // Path length from c through d to other side cell.
-        path=sqrt((di*di+dj*dj)/(dk*dk)+1.0);
+        path = sqrt((di*di+dj*dj)/(dk*dk)+1.0);
     }
     else if (jdela >= idela && jdela >= kdela)
     {
-        alam=(double(jm-j0)+sgnj*0.5)/dj;
-        zc=alam*dk+double(k0);
-        xc=alam*di+double(i0);
-        dz=2.0*abs(zc-(double(km)+0.5*sgnk));
-        dx=2.0*abs(xc-(double(im)+0.5*sgni));
-        s1=(1.-dx)*(1.-dz);
-        s2=(1.-dz)*dx;
-        s3=(1.-dx)*dz;
-        s4=dx*dz;
+        alam = (double(jm-j0)+sgnj*0.5)/dj;
+        zc = alam*dk+double(k0);
+        xc = alam*di+double(i0);
+        dz = 2.0*abs(zc-(double(km)+0.5*sgnk));
+        dx = 2.0*abs(xc-(double(im)+0.5*sgni));
+        s1 = (1.-dx)*(1.-dz);
+        s2 = (1.-dz)*dx;
+        s3 = (1.-dx)*dz;
+        s4 = dx*dz;
 
-        ip  = modulo_gpu(i,m1);
-        imp = modulo_gpu(im,m1);
-        jmp = modulo_gpu(jm,m1);
-        kp  = modulo_gpu(k,m1);
-        kmp = modulo_gpu(km,m1);
+        ip  = modulo_gpu(i, m1);
+        imp = modulo_gpu(im, m1);
+        jmp = modulo_gpu(jm, m1);
+        kp  = modulo_gpu(k, m1);
+        kmp = modulo_gpu(km, m1);
 
-        c1=  coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
-        c2=  coldensh_out[mem_offst_gpu(ip,jmp,kmp,m1)];
-        c3=  coldensh_out[mem_offst_gpu(imp,jmp,kp,m1)];
-        c4=  coldensh_out[mem_offst_gpu(ip,jmp,kp,m1)];
+        c1 = coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
+        c2 = coldensh_out[mem_offst_gpu(ip,jmp,kmp,m1)];
+        c3 = coldensh_out[mem_offst_gpu(imp,jmp,kp,m1)];
+        c4 = coldensh_out[mem_offst_gpu(ip,jmp,kp,m1)];
 
         // extra weights for better fit to analytical solution
-        w1=s1*weightf_gpu(c1,sigma_at_freq);
-        w2=s2*weightf_gpu(c2,sigma_at_freq);
-        w3=s3*weightf_gpu(c3,sigma_at_freq);
-        w4=s4*weightf_gpu(c4,sigma_at_freq);
+        w1 = s1*weightf_gpu(c1,sigma_at_freq);
+        w2 = s2*weightf_gpu(c2,sigma_at_freq);
+        w3 = s3*weightf_gpu(c3,sigma_at_freq);
+        w4 = s4*weightf_gpu(c4,sigma_at_freq);
 
-        cdensi=   (c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4   )/(w1+w2+w3+w4);
+        cdensi = (c1*w1 + c2*w2 + c3*w3 + c4*w4)/(w1 + w2 + w3 + w4);
 
         // Take care of diagonals
         if (jdela == 1 && (idela == 1||kdela == 1))
@@ -596,38 +591,38 @@ __device__ void cinterp_gpu(
                 cdensi = 1.41421356237*cdensi;
             }
         }
-        path=sqrt((di*di+dk*dk)/(dj*dj)+1.0);
+        path = sqrt((di*di+dk*dk)/(dj*dj)+1.0);
     }
     else
     {
-        alam=(double(im-i0)+sgni*0.5)/di;
-        zc=alam*dk+double(k0);
-        yc=alam*dj+double(j0);
-        dz=2.0*abs(zc-(double(km)+0.5*sgnk));
-        dy=2.0*abs(yc-(double(jm)+0.5*sgnj));
-        s1=(1.-dz)*(1.-dy);
-        s2=(1.-dz)*dy;
-        s3=(1.-dy)*dz;
-        s4=dy*dz;
+        alam = (double(im-i0)+sgni*0.5)/di;
+        zc = alam*dk+double(k0);
+        yc = alam*dj+double(j0);
+        dz = 2.0*abs(zc-(double(km)+0.5*sgnk));
+        dy = 2.0*abs(yc-(double(jm)+0.5*sgnj));
+        s1 = (1.-dz)*(1.-dy);
+        s2 = (1.-dz)*dy;
+        s3 = (1.-dy)*dz;
+        s4 = dy*dz;
 
-        imp=modulo_gpu(im ,m1);
-        jp= modulo_gpu(j  ,m1);
-        jmp=modulo_gpu(jm ,m1);
-        kp= modulo_gpu(k  ,m1);
-        kmp=modulo_gpu(km ,m1);
+        imp = modulo_gpu(im, m1);
+        jp = modulo_gpu(j, m1);
+        jmp = modulo_gpu(jm, m1);
+        kp = modulo_gpu(k, m1);
+        kmp = modulo_gpu(km, m1);
 
-        c1=  coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
-        c2=  coldensh_out[mem_offst_gpu(imp,jp,kmp,m1)];
-        c3=  coldensh_out[mem_offst_gpu(imp,jmp,kp,m1)];
-        c4=  coldensh_out[mem_offst_gpu(imp,jp,kp,m1)];
+        c1 = coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
+        c2 = coldensh_out[mem_offst_gpu(imp,jp,kmp,m1)];
+        c3 = coldensh_out[mem_offst_gpu(imp,jmp,kp,m1)];
+        c4 = coldensh_out[mem_offst_gpu(imp,jp,kp,m1)];
 
         // extra weights for better fit to analytical solution
-        w1   =s1*weightf_gpu(c1,sigma_at_freq);
-        w2   =s2*weightf_gpu(c2,sigma_at_freq);
-        w3   =s3*weightf_gpu(c3,sigma_at_freq);
-        w4   =s4*weightf_gpu(c4,sigma_at_freq);
+        w1 = s1*weightf_gpu(c1,sigma_at_freq);
+        w2 = s2*weightf_gpu(c2,sigma_at_freq);
+        w3 = s3*weightf_gpu(c3,sigma_at_freq);
+        w4 = s4*weightf_gpu(c4,sigma_at_freq);
 
-        cdensi   =(c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4   )/(w1+w2+w3+w4);
+        cdensi = (c1*w1 + c2*w2 + c3*w3 + c4*w4)/(w1 + w2 + w3 + w4);
 
         if ( idela == 1  &&  ( jdela == 1 || kdela == 1 ) )
         {
@@ -640,6 +635,6 @@ __device__ void cinterp_gpu(
                 cdensi = 1.41421356237*cdensi;
             }
         }
-        path=sqrt(1.0+(dj*dj+dk*dk)/(di*di));
+        path = sqrt(1.0+(dj*dj+dk*dk)/(di*di));
     }
 }
