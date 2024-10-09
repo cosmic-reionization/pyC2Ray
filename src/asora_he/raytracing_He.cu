@@ -413,6 +413,7 @@ __global__ void evolve0D_gpu(
                                     }
 
                                     //printf("%i\t%e\t%e\t%e\n", nf, sig_hi[nf], sig_hei[nf], sig_heii[nf]);
+                                    //printf("%i\t%.3e\t%.3e\t%e\n", nf, tau_in_tot, tau_out_tot, tau_out_tot-tau_in_tot);
                                                                             
                                     //printf("%lf\n", vol_ph);
                                     double phi = photoion_rates_gpu(strength, tau_in_tot, tau_out_tot, nf, vol_ph, photo_thin_table, photo_thick_table, minlogtau, dlogtau, NumTau, NumFreq);

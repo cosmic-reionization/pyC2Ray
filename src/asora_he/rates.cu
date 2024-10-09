@@ -106,12 +106,12 @@ __device__ double photo_lookuptable(const double* table, const int & nf, const d
         i0 = int(floor(real_i));
         i1 = int(ceil(real_i));
     }
-    w1 = real_i - floor(real_i);
-    w0 = ceil(real_i) - real_i;
+    w1 = real_i - float(i0);
+    w0 = float(i1) - real_i;
 
     // MB (02.10.204): Look for the table value. In the Helium update the tables are a 2D array with shape (N_tau, N_freq) that is table.T.ravel() before being passed to C++ routine.
     double tab = table[int(i0+nf*(NumTau+1))]*w0 + table[int(i1+nf*(NumTau+1))]*w1;
-    //printf("%d %f %d %d %f %f %f %.1e %.1e %e\n", nf, real_i, i0, i1, w0, w1, tau, table[int(i0+nf*(NumTau+1))], table[int(i1+nf*(NumTau+1))], tab);
+    //printf("%d %.3f %d %d %.3f %.3f %3f %.1e %.1e %e\n", nf, real_i, i0, i1, w0, w1, tau, table[int(i0+nf*(NumTau+1))], table[int(i1+nf*(NumTau+1))], tab);
     //printf("%d %d %f %.1e %.1e\n", nf, i0, tau, table[int(i0+nf*(NumTau+1))], table[int(i1+nf*(NumTau+1))]);
     return tab;
 }
