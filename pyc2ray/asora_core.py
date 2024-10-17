@@ -5,7 +5,7 @@
 
 from .load_extensions import load_asora#, load_asora_he
 libasora = load_asora()
-#libasora_he = load_asora_he()
+libasora_he = load_asora_he()
 
 __all__ = ['cuda_is_init','device_init','device_close','photo_table_to_device']
 
