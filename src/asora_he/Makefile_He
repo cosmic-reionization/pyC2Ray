@@ -1,7 +1,7 @@
 CXX=g++
 NVCC=nvcc
-PYTHONINC+=-I/home/mbianco/anaconda3/include/python3.11
-NUMPYINC+=-I/home/mbianco/anaconda3/lib/python3.11/site-packages/numpy/core/include
+PYTHONINC+=-I/usr/include/python3.10
+NUMPYINC+=-I/home/mbianco/.local/lib/python3.10/site-packages/numpy/core/include
 
 # Include Paths for both local and piz daint
 INC+=$(PYTHONINC) $(NUMPYINC)

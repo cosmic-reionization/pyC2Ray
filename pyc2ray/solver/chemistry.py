@@ -111,7 +111,7 @@ def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping)
 
 
 # TODO: here you can plug at the place of the doric in the do_chemistry (making the right changes)
-def friedrich(NHI, NHeI, NHeII, xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI, phi_HeII, X, Y):
+def friedrich(NHI, NHeI, NHeII, xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI, phi_HeII, heat_HI, heat_HeI, heat_HeII, X, Y):
     """
         Chemistry equation solver for H and He.
 
