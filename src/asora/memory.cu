@@ -67,7 +67,7 @@ void device_init(const int & N, const int & num_src_par)
         throw std::runtime_error("Couldn't allocate memory: " + std::to_string((3 + NUM_SRC_PAR)*bytesize/1e6) + std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
         }    
     else {
-        std::cout << "Succesfully allocated " << (3 + NUM_SRC_PAR)*bytesize/1e6 << " Mb of device memory for grid of size N = " << N;
+        std::cout << "Successfully allocated " << (3 + NUM_SRC_PAR)*bytesize/1e6 << " Mb of device memory for grid of size N = " << N;
         std::cout << ", with source batch size " << NUM_SRC_PAR << std::endl;
     }
 }
