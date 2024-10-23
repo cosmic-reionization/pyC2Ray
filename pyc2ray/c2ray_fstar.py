@@ -110,56 +110,63 @@ class C2Ray_fstar(C2Ray):
         mstar_msun = fesc*fstar*srcmass_msun
         
         # sum together masses into a mesh grid
-        mesh_bin = np.linspace(0, self.boxsize/self.cosmology.h, self.N+1)
-        binned_mass, bin_edges, bin_num = binned_statistic_dd(srcpos_mpc, mstar_msun, statistic='sum', bins=[mesh_bin, mesh_bin, mesh_bin])
+        if(nr_switchon > 0):
+            mesh_bin = np.linspace(0, self.boxsize/self.cosmology.h, self.N+1)
+            binned_mass, bin_edges, bin_num = binned_statistic_dd(srcpos_mpc, mstar_msun, statistic='sum', bins=[mesh_bin, mesh_bin, mesh_bin])        
+            # get a list of the source positon and mass
+            srcpos = np.argwhere(binned_mass>0) 
+            srcmstar = binned_mass[binned_mass>0] 
+
+            """
+            if save_Mstar:
+                folder_path = save_Mstar
+                fname_hdf5 = folder_path+f'/{z:.3f}-Mstar_sources.hdf5'
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+                    print(f"Folder '{folder_path}' created successfully.")
+                else:
+                    pass
+                    # print(f"Folder '{folder_path}' already exists.")
+                # Create HDF5 file from the data
+                with h5py.File(fname_hdf5,"w") as f:
+                    # Store Data
+                    dset_pos = f.create_dataset("sources_positions", data=srcpos)
+                    dset_mass = f.create_dataset("sources_mass", data=srcmstar)
+                    # Store Metadata
+                    f.attrs['z'] = z
+                    f.attrs['h'] = self.cosmology.h
+                    f.attrs['numhalo'] = srcmstar.shape[0]
+                    f.attrs['units'] = 'cMpc   Msun'
+            """
+            S_star_ref = 1e48
+
+            # source life-time in cgs
+            if(self.acc_model == 'EXP'):
+                ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
+            elif(self.acc_model == 'constant'):
+                ts = dt
+
+            # normalize flux
+            normflux = msun2g * self.fstar_pars['Nion'] * srcmstar / (m_p * ts * S_star_ref)
+
+            # calculate total number of ionizing photons
+            self.tot_phots = np.sum(normflux * dt * S_star_ref)
+
+            if(self.rank == 0):
+                self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
+                self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
+                self.printlog(' Total number of ionizaing photons : %e' %self.tot_phots)
+                self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
+                self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+            
+            return srcpos, normflux
         
-        # get a list of the source positon and mass
-        srcpos = np.argwhere(binned_mass>0) 
-        srcmstar = binned_mass[binned_mass>0]
-
-        """
-        if save_Mstar:
-            folder_path = save_Mstar
-            fname_hdf5 = folder_path+f'/{z:.3f}-Mstar_sources.hdf5'
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
-                print(f"Folder '{folder_path}' created successfully.")
-            else:
-                pass
-                # print(f"Folder '{folder_path}' already exists.")
-            # Create HDF5 file from the data
-            with h5py.File(fname_hdf5,"w") as f:
-                # Store Data
-                dset_pos = f.create_dataset("sources_positions", data=srcpos)
-                dset_mass = f.create_dataset("sources_mass", data=srcmstar)
-                # Store Metadata
-                f.attrs['z'] = z
-                f.attrs['h'] = self.cosmology.h
-                f.attrs['numhalo'] = srcmstar.shape[0]
-                f.attrs['units'] = 'cMpc   Msun'
-        """
-        S_star_ref = 1e48
-
-        # source life-time in cgs
-        if(self.acc_model == 'EXP'):
-            ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
-        elif(self.acc_model == 'constant'):
-            ts = dt
-
-        # normalize flux
-        normflux = msun2g * self.fstar_pars['Nion'] * srcmstar / (m_p * ts * S_star_ref)
-
-        # calculate total number of ionizing photons
-        self.tot_phots = np.sum(normflux * dt * S_star_ref)
-
-        if(self.rank == 0):
-            self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
-            self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
-            self.printlog(' Total number of ionizaing photons : %e' %self.tot_phots)
-            self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-            self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
-        
-        return srcpos, normflux
+        else:
+            if(self.rank == 0):
+                self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(srcmass_msun.size, file))
+                self.printlog(' No sources switch on. Skip computing the raytracing.')
+            
+            return 0, 0
     
     def read_haloes(self, halo_file, box_len): # >:( trgeoip
         """Read haloes from a file.
@@ -210,7 +217,7 @@ class C2Ray_fstar(C2Ray):
         Parameters
         ----------
         fbase : string
-            the file name (without the path) of the file to open
+            the file name (cwithout the path) of the file to open
         
         """
         file = self.density_basename+fbase

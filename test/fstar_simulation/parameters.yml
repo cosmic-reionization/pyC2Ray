@@ -117,7 +117,7 @@ BlackBodySource:
 
 Sources:
   # stellar-to-halo mass relation: 'fgamma' for classical mass independent model, 'dpl' for double power law (Schneider, Giri, Mirocha 2021) or 'lognorm' for a stochastic with lognorm distribution and std ~Mhalo^(-1/3).
-  fstar_kind: 'lognorm' #'lognorm' 
+  fstar_kind: 'lognorm'
   # efficiency High-Mass Atomically Cooling Halo (HMACH) - used only for fstar_kind: 'fgamma'
   fgamma_hm: 30
   # efficiency Low-Mass Atomically Cooling Halo (LMACH)
@@ -132,7 +132,7 @@ Sources:
   g3: 0
   g4: -0.0
   # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Muv' for a UV dependent model (Gelli+ 2024)
-  fesc_model: 'constant'
+  fesc_model: 'power'
   f0_esc: 0.02
   Mp_esc: 1e10
   al_esc: -0.5
@@ -147,9 +147,9 @@ Sources:
   # index power-low of the bursty star-formation model time relation
   beta2: 0.2
   # bursty star-formation time-scale at z=0
-  tB0: 100.
+  tB0: 300.
   # fraction of the quiescent time-scale
-  tQ_frac: 0.2
+  tQ_frac: 0.95
   # reference redshif for the bursty star-formation model
   z0: 30.0
   # introduce scatter into the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(M0, std))
@@ -177,7 +177,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty4_fesc/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk025/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)

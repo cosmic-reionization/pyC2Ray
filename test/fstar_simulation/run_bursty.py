@@ -61,6 +61,7 @@ for k in range(i_start, len(zred_array)-1):
         z = sim.time2zred(t_age)
         srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=z, dt=dt) #, save_Mstar=sim.results_basename+'/sources')
 
+
         tnow = time.time()
         pc2r.printlog(f"\n --- Timestep {t+1:n}. Redshift: z = {sim.zred : .3f} Wall clock time: {tnow - tinit : .3f} seconds --- \n", sim.logfile)
 
@@ -68,7 +69,10 @@ for k in range(i_start, len(zred_array)-1):
         sim.cosmo_evolve(dt)
 
         # Evolve the simulation: raytrace -> photoionization rates -> chemistry -> until convergence
-        sim.evolve3D(dt, normflux, srcpos)
+        if(np.sum(srcpos) == 0 and np.sum(normflux) == 0):
+            pass
+        else:
+            sim.evolve3D(dt, normflux, srcpos)
 
         if(sim.rank == 0):
             # rank 0 write an additional summary output file
