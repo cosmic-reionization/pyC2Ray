@@ -6,33 +6,41 @@ epsilon = 1e-14
 minimum_fractional_change = 1.0e-3
 minimum_fraction_of_atoms = 1.0e-8
 
-def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping):
-    # Calculate the hydrogen recombination rate at the local temperature
-    brech0 = clumping * bh00 * (temp_p / 1e4)**albpow
 
-    # Calculate the hydrogen collisional ionization rate at the local temperature
-    acolh0 = colh0 * np.sqrt(temp_p) * np.exp(-temph0 / temp_p)
+def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c):
+    conv_flag = 0
 
-    # Find the true photo-ionization rate
-    aphoth0 = phi_p
+    new_xh = np.zeros_like(xh)
+    new_xh_av = np.zeros_like(xh)
+    
+    for k in range(xh.shape[0]):
+        for j in range(xh.shape[1]):
+            for i in range(xh.shape[2]):
+                # Initialize local quantities
+                temperature_start = temp[i,j,k]
+                ndens_p = ndens[i,j,k]
+                phi_ion_p = phi_ion[i,j,k]
+                clump_p = clump[i,j,k]
 
-    # Determine ionization states
-    aih0 = aphoth0 + rhe * acolh0
-    delth = aih0 + rhe * brech0
-    eqxh = aih0 / delth
-    deltht = delth * dt
-    ee = np.exp(-deltht)
-    xh = (xh_old - eqxh) * ee + eqxh
+                # Initialize local ion fractions
+                xh_p = xh[i,j,k]
+                xh_av_p = xh_av[i,j,k]
+                xh_intermed_p = xh_intermed[i,j,k]
 
-    # Handle precision fluctuations
-    xh = np.maximum(xh, epsilon)
+                # call do chemistry
+                new_xh[i, j, k], new_xh_av[i, j, k], _ = do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c)
 
-    # Determine average ionization fraction over the time step
-    avg_factor = np.where(deltht < 1.0e-8, 1.0, (1.0 - ee) / deltht)
-    xh_av = eqxh + (xh_old - eqxh) * avg_factor
-    xh_av = np.maximum(xh_av, epsilon)
+                # Check for convergence (global flag). In original, convergence is tested using neutral fraction, but testing with ionized fraction should be equivalent. TODO: add temperature convergence criterion when non-isothermal mode is added later on.
+                xh_av_p_old = new_xh_av[i,j,k]
 
-    return xh, xh_av
+                cond1 = np.abs(xh_av_p-xh_av_p_old) > minimum_fractional_change
+                cond2 = np.abs((xh_av_p - xh_av_p_old) / (1.0 - xh_av_p)) > minimum_fractional_change
+                cond3 = (1.0 - xh_av_p) > minimum_fraction_of_atoms
+                if(cond1 * cond2 * cond3):
+                    conv_flag += 1
+                                               
+    return new_xh, new_xh_av, conv_flag
+
 
 def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c):
     # Initialize local quantities
@@ -72,112 +80,107 @@ def do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, p
         
     return new_xh_p, xh_av_p, xh_intermed_p
 
-def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c):
-    conv_flag = 0
 
-    new_xh = np.zeros_like(xh)
-    new_xh_av = np.zeros_like(xh)
+def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping):
+    # Calculate the hydrogen recombination rate at the local temperature
+    brech0 = clumping * bh00 * (temp_p / 1e4)**albpow
+
+    # Calculate the hydrogen collisional ionization rate at the local temperature
+    acolh0 = colh0 * np.sqrt(temp_p) * np.exp(-temph0 / temp_p)
+
+    # Find the true photo-ionization rate
+    aphoth0 = phi_p
+
+    # Determine ionization states
+    aih0 = aphoth0 + rhe * acolh0
+    delth = aih0 + rhe * brech0
+    eqxh = aih0 / delth
+    deltht = delth * dt
+    ee = np.exp(-deltht)
+    xh = (xh_old - eqxh) * ee + eqxh
+
+    # Handle precision fluctuations
+    xh = np.maximum(xh, epsilon)
+
+    # Determine average ionization fraction over the time step
+    avg_factor = np.where(deltht < 1.0e-8, 1.0, (1.0 - ee) / deltht)
+    xh_av = eqxh + (xh_old - eqxh) * avg_factor
+    xh_av = np.maximum(xh_av, epsilon)
     
-    for k in range(xh.shape[0]):
-        for j in range(xh.shape[1]):
-            for i in range(xh.shape[2]):
-                # Initialize local quantities
-                temperature_start = temp[i,j,k]
-                ndens_p = ndens[i,j,k]
-                phi_ion_p = phi_ion[i,j,k]
-                clump_p = clump[i,j,k]
-
-                # Initialize local ion fractions
-                xh_p = xh[i,j,k]
-                xh_av_p = xh_av[i,j,k]
-                xh_intermed_p = xh_intermed[i,j,k]
-
-                # call do chemistry
-                new_xh[i, j, k], new_xh_av[i, j, k], _ = do_chemistry(dt, ndens_p, temperature_start, xh_p, xh_av_p, xh_intermed_p, phi_ion_p, clump_p, bh00, albpow, colh0, temph0, abu_c)
-
-                # Check for convergence (global flag). In original, convergence is tested using neutral fraction, but testing with ionized fraction should be equivalent. TODO: add temperature convergence criterion when non-isothermal mode is added later on.
-                xh_av_p_old = new_xh_av[i,j,k]
-
-                cond1 = np.abs(xh_av_p-xh_av_p_old) > minimum_fractional_change
-                cond2 = np.abs((xh_av_p - xh_av_p_old) / (1.0 - xh_av_p)) > minimum_fractional_change
-                cond3 = (1.0 - xh_av_p) > minimum_fraction_of_atoms
-                if(cond1 * cond2 * cond3):
-                    conv_flag += 1
-                                               
-    return new_xh, new_xh_av, conv_flag
+    return xh, xh_av
 
 
-
-def friedrich(NH, NHe, n_gas, X, Y, xHII, xHeII, xHeIII, n_e, phi_HI, phi_HeI, phi_HeII, temp):
+# TODO: here you can plug at the place of the doric in the do_chemistry (making the right changes)
+def friedrich(NHI, NHeI, NHeII, xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI, phi_HeII, heat_HI, heat_HeI, heat_HeII, X, Y):
     """
         Chemistry equation solver for H and He.
 
         Inputs:
-            - NH (array):       neutral hydrogen column density
-            - NHe (array):      neutral helium column density
-            - n_gas (array):    gas number density
-            - X (float):        abbundance of hydrogen
-            - Y (float):        abbunace of helium
-            - xHI (array):      hydrogen ionized fraction
-            - xHeI (array):     helium first ionized fraction
-            - xHeII (array):    helium second ionized fraction
-            - n_e (array):      electron number density
-            - phi_HI (array):   photoionization rate for hydrogen
-            - phi_HeI (array):  photoionization rate for first ionized helium
-            - phi_HeII (array):  photoionization rate for second ionized helium
+            - NH (float):           hydrogen column density
+            - NHe (float):          helium column density
+            - xHI_old (float):      hydrogen ionized fraction of the cell
+            - xHeI_old (float):     helium first ionized fraction of the cell
+            - xHeII_old (float):    helium second ionized fraction of the cell
+            - dt (float):           time step in cgs units
+            - n_e (float):          electron number density of the cell
+            - phi_HI (float):       photoionization rate for hydrogen of the cell
+            - phi_HeI (float):      photoionization rate for first ionized helium of the cell
+            - phi_HeII (float):     photoionization rate for second ionized helium of the cell
+            - X (float):            abbundance of hydrogen
+            - Y (float):            abbunace of helium
         Return:
             - ...
     """
 
     # Recombination rate of HI (Eq. 2.12 and 2.13)
-    alphA_HII = 1.269e-13 * np.power(315608/temp, 1.503) / np.power(np.power(1 + 604613/temp, 0.47), 1.923)
-    alphB_HII = 2.753e-14 * np.power(315608/temp, 1.5) / np.power(np.power(1 + 115185/temp, 0.407), 2.242)
+    alphA_HII = 1.269e-13 * np.power(315608/temp_p, 1.503) / np.power(np.power(1 + 604613/temp_p, 0.47), 1.923)
+    alphB_HII = 2.753e-14 * np.power(315608/temp_p, 1.5) / np.power(np.power(1 + 115185/temp_p, 0.407), 2.242)
     alph1_HII = alphA_HII - alphB_HII
 
     # Recombination rate of HeII (Eq. 2.14-17)
-    if(temp < 9e3):
-        alphA_HeII = 1.269e-13 * np.power(570662/temp, 1.503) / np.power(np.power(1 + 1093222/temp, 0.47), 1.923)
-        alphB_HeII = 2.753e-14 * np.power(570662/temp, 1.5) / np.power(np.power(1 + 208271/temp, 0.407), 2.242)
+    if(temp_p < 9e3):
+        alphA_HeII = 1.269e-13 * np.power(570662/temp_p, 1.503) / np.power(np.power(1 + 1093222/temp_p, 0.47), 1.923)
+        alphB_HeII = 2.753e-14 * np.power(570662/temp_p, 1.5) / np.power(np.power(1 + 208271/temp_p, 0.407), 2.242)
     else:    
-        alphA_HeII = 3e-14 * np.power(570662/temp, 0.654) + 1.9e-3 * np.power(temp, -1.5) * np.exp(-4.7e5/temp) * (1 + 0.3*np.exp(-9.4e4/temp))
-        alphB_HeII = 1.26e-14 * np.power(570662/temp, 0.75) + 1.9e-3 * np.power(temp, -1.5) * np.exp(-4.7e5/temp) * (1 + 0.3*np.exp(-9.4e4/temp))
+        alphA_HeII = 3e-14 * np.power(570662/temp_p, 0.654) + 1.9e-3 * np.power(temp_p, -1.5) * np.exp(-4.7e5/temp_p) * (1 + 0.3*np.exp(-9.4e4/temp_p))
+        alphB_HeII = 1.26e-14 * np.power(570662/temp_p, 0.75) + 1.9e-3 * np.power(temp_p, -1.5) * np.exp(-4.7e5/temp_p) * (1 + 0.3*np.exp(-9.4e4/temp_p))
 
     # Recombination rate of HeIII (Eq. 2.18-20)
-    alphA_HeIII = 2.538e-13 * np.power(1262990/temp, 1.503) / np.power(1 + np.power(2419521/temp, 1.923), 1.923)
-    alphB_HeIII = 5.506e-14 * np.power(1262990/temp, 1.5) / np.power(1 + np.power(460945/temp, 0.407), 2.242)
-    alph1_HeIII = alphA_HeIII - alphB_HeIII # correct???????????????
-    alph2_HeIII = 8.54e-11 * np.power(temp, -0.6)
+    alphA_HeIII = 2.538e-13 * np.power(1262990/temp_p, 1.503) / np.power(1 + np.power(2419521/temp_p, 1.923), 1.923)
+    alphB_HeIII = 5.506e-14 * np.power(1262990/temp_p, 1.5) / np.power(1 + np.power(460945/temp_p, 0.407), 2.242)
+    alph1_HeIII = alphA_HeIII - alphB_HeIII # TODO: double check that this is the correct definition
+    alph2_HeIII = 8.54e-11 * np.power(temp_p, -0.6)
 
     # two photons emission from recombination of HeIII
-    nu = 0.285 * np.power(temp/1e4, 0.119)
+    nu = 0.285 * np.power(temp_p/1e4, 0.119)
 
     # opt depth of HI at HeI ion threshold
     sigma_H_heth = 1.238e-18    # HI cross-section at HeI ionization threshold
-    tau_H_heth  = NH*sigma_H_heth
+    tau_H_heth  = NHI*sigma_H_heth
     
     # opt depth of HeI at HeI ion threshold
     sigma_HeI_at_ion_freq = 7.430e-18   # HeI cross section at its ionzing frequency
-    tau_He_heth = NHe(0)*sigma_HeI_at_ion_freq 
+    tau_He_heth = NHeI*sigma_HeI_at_ion_freq 
     
-    # opt depth of H  at he+Lya (40.817eV)
+    # opt depth of H at he+Lya (40.817eV)
     sigma_H_heLya = 9.907e-22   # HI cross-section at HeII Lya
-    tau_H_heLya = NH*sigma_H_heLya
+    tau_H_heLya = NHI*sigma_H_heLya
     
     # opt depth of He at he+Lya (40.817eV)
     sigma_He_heLya = 1.301e-20
-    tau_He_heLya= NHe(0)*sigma_He_heLya
+    tau_He_heLya= NHeI*sigma_He_heLya
     
     # opt depth of H at HeII ion threshold
     sigma_H_he2 = 1.230695924714239e-19  # HI cross-section at HeII ionization threshold
-    tau_H_he2th = NH*sigma_H_he2
+    tau_H_he2th = NHI*sigma_H_he2
     
     # opt depth of HeI at HeII ion threshold
     sigma_He_he2 = 1.690780687052975e-18    # HeI cross-section at HeII ionization threshold
-    tau_He_he2th = NHe(0)*sigma_He_he2
+    tau_He_he2th = NHeI*sigma_He_he2
     
     # opt depth of HeII at HeII ion threshold
     sigma_HeII_at_ion_freq = 1.589e-18  # HeII cross section at its ionzing frequency
-    tau_He2_he2th = NHe(1)*sigma_HeII_at_ion_freq
+    tau_He2_he2th = NHeII*sigma_HeII_at_ion_freq
     
     # Ratios of these optical depths needed in doric
     y = tau_H_heth /(tau_H_heth +tau_He_heth)
@@ -198,9 +201,9 @@ def friedrich(NH, NHe, n_gas, X, Y, xHII, xHeII, xHeIII, n_e, phi_HI, phi_HeI, p
     f_lya = 1
 
     # Collisional ionization process (Eq. 2.21-23)
-    cHI = 5.835e-11 * np.sqrt(temp) * np.exp(-157804/temp)
-    cHeI = 2.71e-11 * np.sqrt(temp) * np.exp(-285331/temp)
-    cHeII = 5.707e-12 * np.sqrt(temp) * np.exp(-631495/temp)
+    cHI = 5.835e-11 * np.sqrt(temp_p) * np.exp(-157804/temp_p)
+    cHeI = 2.71e-11 * np.sqrt(temp_p) * np.exp(-285331/temp_p)
+    cHeII = 5.707e-12 * np.sqrt(temp_p) * np.exp(-631495/temp_p)
 
     # Photo-ionization rates (Eq. 2.27-29)
     uHI = phi_HI + cHI * n_e
@@ -218,7 +221,7 @@ def friedrich(NH, NHe, n_gas, X, Y, xHII, xHeII, xHeIII, n_e, phi_HI, phi_HeI, p
     # get matrix
     A11 = -uHI + rHII2HI
     A12 = 0.
-    A12 = 0.
+    A13 = 0.
     A21 = Y/X * rHeII2HI * n_e
     A22 = -uHeI - uHeII + rHeII2HeI * n_e
     A23 = uHeII
@@ -226,12 +229,12 @@ def friedrich(NH, NHe, n_gas, X, Y, xHII, xHeII, xHeIII, n_e, phi_HI, phi_HeI, p
     A32 = -uHeI + rHeIII2HeI * n_e
     A33 = rHeIII2HeII * n_e
     
-    g = [uHI, uHeI, 0]
+    #g = [uHI, uHeI, 0]
 
     S = np.sqrt(A33**2 - 2*A33*A22 + A22**2 + 4*A32*23)
     K = 1/(A23*A32 - A33*A22)
-    R = 2*A23*(A33*uHI*K - xHII_ini)
-    T = -A32*uHeI*K - xHeIII_ini
+    R = 2*A23*(A33*uHI*K - xHeII_old)
+    T = -A32*uHeI*K - xHeIII_old
 
     lamb1  = A11
     lamb2 = 0.5*(A33 + A22 - S)
@@ -251,15 +254,17 @@ def friedrich(NH, NHe, n_gas, X, Y, xHII, xHeII, xHeIII, n_e, phi_HI, phi_HeI, p
     B32 = 1.
     B33 = 1.
 
-    c1 = (2*p1*S - (R+(A33-A22)*T)*(A21 - A31)) / 2*S + xHII_ini + T/2*(A21+A3)
+    c1 = (2*p1*S - (R+(A33-A22)*T)*(A21 - A31)) / 2*S + xHII_old + T/2*(A21+A31)
     c2 = (R + (A33 - A22 - S)*T) / (2*S)
     c3 = -(R + (A33 - A22 + S)*T) / (2*S)
 
     xHII_av = B11*c1/(lamb1*dt)*(np.exp(lamb1*dt) - 1.) + B12*c2/(lamb2*dt)(np.exp(lamb2*dt) - 1.) + B13*c3/(lamb3*dt)*(np.exp(lamb3*dt) - 1.)
-    xHI_av = 1 . xHII_av
+    xHI_av = 1. - xHII_av
     xHeII_av = B21*c1/(lamb1*dt)*(np.exp(lamb1*dt) - 1.) + B22*c2/(lamb2*dt)*(np.exp(lamb2*dt) - 1.) + B23*c3/(lamb3*dt)*(np.exp(lamb3*dt) - 1.)
     xHeIII_av = B31*c1/(lamb1*dt)*(np.exp(lamb1*dt) - 1.) + B32*c2/(lamb2*dt)*(np.exp(lamb2*dt) - 1.) + B33*c3/(lamb3*dt)*(np.exp(lamb3*dt) - 1.)
     xHeI_av = 1 - xHeII_av - xHeIII_av
 
-    return 0
+    # TODO: here after there should be the heating part (from eq 2.69 in Kay Lee thesis, pag 37)
+
+    return xHII_av, xHeII_av, xHeIII_av
     

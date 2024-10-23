@@ -11,3 +11,7 @@ run
 .ipynb_checkpoints/
 .vscode/
 *.pkl
+docs/tutorials/test_results/
+docs/tutorials/test_results/*
+pyc2ray/tables/multifreq/*png
+test/debug/*png

@@ -479,8 +479,7 @@ class C2Ray:
             else:
                 self.printlog(f"Using power-law opacity with {self.NumTau:n} table points between tau=10^({self.minlogtau:n}) and tau=10^({self.maxlogtau:n})")
         
-        # The actual table has NumTau + 1 points: the 0-th position is tau=0 and the
-        # remaining NumTau points are log-spaced from minlogtau to maxlogtau (same as in C2Ray)
+        # The actual table has NumTau + 1 points: the 0-th position is tau=0 and the remaining NumTau points are log-spaced from minlogtau to maxlogtau (same as in C2Ray)
         self.tau, self.dlogtau = make_tau_table(self.minlogtau,self.maxlogtau,self.NumTau)
 
         ion_freq_HI = ev2fr * self.eth0
@@ -593,6 +592,8 @@ class C2Ray:
                     f.write(title+"\nLog file for pyC2Ray.\n\n") 
         
     def _sinks_init(self):
+        """ Initialize sinks physics class for the mean-free path and clumping factor """
+
         # init sink physics class for MFP and clumping
         self.sinks = SinksPhysics(params=self._ld, N=self.N)
 
@@ -613,13 +614,15 @@ class C2Ray:
             # Set R_max (LLS 3) in cell units
             self.R_max_LLS = self.sinks.R_mfp_cell_unit        
             if(self.rank == 0):
-                self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model).\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.R_max_LLS))
+                self.printlog('\n---- Calculated Mean-Free Path (%s model):' %self.sinks.mfp_model)
+                self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model).\n This corresponds to %.3f grid cells.\n" %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.R_max_LLS))
         elif(self.sinks.mfp_model == 'Worseck2014'):
             # set mean-free-path to the initial redshift
             self.R_max_LLS = self.sinks.mfp_Worseck2014(z=self._ld['Cosmology']['zred_0']) # in cMpc
             self.R_max_LLS *= self.N / self.boxsize
             if(self.rank == 0):
-                self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model) : A = %.2f Mpc, eta = %.2f.\n This corresponds to %.3f grid cells." %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.sinks.A_mfp, self.sinks.etha_mfp, self.R_max_LLS))
+                self.printlog('\n---- Calculated Mean-Free Path (%s model):' %self.sinks.mfp_model)
+                self.printlog("Maximum comoving distance for photons from source mfp = %.2f cMpc (%s model) : A = %.2f Mpc, eta = %.2f.\n This corresponds to %.3f grid cells.\n" %(self.R_max_LLS*self.boxsize/self.N, self.sinks.mfp_model, self.sinks.A_mfp, self.sinks.etha_mfp, self.R_max_LLS))
 
     # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):

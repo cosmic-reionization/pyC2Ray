@@ -39,42 +39,35 @@ void device_init(const int & N, const int & num_src_par)
     cudaGetDevice(&dev_id);
     cudaGetDeviceProperties(&device_prop, dev_id);
     if (device_prop.computeMode == cudaComputeModeProhibited) {
-        std::cerr << "Error: device is running in <Compute Mode Prohibited>, no "
-                    "threads can use ::cudaSetDevice()"
-                << std::endl;
+        std::cerr << "Error: device is running in <Compute Mode Prohibited>, no threads can use ::cudaSetDevice()" << std::endl;
     }
 
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess) {
-        std::cout << "cudaGetDeviceProperties returned error code " << error
-                << ", line(" << __LINE__ << ")" << std::endl;
+        std::cout << "cudaGetDeviceProperties returned error code " << error << ", line(" << __LINE__ << ")" << std::endl;
     } else {
-        std::cout << "GPU Device " << dev_id << ": \"" << device_prop.name
-                << "\" with compute capability " << device_prop.major << "."
-                << device_prop.minor << std::endl;
+        std::cout << "GPU Device " << dev_id << ": \"" << device_prop.name << "\" with compute capability " << device_prop.major << "." << device_prop.minor << std::endl;
     }
 
     // Byte-size of grid data
     long unsigned int bytesize = N*N*N*sizeof(double);
-    std::cout << bytesize << std::endl;
+    //std::cout << bytesize << std::endl;
 
     // Set the source batch size, i.e. the number of sources done in parallel (on the same GPU)
     NUM_SRC_PAR = num_src_par;
 
     // Allocate memory
-    cudaMalloc(&cdh_dev,NUM_SRC_PAR * bytesize);
-    cudaMalloc(&n_dev,bytesize);
-    cudaMalloc(&x_dev,bytesize);
-    cudaMalloc(&phi_dev,bytesize);
+    cudaMalloc(&cdh_dev, NUM_SRC_PAR * bytesize);
+    cudaMalloc(&n_dev, bytesize);
+    cudaMalloc(&x_dev, bytesize);
+    cudaMalloc(&phi_dev, bytesize);
 
     error = cudaGetLastError();
     if (error != cudaSuccess) {
-        throw std::runtime_error("Couldn't allocate memory: " + std::to_string((3 + NUM_SRC_PAR)*bytesize/1e6)
-            + std::string(cudaGetErrorName(error)) + " - "
-            + std::string(cudaGetErrorString(error)));
+        throw std::runtime_error("Couldn't allocate memory: " + std::to_string((3 + NUM_SRC_PAR)*bytesize/1e6) + std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
         }    
     else {
-        std::cout << "Succesfully allocated " << (3 + NUM_SRC_PAR)*bytesize/1e6 << " Mb of device memory for grid of size N = " << N;
+        std::cout << "Successfully allocated " << (3 + NUM_SRC_PAR)*bytesize/1e6 << " Mb of device memory for grid of size N = " << N;
         std::cout << ", with source batch size " << NUM_SRC_PAR << std::endl;
     }
 }
@@ -109,8 +102,6 @@ void source_data_to_device(int* pos, double* flux, const int & NumSrc)
     // Copy source data (positions & strengths) to device
     cudaMemcpy(src_pos_dev,pos,3*NumSrc*sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(src_flux_dev,flux,NumSrc*sizeof(double),cudaMemcpyHostToDevice);
-
-    // std::cout << "Copied " << NumSrc << " sources to device... flux of first source = " << flux[0] << std::endl;
 }
 
 // ========================================================================

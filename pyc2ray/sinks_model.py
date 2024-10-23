@@ -26,13 +26,13 @@ class SinksPhysics:
         if(self.clumping_model == 'constant'):
             self.calculate_clumping = np.ones((N, N, N), dtype=np.float64) * params['Sinks']['clumping']
         else:
-            self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/resolutions.txt')
+            self.model_res = np.loadtxt(pc2r.__path__[0]+'/tables/clumping/resolutions.txt')
             
             # use parameters from tables with similare spatial resolution
             tab_res = self.model_res[np.argmin(np.abs(self.model_res*0.7 - res))]     # the tables where calculated for cMpc/h with h=0.7
 
             # get parameter files
-            self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/par_%s_%.3fMpc.txt' %(self.clumping_model, tab_res))
+            self.clumping_params = np.loadtxt(pc2r.__path__[0]+'/tables/clumping/par_%s_%.3fMpc.txt' %(self.clumping_model, tab_res))
             if(self.clumping_model == 'redshift'):
                 self.c2, self.c1, self.C0 = self.clumping_params[:3]
                 self.calculate_clumping = self.biashomogeneous_clumping
@@ -53,7 +53,7 @@ class SinksPhysics:
         return clump_fact * np.ones((self.N, self.N, self.N))
     
     def inhomogeneous_clumping(self, z, ndens):
-        redshift = self.clump_params[:,0]
+        redshift = self.clumping_params[:,0]
 
         # find nearest redshift bin
         zlow, zhigh = find_bins(z, redshift)
@@ -63,11 +63,13 @@ class SinksPhysics:
         w_l, w_h = 1-(z-zlow)/(zhigh - zlow), 1-(zhigh-z)/(zhigh - zlow)
 
         # get parameters weighted   
-        a, b, c = self.clump_params[i_low,1:4]*w_l + self.clump_params[i_high,1:4]*w_h        
+        a, b, c = self.clumping_params[i_low,1:4]*w_l + self.clumping_params[i_high,1:4]*w_h        
         
-        x =  np.log(1 + ndens / ndens.mean())
-        clump_fact = 10**(a*x**2 + b*x**2 + c)
-        return clump_fact
+        # MB (22.10.24): In the original paper, Bianco+ (2021), we used to do the fit in log-space log10(1+<delta>) VS log10(C). Later, and in the current parameters files we did the fit in the linear-space. 
+        x =  1 + ndens / ndens.mean()
+        clump_fact = a*x**2 + b*x + c
+
+        return np.clip(clump_fact, 1., clump_fact.max())
     
     def stochastic_clumping(self, z, ndens):
         # TODO: implement

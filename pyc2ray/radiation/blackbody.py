@@ -1,3 +1,4 @@
+import pyc2ray as pc2r
 import numpy as np, scipy
 from scipy.integrate import quad,quad_vec
 import astropy.constants as cst
@@ -163,7 +164,8 @@ class YggdrasilModel:
         table_thin = np.array([scipy.integrate.simpson(y=self._photo_thin_integrand_vec(sed=norm_sed, freq=freqs, tau=t), x=freqs, even='simpson') for t in tau])
         table_thick = np.array([scipy.integrate.simpson(y=self._photo_thick_integrand_vec(sed=norm_sed, freq=freqs, tau=t), x=freqs, even='simpson') for t in tau])
         
-        return table_thin, table_thick
+        # tables must have shapes: (num taus, num freq) due to the C++ order
+        return table_thin.T, table_thick.T
     
     def make_heat_table(self,tau, freq_min, freq_max, S_star_ref):
 
@@ -172,8 +174,9 @@ class YggdrasilModel:
         
         table_thin = np.array([scipy.integrate.simpson(y=self._heat_thin_integrand_vec(sed=norm_sed, freq=freqs, tau=t), x=freqs, even='simpson') for t in tau])
         table_thick = np.array([scipy.integrate.simpson(y=self._heat_thick_integrand_vec(sed=norm_sed, freq=freqs, tau=t), x=freqs, even='simpson') for t in tau])
-        
-        return table_thin, table_thick
+
+        # tables must have shapes: (num taus, num freq) due to the C++ order
+        return table_thin.T, table_thick.T
 
 
 class BlackBodySource_Multifreq:
@@ -263,8 +266,9 @@ class BlackBodySource_Multifreq:
         for i_f, (f_min, f_max) in enumerate(zip(freqs[:-1], freqs[1:])):
             table_thin[:, i_f] = quad_vec(integrand_thin, f_min, f_max, epsrel=1e-12)[0]
             table_thick[:, i_f] = quad_vec(integrand_thick, f_min, f_max, epsrel=1e-12)[0]
-            
-        return table_thin, table_thick
+        
+        # tables must have shapes: (num taus, num freq) due to the C++ order
+        return table_thin.T, table_thick.T
     
     def make_heat_table(self, tau, freq_min, freq_max, S_star_ref):
         self.normalize_SED(freq_min, freq_max, S_star_ref)
@@ -287,4 +291,6 @@ class BlackBodySource_Multifreq:
         for i_f, (f_min, f_max) in enumerate(zip(freqs[:-1], freqs[1:])):
             table_thin[:, i_f] = quad_vec(integrand_thin, f_min, f_max, epsrel=1e-12)[0]
             table_thick[:, i_f] = quad_vec(integrand_thick, f_min, f_max, epsrel=1e-12)[0]
-        return table_thin, table_thick
+
+        # tables must have shapes: (num taus, num freq) due to the C++ order
+        return table_thin.T, table_thick.T

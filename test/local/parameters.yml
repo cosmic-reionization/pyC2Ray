@@ -12,6 +12,13 @@
 Grid:
   # Box size in Mpc
   boxsize: 128
+  # size per side of the mesh grid
+  meshsize: 256
+  # boolean varible to switch on ASORA raytracing
+  gpu: 1
+  # boolean varible to switch on MPI parallelization on the sources list
+  mpi: 0
+  # boolean variable to indicate if resuming a simulation (no need to change zred_0)
   resume: 0
 
 # --------------------------------------------------------------------

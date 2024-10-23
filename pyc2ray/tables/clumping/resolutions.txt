@@ -1,4 +1,4 @@
-# resolution of the different tables
+# resolution of the different tables in cMpc
 2.094
 2.024
 1.518

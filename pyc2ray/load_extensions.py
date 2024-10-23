@@ -4,6 +4,8 @@ _c2ray_lib = None
 _c2ray_lib_loaded = None
 _asora_lib = None
 _asora_lib_loaded = None
+#_asora_he_lib = None
+#_asora_he_lib_loaded = None
 
 # Load the f2py-compiled C2Ray subroutines
 def load_c2ray():
@@ -46,3 +48,26 @@ def load_asora():
         return _asora_lib
     else:
         return None
+
+"""
+# Load the ASORA (with Helium) raytracing library
+def load_asora_he():
+    global _asora_he_lib
+    global _asora_he_lib_loaded
+
+    # Try once to load the library
+    if _asora_he_lib_loaded is None:
+        try:
+            from .lib import libasora_He
+            _asora_he_lib_loaded = True
+            _asora_he_lib = libasora_He
+            return _asora_he_lib
+        except ImportError:
+            # If asora is not found, the package can still be used but we inform the user that GPU raytracing is not available
+            print("Info: could not load ASORA (with Helium) library (image not found)")
+            _asora_he_lib_loaded = False
+    elif _asora_he_lib_loaded is True:
+        return _asora_he_lib
+    else:
+        return None
+"""

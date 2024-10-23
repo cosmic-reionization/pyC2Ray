@@ -6,6 +6,9 @@ import pyc2ray as pc2r
 from pyc2ray.utils.sourceutils import format_sources
 from pyc2ray.asora_core import device_init, device_close
 
+# For reproducibility set random seed
+np.random.seed(918)
+
 MYR = 3.15576E+13
 m_p = 1.672661e-24
 msun2g = 1.98892e33
@@ -18,7 +21,6 @@ parser.add_argument("-batchsize", default=10, type=int)
 parser.add_argument("-numreps", default=10, type=int)
 parser.add_argument("-o", default="benchmark_result.pkl", type=str)
 args = parser.parse_args()
-
 
 # Global parameters
 N = 200                # Mesh size
@@ -40,8 +42,6 @@ if((args.batchsize == None) and (args.numsrc != None)):
     # case 1: benchmark sources batch size (fix number of sources)
     src_batch_size = np.array([16, 32, 64, 128])
     nsrc_range = np.array([int(args.numsrc)])
-
-
 elif((args.batchsize != None) and (args.numsrc != None)):
     # case 2: benchmark number of sources (fix batch size)
     nsrc_range = np.array([1, 10, 100, 1000, 10000, 100000, 1000000])
@@ -54,19 +54,19 @@ elif((args.batchsize != None) and (args.numsrc != None)):
     timings = np.empty(len(nsrc_range))
 
     # Read sources and convert to flux
-    with open("./cosmo_sources_sorted.refbin","rb") as f:
-        sources_list = pkl.load(f)
-
+    sources_list = np.random.randint(low=0, high=N, size=(nsrc_range.max(), 3))
+    
     for k, nsrc in enumerate(nsrc_range):
 
-        fact = fgamma*msun2g*0.0044/(sim.cosmology.Om0*t_s*m_p)
+        fact = fgamma*msun2g*0.0044/(0.30966*t_s*m_p)
         srcpos = sources_list[:nsrc,:3].T
         normflux = fact*sources_list[:nsrc,3]/1e48
+
+        srcpos_flat, normflux_flat = format_sources(srcpos, normflux)
+
 elif((args.batchsize == None) and (args.numsrc == None)):
     # error
     raise ValueError('Either -batchsize or -numreps must be fixed (int).')
-
-
 
 
 timings = np.empty(len(nsrc_range))
