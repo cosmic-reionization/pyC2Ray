@@ -16,7 +16,7 @@ from .utils.other_utils import get_extension_in_folder, get_redshifts_from_outpu
 from .utils import get_source_redshifts
 from .c2ray_base import C2Ray, YEAR, Mpc, msun2g, ev2fr, ev2k
 
-from .source_model import SourceModel, StellarToHaloRelation, BurstySFR, EscapeFraction, Halo2Grid, m_p
+from .source_model import StellarToHaloRelation, BurstySFR, EscapeFraction, Halo2Grid, m_p
 from scipy.stats import binned_statistic_dd
 
 __all__ = ['C2Ray_fstar']
@@ -50,26 +50,6 @@ class C2Ray_fstar(C2Ray):
     # USER DEFINED METHODS
     # =====================================================================================================
 
-    def fstar_model(self, mhalo):
-        kind = self.fstar_kind
-        if kind.lower() in ['fgamma', 'f_gamma', 'mass_independent']: 
-            fstar = self.fstar_pars['f0'] * (self.cosmology.Ob0/self.cosmology.Om0)
-            fesc = self.fstar_pars['f0_esc']
-        elif kind.lower() == 'dpl':
-            model_star = StellarToHaloRelation(f0=self.fstar_pars['f0'], Mt=self.fstar_pars['Mt'], Mp=self.fstar_pars['Mp'], g1=self.fstar_pars['g1'], g2=self.fstar_pars['g2'], g3=self.fstar_pars['g3'], g4=self.fstar_pars['g4'], cosmo=self.cosmology)
-            fstar = model_star.deterministic(mhalo)['fstar']
-            model_fesc = EscapeFraction(f0_esc=self.fstar_pars['f0_esc'], Mp_esc=self.fstar_pars['Mp_esc'], al_esc=self.fstar_pars['al_esc'])
-            fesc = model_fesc.deterministic(mhalo)['fesc']
-        elif kind.lower() == 'lognorm':
-            model_fstar = StellarToHaloRelation(f0=self.fstar_pars['f0'], Mt=self.fstar_pars['Mt'], Mp=self.fstar_pars['Mp'], g1=self.fstar_pars['g1'], g2=self.fstar_pars['g2'], g3=self.fstar_pars['g3'], g4=self.fstar_pars['g4'], cosmo=self.cosmology)
-            std_fstar = np.power(mhalo/self.fstar_pars['Mp'], -1./3)
-            fstar = model_fstar.stochastic_lognormal(Mhalo=mhalo, sigma=std_fstar)['fstar']
-            model_fesc = EscapeFraction(f0_esc=self.fstar_pars['f0_esc'], Mp_esc=self.fstar_pars['Mp_esc'], al_esc=self.fstar_pars['al_esc'])
-            fesc = model_fesc.deterministic(mhalo)['fesc']
-        else:
-            print(f'{kind} fstar model is not implemented.')
-        return fstar, fesc
-
     def ionizing_flux(self, file, z, dt=None, save_Mstar=False): # >:( trgeoip
         """Read sources from a C2Ray-formatted file
         Parameters
@@ -91,15 +71,30 @@ class C2Ray_fstar(C2Ray):
         # read halo list       
         srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, self.boxsize)
 
-        # get stellar-to-halo ratio and escaping fraction
-        fstar, fesc = self.fstar_model(srcmass_msun)
+        # source life-time in cgs
+        if(self.acc_kind == 'EXP'):
+            #ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
+            ts = self.fstar_model.source_liftime(z=z)
+        elif(self.acc_kind == 'constant'):
+            ts = dt
 
-        if(self.bursty_model == 'instant' or self.bursty_model == 'integrate'):
-            burst = BurstySFR(beta1=self.bursty_pars['beta1'], beta2=self.bursty_pars['beta2'], tB0=self.bursty_pars['tB0'], tQ_frac=self.bursty_pars['tQ_frac'], z0=self.bursty_pars['z0'], alpha_h=self.alph_h, cosmo=self.cosmology, stochastic=self.bursty_pars['scatter'])
-            burst_mask = burst.instant_burst_or_quiescent_galaxies(mass=srcmass_msun, z=z)
+        # get stellar-to-halo ratio
+        fstar = self.fstar_model.get(Mhalo=srcmass_msun)
+
+        # get escaping fraction
+        if(self.fesc_kind == 'power'):
+            fesc = self.fesc_model.get(Mhalo=srcmass_msun)
+        elif(self.fesc_kind == 'Muv'):
+            Muv = self.fstar_model.UV_magnitude(fstar=fstar, mdot=srcmass_msun/ts)
+            fesc = self.fesc_model.get(Muv=Muv, Mhalo=srcmass_msun)
+            
+        # get for star formation history 
+        if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
+            burst_mask = self.bursty_model.get_bursty(mass=srcmass_msun, z=z)
 
             nr_switchon = np.count_nonzero(burst_mask)
             self.perc_switchon = 100*nr_switchon/burst_mask.size
+
             self.printlog(' A total of %.2f %% of galaxies (%d out of %d) have bursty star-formation.' %(self.perc_switchon, nr_switchon, burst_mask.size))
 
             # mask the sources that are switched off
@@ -113,6 +108,7 @@ class C2Ray_fstar(C2Ray):
         if(nr_switchon > 0):
             mesh_bin = np.linspace(0, self.boxsize/self.cosmology.h, self.N+1)
             binned_mass, bin_edges, bin_num = binned_statistic_dd(srcpos_mpc, mstar_msun, statistic='sum', bins=[mesh_bin, mesh_bin, mesh_bin])        
+            
             # get a list of the source positon and mass
             srcpos = np.argwhere(binned_mass>0) 
             srcmstar = binned_mass[binned_mass>0] 
@@ -139,12 +135,6 @@ class C2Ray_fstar(C2Ray):
                     f.attrs['units'] = 'cMpc   Msun'
             """
             S_star_ref = 1e48
-
-            # source life-time in cgs
-            if(self.acc_model == 'EXP'):
-                ts = 1. / (self.alph_h * (1+z) * self.cosmology.H(z=z).cgs.value)
-            elif(self.acc_model == 'constant'):
-                ts = dt
 
             # normalize flux
             normflux = msun2g * self.fstar_pars['Nion'] * srcmstar / (m_p * ts * S_star_ref)
@@ -228,7 +218,7 @@ class C2Ray_fstar(C2Ray):
             self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
 
     # =====================================================================================================
-    # Below are the overridden initialization routines specific to the CubeP3M case
+    # Below are the overridden initialization routines specific to the f_star case
     # =====================================================================================================
 
     def _redshift_init(self):
@@ -288,42 +278,48 @@ class C2Ray_fstar(C2Ray):
     def _sources_init(self):
         """Initialize settings to read source files
         """
+        # --- Stellar-to-Halo Source model ---
         self.fstar_kind = self._ld['Sources']['fstar_kind']
-        if(self.fstar_kind == 'fgamma'):
-            self.fstar_pars = {'Nion': self._ld['Sources']['Nion'],
-                              'f0': self._ld['Sources']['fgamma_hm'],
-                              'f0_esc': self._ld['Sources']['f0_esc']}
-            #self.fgamma_lm = self._ld['Sources']['fgamma_lm']
-            if(self.rank == 0):
-                #self.printlog(f"Using UV model with fgamma_lm = {self.fgamma_lm:.1f} and fgamma_hm = {self.fgamma_hm:.1f}")
-                self.printlog(f"Using UV model with fgamma_hm = {self.fstar_pars['f0']:.1f}, Nion = {self.fstar_pars['Nion']:.1f}")
-        elif(self.fstar_kind == 'dpl' or self.fstar_kind == 'lognorm'):
-            self.fstar_pars = {
-                            'Nion': self._ld['Sources']['Nion'],
-                            'f0': self._ld['Sources']['f0'],
-                            'Mt': self._ld['Sources']['Mt'], 
-                            'Mp': self._ld['Sources']['Mp'], 
-                            'g1': self._ld['Sources']['g1'], 
-                            'g2': self._ld['Sources']['g2'], 
-                            'g3': self._ld['Sources']['g3'], 
-                            'g4': self._ld['Sources']['g4'], 
-                            'f0_esc': self._ld['Sources']['f0_esc'], 
-                            'Mp_esc': self._ld['Sources']['Mp_esc'], 
-                            'al_esc': self._ld['Sources']['al_esc']
-                            }
-            if(self.rank == 0):
-                self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation, and the parameter dictionary = {self.fstar_pars}.")
 
-        self.acc_model = self._ld['Sources']['accretion_model']
-        self.alph_h = self._ld['Sources']['alpha_h']
+        # dictionary with all the f_star parameters
+        self.fstar_pars = {'Nion': self._ld['Sources']['Nion'], 'f0': self._ld['Sources']['f0'], 'Mt': self._ld['Sources']['Mt'], 'Mp': self._ld['Sources']['Mp'], 'g1': self._ld['Sources']['g1'], 'g2': self._ld['Sources']['g2'], 'g3': self._ld['Sources']['g3'], 'g4': self._ld['Sources']['g4'], 'alpha_h': self._ld['Sources']['alpha_h']}
 
-        self.bursty_model = self._ld['Sources']['bursty_sfr']
-        if(self.bursty_model == 'instant' or self.bursty_model == 'integrate'):
-            self.bursty_pars = {
-                                'beta1': self._ld['Sources']['beta1'],
-                                'beta2': self._ld['Sources']['beta2'],
-                                'tB0': self._ld['Sources']['tB0'],
-                                'tQ_frac': self._ld['Sources']['tQ_frac'],
-                                'z0': self._ld['Sources']['z0'],
-                                'scatter': self._ld['Sources']['scatter']
-                                }
+        # print message that inform of the f_star model employed
+        if(self.fstar_kind == 'fgamma' and self.rank == 0):
+            self.printlog(f"Using constant stellar-to-alo relation model with fgamma_hm = {self.fstar_pars['f0']:.1f}, Nion = {self.fstar_pars['Nion']:.1f}")
+        elif(self.rank == 0 and (self.fstar_kind == 'dpl' or self.fstar_kind == 'lognorm')):
+            self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation with parameters: {self.fstar_pars}.")
+
+        # define the f_star model class (to call self.fstar_model.get_fstar(Mhalo) when reading the sources)
+        self.fstar_model = StellarToHaloRelation(model=self.fstar_kind, pars=self.fstar_pars, cosmo=self.cosmology)
+
+        # --- Halo Accretion Model --- 
+        # TODO: Create class etc...
+        self.acc_kind = self._ld['Sources']['accretion_model']
+        self.alph_h = self.fstar_pars['alpha_h']
+
+        # --- Burstiness Model for Star Formation ---
+        self.bursty_kind = self._ld['Sources']['bursty_sfr']
+
+        # dictionary with all the burstiness parameters
+        if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
+            self.bursty_pars = {'beta1': self._ld['Sources']['beta1'], 'beta2': self._ld['Sources']['beta2'], 'tB0': self._ld['Sources']['tB0'], 'tQ_frac': self._ld['Sources']['tQ_frac'], 'z0': self._ld['Sources']['z0'], 't_rnd': self._ld['Sources']['t_rnd']}
+
+            if(self.rank == 0):
+                self.printlog(f"Using {self.bursty_kind} bustiness to model the star formation history with parameters: {self.bursty_pars}.")
+            
+        # define the burstiness SF model class
+        self.bursty_model = BurstySFR(model=self.bursty_kind, pars=self.bursty_pars, alpha_h=self.alph_h, cosmo=self.cosmology)
+
+        # --- Escaping fraction Model ---
+        self.fesc_kind = self._ld['Sources']['fesc_model']
+        self.fesc_pars = {'f0_esc': self._ld['Sources']['f0_esc'], 'Mp_esc': self._ld['Sources']['Mp_esc'], 'al_esc': self._ld['Sources']['al_esc']}
+        if(self.rank == 0):
+            if(self.fesc_kind == 'constant'):
+                self.printlog(f"Using constant escaping fraction model model with f0_esc = %.1f" %(self.fesc_pars['f0_esc']))
+            elif(self.fesc_kind == 'power'):
+                self.printlog(f"Using mass-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
+            elif(self.fesc_kind == 'Gelli2024'):
+                self.printlog(f"Using UV magnitude-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
+
+        self.fesc_model = EscapeFraction(model=self.fesc_kind, pars=self.fesc_pars)

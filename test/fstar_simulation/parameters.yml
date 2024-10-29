@@ -17,7 +17,7 @@ Grid:
   # boolean varible to switch on ASORA raytracing
   gpu: 1
   # boolean varible to switch on MPI parallelization on the sources list
-  mpi: 1
+  mpi: 0
   # boolean variable to indicate if resuming a simulation (no need to change zred_0)
   resume: 0
   
@@ -131,7 +131,7 @@ Sources:
   g2: -0.3
   g3: 0
   g4: -0.0
-  # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Muv' for a UV dependent model (Gelli+ 2024)
+  # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Gelli2024' for a UV dependent model (Gelli+ 2024)
   fesc_model: 'power'
   f0_esc: 0.02
   Mp_esc: 1e10
@@ -152,8 +152,8 @@ Sources:
   tQ_frac: 0.95
   # reference redshif for the bursty star-formation model
   z0: 30.0
-  # introduce scatter into the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(M0, std))
-  scatter: 0
+  # randominze the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(t_start, t_rnd))
+  t_rnd: 0
 
 # -----------------------
 # Cosmological Parameters
@@ -177,7 +177,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty4_fesc/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/test_fstar2/ #/scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty4_fesc/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk025/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)

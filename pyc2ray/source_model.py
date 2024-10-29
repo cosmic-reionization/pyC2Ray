@@ -19,40 +19,43 @@ from .c2ray_base import YEAR, Mpc, msun2g, ev2fr, ev2k
 # msun2g = 1.98892e33 #(1*u.Msun).to('g').value       # solar mass to grams
 m_p = 1.672661e-24
 
-def stellar_to_halo_fraction(Mhalo, f0=0.3, Mt=1e8, Mp=3e11, g1=0.49, g2=-0.61, g3=3, g4=-3, Om=0.27, Ob=0.044):
-	'''
-	A parameterised stellar to halo relation (2011.12308, 2201.02210, 2302.06626).
-	'''
-	# Double power law, motivated by UVLFs
-	dpl = 2*Ob/Om*f0/((Mhalo/Mp)**g1+(Mhalo/Mp)**g2)
-
-	# Suppression at the small-mass end
-	S_M = (1 + (Mt/Mhalo)**g3)**g4
-
-	fstar = dpl*S_M
-
-	return fstar
-
 class StellarToHaloRelation:
 	"""Modelling the mass relation between dark matter halo and the residing stars/galaxies."""
-	def __init__(self, f0=0.3, Mt=1e8, Mp=3e11, g1=0.49, g2=-0.61, g3=3, g4=-3, cosmo=None):
+	def __init__(self, model, pars, cosmo=None):
 
-		self.h, self.Ob, self.Om = cosmo.h, cosmo.Ob0, cosmo.Om0
-		self.f0 = f0
-		self.Mt = Mt
-		self.Mp = Mp
-		self.g1 = g1
-		self.g2 = g2
-		self.g3 = g3
-		self.g4 = g4
+		self.cosmo = cosmo
+		self.model = model
+		self.Nion = pars['Nion']
+		self.f0 = pars['f0']
+		self.Mt = pars['Mt']
+		self.Mp = pars['Mp']
+		self.g1 = pars['g1']
+		self.g2 = pars['g2']
+		self.g3 = pars['g3']
+		self.g4 = pars['g4']
+		self.alph_h = pars['alpha_h']
+
+		if(self.model == 'fgamma'):
+			self.get = lambda Mhalo : self.cosmo.Ob0/self.cosmo.Om0*Mhalo*self.f0
+		elif(self.model == 'dpl'):
+			self.get = self.deterministic
+		elif(self.model == 'lognorm'):
+			self.get = self.stochastic_lognormal
+		elif(self.model == 'Muv'):
+			self.get = self.fstar_from_Muv
+		else:
+			ValueError(' Selected stellar-to-halo relation model that does not exist : %s' %self.model)
+
+	def source_liftime(self, z):
+		ts = 1. / (self.alph_h * (1+z) * self.cosmo.H(z=z).cgs.value)
+		return ts
 
 	def deterministic(self, Mhalo):
-		fstar_mean = stellar_to_halo_fraction(Mhalo, f0=self.f0, Mt=self.Mt, Mp=self.Mp, g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, Ob=self.Ob, Om=self.Om)
-		Mstar = Mhalo*fstar_mean 
-		return {'fstar': fstar_mean, 'Mstar': Mstar}
+		fstar_mean = self.stellar_to_halo_fraction(Mhalo)
+		return fstar_mean
 
 	def stochastic_Gaussian(self, Mhalo, sigma):
-		fstar_mean = stellar_to_halo_fraction(Mhalo, f0=self.f0, Mt=self.Mt, Mp=self.Mp, g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, Ob=self.Ob, Om=self.Om)
+		fstar_mean = self.stellar_to_halo_fraction(Mhalo)
 		
 		if isinstance(sigma, float): 
 			fstar_std = lambda M: sigma*np.ones_like(Mhalo) 
@@ -60,67 +63,122 @@ class StellarToHaloRelation:
 			fstar_std = sigma
 
 		fstar = np.clip(fstar_mean*(1+np.random.normal(0, fstar_std)), a_min=0, a_max=1)
-		Mstar = Mhalo*fstar
+		
+		return fstar
 
-		return {'fstar': fstar, 'Mstar': Mstar}
+	def stochastic_lognormal(self, Mhalo, sigma=None):
+		fstar_mean = self.stellar_to_halo_fraction(Mhalo)
 
-	def stochastic_lognormal(self, Mhalo, sigma, sigma_percent=False, **kwargs):
-		fstar_mean = stellar_to_halo_fraction(Mhalo, f0=self.f0, Mt=self.Mt, Mp=self.Mp, g1=self.g1, g2=self.g2, g3=self.g3, g4=self.g4, Ob=self.Ob, Om=self.Om)
-
-		if isinstance(sigma,float): 
-			log_fstar_std = sigma*np.ones_like(Mhalo) 
-		else:
+		if isinstance(sigma, (np.ndarray, list)):
 			log_fstar_std = sigma
-
+		elif isinstance(sigma, float): 
+			log_fstar_std = sigma*np.ones_like(Mhalo) 
+		elif(sigma == None):
+			log_fstar_std = np.power(Mhalo/self.Mp, -1./3)
+		
 		log_fstar = np.log(fstar_mean)+np.random.normal(0, log_fstar_std)
 		fstar = np.clip(a=np.exp(log_fstar), a_min=0, a_max=1)
-		Mstar = Mhalo*fstar
-		return {'fstar': fstar, 'Mstar': Mstar}
+		return fstar
 	
+	def fstar_from_Muv(self, Mhalo, z):
+		# source life-time (for accreation mass) in cgs units
+		ts = self.source_liftime(z=z)
+
+		# mean absolute magnitude
+		mean_fstar = self.stellar_to_halo_fraction(Mhalo=Mhalo)
+		mean_Muv = self.UV_magnitude(fstar=mean_fstar, mdot=Mhalo/ts)
+		print(mean_Muv)
+
+		# following Gelli+ (2024), Muv scatter is proportional to halo circular velocity: ~M^(-1/3) 
+		std_Muv = -np.log10(Mhalo)/3.0 + 4.5 # same as: np.log10(np.power(mass/10**(13.5), -1./3))
+
+		# absolute magnitude with scatter
+		Muv = np.random.normal(loc=mean_Muv, scale=std_Muv)
+		print(Muv)
+		#calibrated for 1500 Å dust-corrected rest-frame UV luminosity
+		M0, k_val = 51.6, 3.64413e-36 # in [Msun/s * Hz / (s erg)]
+		fstar = self.cosmo.Om0/self.cosmo.Ob0 * k_val / (Mhalo/ts) * np.power(10., (M0-Muv)/2.5)
+		return np.clip(fstar, 0., 1.)
+
+	def stellar_to_halo_fraction(self, Mhalo):
+		'''
+		A parameterised stellar to halo relation (2011.12308, 2201.02210, 2302.06626).
+		'''
+		# Double power law, motivated by UVLFs
+		dpl = 2*self.cosmo.Ob0/self.cosmo.Om0*self.f0/((Mhalo/self.Mp)**self.g1+(Mhalo/self.Mp)**self.g2)
+
+		# Suppression at the small-mass end
+		S_M = (1 + (self.Mt/Mhalo)**self.g3)**self.g4
+
+		fstar = dpl*S_M
+
+		return fstar
+
 	def UV_magnitude(self, fstar, mdot):
 		# corresponding to AB magnitude system (Oke 1974)
-		M0 = 51.6	
+		M0 = 51.6
 		
-		#calibrated for 1500 Å dust-corrected rest-frame UV luminosity in units [Msun * s * Hz / (yr erg)]
-		k_val = 1.15e-28
+		#calibrated for 1500 Å dust-corrected rest-frame UV luminosity
+		#k_val = 1.15e-28 # in [Msun/yr * Hz / (s erg)]
+		k_val = 3.64413e-36 # in [Msun/s * Hz / (s erg)]
 		
-		M_UV = M0 - 2.5*(np.log10(fstar) + np.log10(self.Ob/self.Om) + np.log10(mdot) - np.log10(k_val))
+		M_UV = M0 - 2.5*(np.log10(fstar) + np.log10(self.cosmo.Ob0/self.cosmo.Om0) + np.log10(mdot/k_val))
 		return M_UV
 
 
 class EscapeFraction:
 	""" Modelling the escape of photons from the stars/galaxies inside dark matter haloes."""
-	def __init__(self, f0_esc=0.1, Mp_esc=1e10, al_esc=0):
+	def __init__(self, model, pars):
+		self.model = model
+		self.f0_esc = pars['f0_esc']
+		self.Mp_esc = pars['Mp_esc']
+		self.al_esc = pars['al_esc']
 
-		self.f0_esc = f0_esc
-		self.Mp_esc = Mp_esc
-		self.al_esc = al_esc
+		if(self.model == 'constant'):
+			self.get = lambda Mhalo: self.f0_esc
+		elif(self.model == 'power'):
+			self.get = self.deterministic
+		elif(self.model == 'Gelli2024'):
+			self.get = self.fesc_Muv
+		else:
+			ValueError(' Selected escaping fraction model that does not exist : %s' %self.model)
 
 	def deterministic(self, Mhalo):
 		fesc_mean = self.f0_esc*(Mhalo/self.Mp_esc)**self.al_esc
-		return {'fesc': fesc_mean}
+		return fesc_mean
 
-	def fesc_Muv(self, Mhalo, Mdot):
-		# TODO: follow Gelli+ (2024) model
-		return 0
+	def fesc_Muv(self, delta_Muv):
+		# Similar to Gelli+ (2024) model
+		fesc = self.f0_esc * (delta_Muv**self.al_esc + 1.)
+		fesc[delta_Muv < 0] = self.f0_esc
+		return np.clip(fesc, 0, 1)
+
 
 class BurstySFR:
 	""" Modelling bursty star formation"""
-	def __init__(self, beta1, beta2, tB0, tQ_frac, z0, alpha_h, cosmo, stochastic=False):
-		self.beta1 = beta1
-		self.beta2 = beta2
-		self.tB0 = tB0
-		self.tQ_frac = tQ_frac
-		self.z0 = z0
+	def __init__(self, model, pars, alpha_h, cosmo):
+		self.model = model
+		self.beta1 = pars['beta1']
+		self.beta2 = pars['beta2']
+		self.tB0 = pars['tB0']
+		self.tQ_frac = pars['tQ_frac']
+		self.z0 = pars['z0']
+		self.t_rnd = pars['t_rnd']
 		self.alpha_h = alpha_h
 		self.cosmo = cosmo
-		self.stochastic = stochastic
 
-		self.t0 = cosmo.age(z0).to('Myr').value
+		self.t0 = cosmo.age(self.z0).to('Myr').value
+
+		if(self.model == 'instant'):
+			self.get_bursty = self.instant_burst_or_quiescent_galaxies
+		elif(self.model == 'integrate'):
+			ValueError(' Sorry, model not yet implemented : %s' %self.model)
+		else:
+			ValueError(' Selected burstiness model that does not exist : %s' %self.model)
 
 	def time_burstiness(self, mass, z):
-		if(self.stochastic):
-			M0 = 10**np.random.normal(np.log10(M0), self.stochastic)
+		if(self.t_rnd):
+			M0 = 10**np.random.normal(np.log10(M0), self.t_rnd)
 		else:
 			M0 = mass/np.exp(-self.alpha_h*(z-self.z0))
 		
@@ -267,115 +325,3 @@ class Halo2Grid:
 		binned_value_list = binned_value[binned_value>0]
 		return binned_pos_list, binned_value_list
 
-
-class SourceModel(Halo2Grid):
-	"""Combines StellarToHaloRelation and Halo2Grid to model the source properties."""
-
-	def __init__(self, Nion=1, f0=0.3, Mt=1e8, Mp=3e11,
-					g1=0.49, g2=-0.61, g3=3, g4=-3,
-					f0_esc=1, Mp_esc=1e10, al_esc=0,
-					box_len=None, n_grid=None, method='nearest', **kwargs):
-		"""
-		Initialize the SourceModel.
-
-		Parameters:
-			f0 (float): Normalisation parameter for f_star.
-			Mt (float): Truncation mass for f_star.
-			Mp (float): Peak mass postion in f_star.
-			g1 (float): Slope at low mass end.
-			g2 (float): Slope at high mass end.
-			g3 (float): Power-law index for the masses below Mt.
-			g4 (float): Power-law index for the masses below Mt.
-			f0_esc (float): Normalisation parameter for f_esc.
-			Mp_esc (float): Normalisation for the masses in f_esc relation.
-			al_esc (float): Power-law index for f_esc relation.
-			box_len (float): Size of the simulation box.
-			n_grid (int): Number of grid cells.
-			method (str): Interpolation method for Halo2Grid.
-			kwargs (dict): Additional parameters for parent classes.
-		"""
-		Halo2Grid.__init__(self, box_len=box_len, n_grid=n_grid, method=method)
-
-		self.f_star = StellarToHaloRelation(f0=f0, Mt=Mt, Mp=Mp, g1=g1, g2=g2, g3=g3, g4=g4, **kwargs)
-		self.f_esc  = EscapeFraction(f0_esc=f0_esc, Mp_esc=Mp_esc, al_esc=al_esc)
-
-	def ionizing_flux(self, ts=10, mstar_model='deterministic', **kwargs):
-		pos = kwargs.get('pos', self.pos_grid)
-		if pos is None:
-			print('Provide the halo positions via parameter "pos".')
-			return None
-		mass = kwargs.get('mass', self.pos_grid)
-		if mass is None:
-			print('Provide the halo masses via parameter "mass".')
-			return None
-
-		S_star_ref = 1e48
-		
-		# TODO: automatic selection of low mass or high mass. For the moment only high mass
-		#mass2phot = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value * self.ts * self.cosmology.Om0)    
-		# TODO: for some reason the difference with the orginal Fortran run is of the molecular weight
-		#self.printlog('%f' %self.mean_molecular )
-		fgamma_hm = 1  # Set to 1 as we can absorb this into f0 in stellar-to-halo relation.
-
-		# Mstar modelling
-		if mstar_model.lower()=='deterministic':
-			fstar  = self.f_star.deterministic(mass)
-			mass_star = fstar['Mstar']
-
-		# UV Escape fraction modelling
-		fesc = self.f_esc.deterministic(mass)
-
-		mass2phot = msun2g * fgamma_hm *  1/ (m_p * ts)    
-		normflux = fesc['fesc']*mass_star * mass2phot / S_star_ref
-		print(normflux)
-
-		binned_flux, bin_edges, bin_num = self.value_on_grid(pos, normflux)
-		binned_pos_list, binned_flux_list = self.halo_value_on_grid(normflux, binned_value=binned_flux)
-
-		print(' Total Flux : %e' %np.sum(normflux*S_star_ref))
-		print(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-		print(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot*S_star_ref, normflux.max()/mass2phot*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
-		self.binned_flux = binned_flux
-		self.binned_pos_list  = binned_pos_list
-		self.binned_flux_list = binned_flux_list
-		return binned_pos_list, binned_flux_list
-
-
-if __name__ == "__main__":
-	import matplotlib.pyplot as plt 
-
-	model1 = StellarToHaloRelation(f0=0.3, Mt=1e8, Mp=3e11,
-					g1=0.49, g2=-0.61, g3=5, g4=-5)
-	model2 = StellarToHaloRelation(f0=0.3, Mt=1e9, Mp=3e11,
-					g1=0.49, g2=-0.61, g3=5, g4=-5)
-
-	Ms = 10**np.linspace(7,14,250)
-	star1 = model1.deterministic(Ms)
-	star2 = model2.deterministic(Ms)
-
-	star1_Gaussian1 = model1.stochastic_Gaussian(Ms, 0.50, sigma_percent=True)
-	star1_Gaussian2 = model1.stochastic_Gaussian(Ms, 0.05, sigma_percent=True)
-	star2_Gaussian1 = model2.stochastic_Gaussian(Ms, 0.50, sigma_percent=True)
-	star2_Gaussian2 = model2.stochastic_Gaussian(Ms, 0.05, sigma_percent=True)
-
-	fig, axs = plt.subplots(1,2,figsize=(13,5))
-	axs[0].scatter(Ms, star1_Gaussian1['fstar'], c='C0', marker='o', edgecolor='k')
-	axs[0].scatter(Ms, star1_Gaussian2['fstar'], c='C0', marker='^', edgecolor='k')
-	axs[0].scatter(Ms, star2_Gaussian1['fstar'], c='C1', marker='o', edgecolor='k')
-	axs[0].scatter(Ms, star2_Gaussian2['fstar'], c='C1', marker='^', edgecolor='k')
-	axs[0].loglog(Ms, star1['fstar'], c='C0', lw=3, ls='-')
-	axs[0].loglog(Ms, star2['fstar'], c='C1', lw=3, ls='--')
-	axs[0].set_xlabel(r'$M_\mathrm{halo}$', fontsize=16)
-	axs[0].set_ylabel(r'$f_\mathrm{\star}$', fontsize=16)
-	axs[0].axis([3e7,8e13,1e-4,0.5])
-	axs[1].scatter(Ms, star1_Gaussian1['Mstar'], c='C0', marker='o', edgecolor='k')
-	axs[1].scatter(Ms, star1_Gaussian2['Mstar'], c='C0', marker='^', edgecolor='k')
-	axs[1].scatter(Ms, star2_Gaussian1['Mstar'], c='C1', marker='o', edgecolor='k')
-	axs[1].scatter(Ms, star2_Gaussian2['Mstar'], c='C1', marker='^', edgecolor='k')
-	axs[1].loglog(Ms, star1['Mstar'], c='C0', lw=3, ls='-')
-	axs[1].loglog(Ms, star2['Mstar'], c='C1', lw=3, ls='--')
-	axs[1].set_xlabel(r'$M_\mathrm{halo}$', fontsize=16)
-	axs[1].set_ylabel(r'$M_\mathrm{\star}$', fontsize=16)
-	axs[1].axis([3e7,8e13,1e1,5e12])
-	plt.tight_layout()
-	plt.show()
