@@ -132,7 +132,7 @@ Sources:
   g3: 0
   g4: -0.0
   # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Gelli2024' for a UV dependent model (Gelli+ 2024)
-  fesc_model: 'power'
+  fesc_model: 'constant'
   f0_esc: 0.02
   Mp_esc: 1e10
   al_esc: -0.5
@@ -145,11 +145,11 @@ Sources:
   # index power-low of the bursty star-formation model mass relation
   beta1: 0.1
   # index power-low of the bursty star-formation model time relation
-  beta2: 0.2
+  beta2: 2.5
   # bursty star-formation time-scale at z=0
   tB0: 300.
   # fraction of the quiescent time-scale
-  tQ_frac: 0.95
+  tQ_frac: 2.0
   # reference redshif for the bursty star-formation model
   z0: 30.0
   # randominze the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(t_start, t_rnd))
@@ -177,7 +177,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/test_fstar2/ #/scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty4_fesc/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty5/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk025/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)

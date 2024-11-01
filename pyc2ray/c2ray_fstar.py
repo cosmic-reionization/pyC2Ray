@@ -82,7 +82,9 @@ class C2Ray_fstar(C2Ray):
         fstar = self.fstar_model.get(Mhalo=srcmass_msun)
 
         # get escaping fraction
-        if(self.fesc_kind == 'power'):
+        if(self.fesc_kind == 'constant'):
+            fesc = self.fesc_model.f0_esc
+        elif(self.fesc_kind == 'power'):
             fesc = self.fesc_model.get(Mhalo=srcmass_msun)
         elif(self.fesc_kind == 'Muv'):
             Muv = self.fstar_model.UV_magnitude(fstar=fstar, mdot=srcmass_msun/ts)
@@ -99,7 +101,10 @@ class C2Ray_fstar(C2Ray):
 
             # mask the sources that are switched off
             srcpos_mpc, srcmass_msun = srcpos_mpc[burst_mask], srcmass_msun[burst_mask]
-            fstar, fesc = fstar[burst_mask], fesc[burst_mask]
+            if(self.fesc_kind == 'constant'):
+                fstar = fstar[burst_mask]
+            else:
+                fstar, fesc = fstar[burst_mask], fesc[burst_mask]
 
         # get stellar mass
         mstar_msun = fesc*fstar*srcmass_msun

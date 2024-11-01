@@ -87,14 +87,13 @@ class StellarToHaloRelation:
 		# mean absolute magnitude
 		mean_fstar = self.stellar_to_halo_fraction(Mhalo=Mhalo)
 		mean_Muv = self.UV_magnitude(fstar=mean_fstar, mdot=Mhalo/ts)
-		print(mean_Muv)
 
 		# following Gelli+ (2024), Muv scatter is proportional to halo circular velocity: ~M^(-1/3) 
 		std_Muv = -np.log10(Mhalo)/3.0 + 4.5 # same as: np.log10(np.power(mass/10**(13.5), -1./3))
 
 		# absolute magnitude with scatter
 		Muv = np.random.normal(loc=mean_Muv, scale=std_Muv)
-		print(Muv)
+
 		#calibrated for 1500 Å dust-corrected rest-frame UV luminosity
 		M0, k_val = 51.6, 3.64413e-36 # in [Msun/s * Hz / (s erg)]
 		fstar = self.cosmo.Om0/self.cosmo.Ob0 * k_val / (Mhalo/ts) * np.power(10., (M0-Muv)/2.5)
@@ -149,8 +148,8 @@ class EscapeFraction:
 
 	def fesc_Muv(self, delta_Muv):
 		# Similar to Gelli+ (2024) model
-		fesc = self.f0_esc * (delta_Muv**self.al_esc + 1.)
-		fesc[delta_Muv < 0] = self.f0_esc
+		fesc = np.exp(delta_Muv - 5) #self.f0_esc * (delta_Muv**self.al_esc + 1.)
+		#fesc[delta_Muv < 0] = self.f0_esc
 		return np.clip(fesc, 0, 1)
 
 
@@ -222,6 +221,7 @@ class BurstySFR:
 		# get burstiness and quencing time
 		tB = self.time_burstiness(mass, z)
 		tQ = self.tQ_frac * tB
+		#tB *= (1-self.tQ_frac) 
 		
 		# get time at the corresponding redshift
 		t_age = self.cosmo.age(z).to('Myr').value - self.t0
