@@ -160,7 +160,8 @@ class C2Ray_fstar(C2Ray):
             if(self.rank == 0):
                 self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(srcmass_msun.size, file))
                 self.printlog(' No sources switch on. Skip computing the raytracing.')
-            
+
+            self.tot_phots = 0
             return 0, 0
     
     def read_haloes(self, halo_file, box_len): # >:( trgeoip

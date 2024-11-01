@@ -17,7 +17,7 @@ Grid:
   # boolean varible to switch on ASORA raytracing
   gpu: 1
   # boolean varible to switch on MPI parallelization on the sources list
-  mpi: 0
+  mpi: 1
   # boolean variable to indicate if resuming a simulation (no need to change zred_0)
   resume: 0
   
@@ -145,11 +145,11 @@ Sources:
   # index power-low of the bursty star-formation model mass relation
   beta1: 0.1
   # index power-low of the bursty star-formation model time relation
-  beta2: 2.5
+  beta2: 1.5
   # bursty star-formation time-scale at z=0
   tB0: 300.
   # fraction of the quiescent time-scale
-  tQ_frac: 2.0
+  tQ_frac: 1.5
   # reference redshif for the bursty star-formation model
   z0: 30.0
   # randominze the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(t_start, t_rnd))
