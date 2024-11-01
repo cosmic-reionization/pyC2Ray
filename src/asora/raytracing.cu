@@ -125,7 +125,7 @@ void do_all_sources_gpu(
  minlogtau,dlogtau,NumTau,last_l,last_r);
 
             // Check for errors
-            auto error = cudaGetLastError();
+            cudaError_t error = cudaGetLastError();
             if(error != cudaSuccess) {
                 throw std::runtime_error("Error Launching Kernel: " + std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
             }
@@ -135,8 +135,8 @@ void do_all_sources_gpu(
         }
 
         // Copy the accumulated ionization fraction back to the host
-        auto error = cudaMemcpy(phi_ion,phi_dev,meshsize,cudaMemcpyDeviceToHost);
-        auto error2 = cudaMemcpy(coldensh_out,cdh_dev,meshsize,cudaMemcpyDeviceToHost);
+        cudaError_t error = cudaMemcpy(phi_ion,phi_dev,meshsize,cudaMemcpyDeviceToHost);
+        cudaError_t error2 = cudaMemcpy(coldensh_out,cdh_dev,meshsize,cudaMemcpyDeviceToHost);
     }
 
 
