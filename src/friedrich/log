@@ -1,0 +1,112 @@
+f2py --f2cmap f2c.f2py_f2cmap -DUSE_SUBBOX   --f90flags="-cpp" -c chemistry_he.f90 -m libc2ray_He
+running build
+running config_cc
+INFO: unifing config_cc, config, build_clib, build_ext, build commands --compiler options
+running config_fc
+INFO: unifing config_fc, config, build_clib, build_ext, build commands --fcompiler options
+running build_src
+INFO: build_src
+INFO: building extension "libc2ray_He" sources
+INFO: f2py options: ['--f2cmap', 'f2c.f2py_f2cmap']
+INFO: f2py:> /tmp/tmp0tmzatwo/src.linux-x86_64-3.10/libc2ray_Hemodule.c
+creating /tmp/tmp0tmzatwo/src.linux-x86_64-3.10
+Reading f2cmap from 'f2c.f2py_f2cmap' ...
+	Mapping "real(kind=real64)" to "double"
+Successfully applied user defined f2cmap changes
+Reading fortran codes...
+	Reading file 'chemistry_he.f90' (format:free)
+{'before': '', 'this': 'use', 'after': ', intrinsic :: iso_fortran_env, only: real64 '}
+Line #5 in chemistry_he.f90:"    use, intrinsic :: iso_fortran_env, only: real64 "
+	analyzeline: Could not crack the use statement.
+Post-processing...
+	Block: libc2ray_He
+			Block: chemistry
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+In: :libc2ray_He:chemistry_he.f90:chemistry
+get_parameters: got "eval() arg 1 must be a string, bytes or code object" on 4
+				Block: global_pass
+				Block: evolve0d_global
+				Block: do_chemistry
+				Block: friedrich
+Applying post-processing hooks...
+  character_backward_compatibility_hook
+Post-processing (stage 2)...
+	Block: libc2ray_He
+		Block: unknown_interface
+			Block: chemistry
+				Block: global_pass
+				Block: evolve0d_global
+				Block: do_chemistry
+				Block: friedrich
+Building modules...
+    Building module "libc2ray_He"...
+		Constructing F90 module support for "chemistry"...
+		  Variables: epsilon minimum_fractional_change minimum_fraction_of_atoms sigma_h_heth sigma_hei_at_ion_freq sigma_h_helya sigma_he_helya sigma_h_he2 sigma_he_he2 sigma_heii_at_ion_freq p l m f_lya
+            Constructing wrapper function "chemistry.global_pass"...
+              conv_flag = global_pass(dt,ndens,temp,xh,xh_av,xh_intermed,xhei,xhei_av,xhei_intermed,xheii,xheii_av,xheii_intermed,phi_hi_ion,phi_hei_ion,phi_heii_ion,clump,abu_c,[m1,m2,m3])
+            Constructing wrapper function "chemistry.evolve0d_global"...
+              evolve0d_global(dt,pos,ndens,temp,xh,xh_av,xh_intermed,xhei,xhei_av,xhei_intermed,xheii,xheii_av,xheii_intermed,phi_hi_ion,phi_hei_ion,phi_heii_ion,heat_hi_ion,heat_hi_ion1,heat_hi_ion2,clump,abu_c,conv_flag,[m1,m2,m3])
+            Constructing wrapper function "chemistry.do_chemistry"...
+              xh_av_p,xh_intermed_p,xhei_av_p,xhei_intermed_p,xheii_av_p,xheii_intermed_p = do_chemistry(dt,ndens_p,temperature_start,xh_p,xhei_p,xheii_p,phi_hi_ion_p,phi_hei_ion_p,phi_heii_ion_p,heat_hi_ion_p,heat_hei_ion_p,heat_heii_ion_p,clump_p,abu_c)
+            Constructing wrapper function "chemistry.friedrich"...
+              xhii_av,xheii_av,xheiii_av = friedrich(nhi,nhei,nheii,xhii_old,xheii_old,xheiii_old,dt,temp_p,n_e,phi_hi,phi_hei,phi_heii,heat_hi,heat_hei,heat_heii,x,y)
+    Wrote C/API module "libc2ray_He" to file "/tmp/tmp0tmzatwo/src.linux-x86_64-3.10/libc2ray_Hemodule.c"
+    Fortran 90 wrappers are saved to "/tmp/tmp0tmzatwo/src.linux-x86_64-3.10/libc2ray_He-f2pywrappers2.f90"
+INFO:   adding '/tmp/tmp0tmzatwo/src.linux-x86_64-3.10/fortranobject.c' to sources.
+INFO:   adding '/tmp/tmp0tmzatwo/src.linux-x86_64-3.10' to include_dirs.
+copying /home/mbianco/.local/lib/python3.10/site-packages/numpy/f2py/src/fortranobject.c -> /tmp/tmp0tmzatwo/src.linux-x86_64-3.10
+copying /home/mbianco/.local/lib/python3.10/site-packages/numpy/f2py/src/fortranobject.h -> /tmp/tmp0tmzatwo/src.linux-x86_64-3.10
+INFO:   adding '/tmp/tmp0tmzatwo/src.linux-x86_64-3.10/libc2ray_He-f2pywrappers2.f90' to sources.
+INFO: build_src: building npy-pkg config files
+running build_ext
+INFO: customize UnixCCompiler
+INFO: customize UnixCCompiler using build_ext
+INFO: get_default_fcompiler: matching types: '['arm', 'gnu95', 'intel', 'lahey', 'pg', 'nv', 'absoft', 'nag', 'vast', 'compaq', 'intele', 'intelem', 'gnu', 'g95', 'pathf95', 'nagfor', 'fujitsu']'
+INFO: customize ArmFlangCompiler
+WARN: Could not locate executable armflang
+INFO: customize Gnu95FCompiler
+INFO: Found executable /usr/bin/gfortran
+INFO: customize Gnu95FCompiler
+INFO: customize Gnu95FCompiler using build_ext
+INFO: building 'libc2ray_He' extension
+INFO: compiling C sources
+INFO: C compiler: x86_64-linux-gnu-gcc -Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -fPIC
+
+creating /tmp/tmp0tmzatwo/tmp
+creating /tmp/tmp0tmzatwo/tmp/tmp0tmzatwo
+creating /tmp/tmp0tmzatwo/tmp/tmp0tmzatwo/src.linux-x86_64-3.10
+INFO: compile options: '-DUSE_SUBBOX -DNPY_DISABLE_OPTIMIZATION=1 -I/tmp/tmp0tmzatwo/src.linux-x86_64-3.10 -I/home/mbianco/.local/lib/python3.10/site-packages/numpy/core/include -I/usr/include/python3.10 -c'
+INFO: x86_64-linux-gnu-gcc: /tmp/tmp0tmzatwo/src.linux-x86_64-3.10/libc2ray_Hemodule.c
+INFO: x86_64-linux-gnu-gcc: /tmp/tmp0tmzatwo/src.linux-x86_64-3.10/fortranobject.c
+INFO: compiling Fortran 90 module sources
+INFO: Fortran f77 compiler: /usr/bin/gfortran -Wall -g -ffixed-form -fno-second-underscore -fPIC -O3 -funroll-loops
+Fortran f90 compiler: /usr/bin/gfortran -cpp -fPIC -O3 -funroll-loops
+Fortran fix compiler: /usr/bin/gfortran -Wall -g -ffixed-form -fno-second-underscore -cpp -fPIC -O3 -funroll-loops
+INFO: compile options: '-DUSE_SUBBOX -I/tmp/tmp0tmzatwo/src.linux-x86_64-3.10 -I/home/mbianco/.local/lib/python3.10/site-packages/numpy/core/include -I/usr/include/python3.10 -c'
+extra options: '-J/tmp/tmp0tmzatwo/ -I/tmp/tmp0tmzatwo/'
+INFO: gfortran:f90: chemistry_he.f90
