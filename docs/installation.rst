@@ -36,10 +36,10 @@ To install all the required python packages in an environement, use the the foll
 
 .. code-block:: bash
         
-        python -m venv pyc2ray-env
+        python3 -m venv pyc2ray-env
         source ./pyc2ray-env/bin/activate
         cd pyC2Ray/
-        python3 -m pip install requirements.txt
+        python3 -m pip install  requirements.txt
 
 This way will helps you to keep the required dependencies for different projects separated.
 
