@@ -154,11 +154,12 @@ module chemistry
         heat_hi_ion_p = heat_hi_ion(pos(1),pos(2),pos(3))
         heat_hei_ion_p = heat_hei_ion(pos(1),pos(2),pos(3))
         heat_heii_ion_p = heat_heii_ion(pos(1),pos(2),pos(3))
+        ! TODO: no need of column density
         coldend_hi_p = coldens_hi(pos(1),pos(2),pos(3))
         coldend_hei_p = coldens_hei(pos(1),pos(2),pos(3))
         coldend_heii_p = coldens_heii(pos(1),pos(2),pos(3))
-        
         clump_p = clump(pos(1),pos(2),pos(3))
+        ! TODO: add calculation of the p, y ya2, yb2 and z factor (Table 2 Martina's paper)
 
         ! Initialize local ion fractions
         xh_p = xh(pos(1),pos(2),pos(3))
@@ -249,6 +250,8 @@ module chemistry
 
             ! Calculate the new and mean ionization states
             ! In this version: xh0_p (x0) is used as input, while doric outputs a new x(t) ("xh_av") and <x> ("xh_av_p")
+            ! TODO: multiphase is necessary to correctly calculate the differantial brightness. Hannah's works is on github with helium: https://github.com/garrelt/C2-Ray3Dm1D_Helium/blob/multiphase/code/files_for_3D/evolve_data.F90#L37-L39
+            ! TODO: the intermediate need in the python evolve.py for global convergence. Keep it and bring it back.
             call friedrich(dt, temperature_previous_iteration, de, &
                             xh_p, xhei_p, xheii_p, &
                             phi_hi_ion_p, phi_hei_ion_p, phi_heii_ion_p, &
@@ -289,8 +292,9 @@ module chemistry
     ! Author: Martina Friderich (2012)
     ! 1 November 2024: adapted for f2py (M. Bianco)
     !
-    ! Adapted version of Friderich+ (2012) method. We used Kai Yan Lee PhD thesis as reference. 
-    ! The naming of variables changed a bit to for a direct comparison with equation described in the thesis.
+    ! Adapted version of Friderich+ (2012) method as an extension to the Altay+ (2008) analytical solution. 
+    ! We used Kai Yan Lee PhD thesis as reference. The naming of variables changed a bit to for a direct 
+    ! comparison with equation described in the thesis.
     ! ===============================================================================================
     subroutine friedrich (dt, temp_p, n_e, &
                             xHII_old, xHeII_old, xHeIII_old, &
@@ -340,7 +344,7 @@ module chemistry
     ! Recombination rate of HeIII (Eq. 2.18-20)
     alphA_HeIII = 2.538e-13 * (1262990.0d0/temp_p)**1.503 / (1.0d0+(2419521.0d0/temp_p)**1.923)**1.923
     alphB_HeIII = 5.506e-14 * (1262990.0d0/temp_p)**1.5 / (1.0d0 + (460945.0d0/temp_p)**0.407)**2.242
-    ! TODO: double check that alph1_HeIII is the correct definition (not specified in Kay Yan Lee thesis)
+    ! Not specified in Kay Yan Lee thesis, but double-checked with Garrelt (13.10.24)
     alph1_HeIII = alphA_HeIII - alphB_HeIII
     alph2_HeIII = 8.54e-11 * temp_p**(-0.6)
 
@@ -373,6 +377,7 @@ module chemistry
     y2b =  tau_He_he2th /(tau_He2_he2th +tau_He_he2th+tau_H_he2th)
 
     ! Collisional ionization process (Eq. 2.21-23)
+    ! TODO: a remarks is that in principle collisional ionization is also clumping (but HI clumping) dependent (but probably irrelevant).
     cHI = 5.835e-11 * sqrt(temp_p) * exp(-157804.0d0/temp_p)
     cHeI = 2.71e-11 * sqrt(temp_p) * exp(-285331.0d0/temp_p)
     cHeII = 5.707e-12 * sqrt(temp_p) * exp(-631495.0d0/temp_p)
@@ -444,7 +449,13 @@ module chemistry
     end subroutine friedrich
 
     ! TODO: here after there should be the heating part (from eq 2.69 in Kay Lee thesis, pag 37)
-    !subroutine thermal(dt, sup_t_steps)
-    !end subroutine thermal
+    subroutine thermal(dt, end_temper, avg_temper,ndens_electrn,nden_atom,ion,phi)
+
+    dti = 0.1
+
+    do i=1,Ni
+
+    enddo
+    end subroutine thermal
 
 end module chemistry

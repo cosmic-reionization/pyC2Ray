@@ -171,6 +171,7 @@ void do_all_sources_gpu(
         auto error4 = cudaMemcpy(phi_heat_HI, heat_HI_dev, meshsize, cudaMemcpyDeviceToHost);
         auto error5 = cudaMemcpy(phi_heat_HeI, heat_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
         auto error6 = cudaMemcpy(phi_heat_HeII, heat_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
+        //TODO: it is not needed to get the column density back to the CPU
         auto error7 = cudaMemcpy(coldensh_out_hi, cdh_dev, meshsize, cudaMemcpyDeviceToHost);
         auto error8 = cudaMemcpy(coldensh_out_hei, cdhei_dev, meshsize, cudaMemcpyDeviceToHost);
         auto error9 = cudaMemcpy(coldensh_out_heii, cdheii_dev, meshsize, cudaMemcpyDeviceToHost);
@@ -366,6 +367,7 @@ __global__ void evolve0D_gpu(
                             double cdo_heii = coldens_in_heii + nHeII_p * path;
                             
                             // Add the computed column density for the three species to the array ATOMICALLY 
+                            // TODO: not needed to sum together
                             atomicAdd(coldensh_out_hi + mem_offst_gpu(pos[0],pos[1],pos[2],m1), cdo_hi);
                             atomicAdd(coldensh_out_hei + mem_offst_gpu(pos[0],pos[1],pos[2],m1), cdo_hei);
                             atomicAdd(coldensh_out_heii + mem_offst_gpu(pos[0],pos[1],pos[2],m1), cdo_heii);
@@ -378,6 +380,9 @@ __global__ void evolve0D_gpu(
                                 {
                                     double tau_in_tot;
                                     double tau_out_tot;
+                                    double tau_in_hi;
+                                    double tau_in_hei;
+                                    double tau_in_heii;
                                     double tau_out_hi;
                                     double tau_out_hei;
                                     double tau_out_heii;
@@ -385,6 +390,7 @@ __global__ void evolve0D_gpu(
                                     if(nf < NumBin1) // first frequency bin ionizes just HI
                                     {
                                         // Compute optical depth
+                                        tau_in_hi = coldens_in_hi * sig_hi[nf];
                                         tau_out_hi = cdo_hi * sig_hi[nf];
 
                                         // total optical depth
@@ -392,23 +398,29 @@ __global__ void evolve0D_gpu(
                                         tau_out_tot = tau_out_hi;
                                     }else if((nf >= NumBin1) && (nf < NumBin1+NumBin2)) // second frequency bin ionizes HI and HeI
                                     {
-
                                         // Compute optical depth
+                                        tau_in_hi = coldens_in_hi * sig_hi[nf];
+                                        tau_in_hei = coldens_in_hei * sig_hei[nf];
+
                                         tau_out_hi = cdo_hi * sig_hi[nf];
                                         tau_out_hei = cdo_hei * sig_hei[nf];
 
                                         // total optical depth
-                                        tau_in_tot = coldens_in_hi * sig_hi[nf] + coldens_in_hei * sig_hei[nf];
+                                        tau_in_tot = tau_in_hi + tau_in_hei;
                                         tau_out_tot = tau_out_hi + tau_out_hei;
                                     }else if((nf >= NumBin1+NumBin2) && (nf < NumBin1+NumBin2+NumBin3)) // third frequency bin ionizes HI, HeI and HeII
                                     {
                                         // Compute optical depth
+                                        tau_in_hi = coldens_in_hi * sig_hi[nf];
+                                        tau_in_hei = coldens_in_hei * sig_hei[nf];
+                                        tau_in_heii = coldens_in_heii * sig_heii[nf];
+
                                         tau_out_hi = cdo_hi * sig_hi[nf];
                                         tau_out_hei = cdo_hei * sig_hei[nf];
                                         tau_out_heii = cdo_heii * sig_heii[nf];
 
                                         // total optical depth
-                                        tau_in_tot = coldens_in_hi * sig_hi[nf] + coldens_in_hei * sig_hei[nf] + coldens_in_heii * sig_heii[nf];
+                                        tau_in_tot = tau_in_hi + tau_in_hei + tau_in_heii;
                                         tau_out_tot = tau_out_hi + tau_out_hei + tau_out_heii;
                                     }
 
@@ -417,15 +429,17 @@ __global__ void evolve0D_gpu(
                                                                             
                                     //printf("%lf\n", vol_ph);
                                     double phi = photoion_rates_gpu(strength, tau_in_tot, tau_out_tot, nf, vol_ph, photo_thin_table, photo_thick_table, minlogtau, dlogtau, NumTau, NumFreq);
+                                    // TODO: heating requires more tables then just one because of the frequency dependence. Probably solution is to move this inside the if else condition (look at the radionation_tables.f90 line 322)
                                     double heat = photoheat_rates_gpu(strength, tau_in_tot, tau_out_tot, nf, vol_ph, heat_thin_table, heat_thick_table, minlogtau, dlogtau, NumTau, NumFreq);
                                     
                                     // Assign the photo-ionization and heating rates to each element (part of the photon-conserving rate prescription)
-                                    double phi_HI = phi * tau_out_hi / tau_out_tot / nHI_p;
-                                    double phi_HeI = phi * tau_out_hei / tau_out_tot / nHeI_p;
-                                    double phi_HeII = phi * tau_out_heii / tau_out_tot / nHeII_p;
-                                    double heat_HI = heat * tau_out_hi / tau_out_tot / nHI_p;
-                                    double heat_HeI = heat * tau_out_hei / tau_out_tot / nHeI_p;
-                                    double heat_HeII = heat * tau_out_heii / tau_out_tot / nHeII_p;
+                                    // TODO: potentially a problem if the fraction value is close to zero.
+                                    double phi_HI = phi * (tau_out_hi-tau_in_hi) / (tau_out_tot-tau_in_tot) / nHI_p;
+                                    double phi_HeI = phi * (tau_out_hei-tau_in_hei) / (tau_out_tot-tau_in_tot) / nHeI_p;
+                                    double phi_HeII = phi * (tau_out_hei-tau_in_heii) / (tau_out_tot-tau_in_tot) / nHeII_p;
+                                    double heat_HI = heat * (tau_out_hi-tau_in_hi) / (tau_out_tot-tau_in_tot) / nHI_p;
+                                    double heat_HeI = heat * (tau_out_hei-tau_in_hei) / (tau_out_tot-tau_in_tot) / nHeI_p;
+                                    double heat_HeII = heat * (tau_out_heii-tau_in_heii) / (tau_out_tot-tau_in_tot) / nHeII_p;
                             
                                     // Add the computed ionization and heating rate to the array ATOMICALLY since multiple blocks could be writing to the same cell at the same time!
                                     atomicAdd(phi_ion_HI + mem_offst_gpu(pos[0],pos[1],pos[2], m1), phi_HI);

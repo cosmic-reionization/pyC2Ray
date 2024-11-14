@@ -3,7 +3,7 @@
 # GPU memory has been allocated when GPU-accelerated functions are called.
 # ===================================================================================================
 
-from .load_extensions import load_asora#, load_asora_he
+from .load_extensions import load_asora, load_asora_he
 libasora = load_asora()
 libasora_he = load_asora_he()
 

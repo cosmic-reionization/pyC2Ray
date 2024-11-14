@@ -212,19 +212,17 @@ class BlackBodySource_Multifreq:
 
     def cross_section_freq_dependence(self, freq):
         if self.grey:
-            return 1.0
+            return 1.0  
         else:
             # MB: use the power-low index of the higher frequency bin (private conversation with Garrelt, Ilian and Sambit), i.e.: use the predominat cross section
-            # Not sure if this is correct: see cross-section fit of Verner+ (1996). See Equation 1 and parameters in Table 1.
+            i = np.digitize(x=freq, bins=self.freqs_tab)-1
+            freq0 = self.freqs_tab[i]
             if(freq < self.freq0_HeI):
                 pl_index = np.interp(x=freq, xp=self.freqs_tab, fp=self.pl_index_HI)
-                freq0 = self.freq0_HI
             elif(freq < self.freq0_HeII and freq >= self.freq0_HeI):
                 pl_index = np.interp(x=freq, xp=self.freqs_tab, fp=self.pl_index_HeI)
-                freq0 = self.freq0_HeI
             elif(freq >= self.freq0_HeII):
                 pl_index = np.interp(x=freq, xp=self.freqs_tab, fp=self.pl_index_HeII)
-                freq0 = self.freq0_HeII
             return (freq/freq0)**(-pl_index)
     
     # C2Ray distinguishes between optically thin and thick cells, and calculates the rates differently for those two cases. See radiation_tables.F90, lines 345 -
