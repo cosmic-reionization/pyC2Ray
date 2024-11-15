@@ -63,7 +63,7 @@ Abundances:
   # Hydrogen Abundance
   abu_h: 0.926
   # Helium Abundance
-  abu_he: 0.074    # 1 abu_he: 0.08 #  for EoR KP sims
+  abu_he: 0.074
   # Carbon Abundance
   abu_c: 7.1e-7
 
@@ -122,21 +122,15 @@ Cosmology:
   # Global flag to use cosmology
   cosmological: 0
   # Reduced Hubble constant
-  h: 1.0 #0.7
+  h: 0.6766
   # Omega matter t=0
-  Omega0: 0.27
+  Omega0: 0.30966
   # Omega baryon t=0
-  Omega_B: 0.044
+  Omega_B: 0.04897
   # Temperature of CMB in Kelvins
-  cmbtemp: 2.726
+  cmbtemp: 2.7255
   # Initial redshift of the simulation
   zred_0: 9.0
-
-  # N.B. : Planck 18
-  #  h: 0.6766
-  #  Omega0: 0.30966
-  #  Omega_B: 0.04897
-  #  cmbtemp: 2.7255
 
 # ------------
 # Output setup
@@ -144,6 +138,12 @@ Cosmology:
 Output:
   # Directory where results and log files are stored
   results_basename: ./test_results/
+  # Directory where inputs files are stored (set to None for test case)
+  inputs_basename: ./
+  # Directory where inputs files are stored (set to None for test case)
+  sources_basename: ./
+  # Directory where inputs files are stored (set to None for test case)
+  density_basename: ./
   # Name of the log file to write
   logfile: pyC2Ray.log
 

@@ -17,6 +17,7 @@ You can modify and run your installation script from the same directory with the
 **Requirements**:
 
 - C Compiler
+- Python ``>=3.9``
 - ``gfortran`` Fortran Compiler
 - ``nvcc`` CUDA compiler
 - ``f2py>=1.24.4``, provided by ``numpy``
@@ -36,10 +37,10 @@ To install all the required python packages in an environement, use the the foll
 
 .. code-block:: bash
         
-        python -m venv pyc2ray-env
-        source activate pyc2ray-env/bin/activate
+        python3 -m venv pyc2ray-env
+        source ./pyc2ray-env/bin/activate
         cd pyC2Ray/
-        python3 -m pip install requirements.txt
+        python3 -m pip install -r requirements.txt
 
 This way will helps you to keep the required dependencies for different projects separated.
 

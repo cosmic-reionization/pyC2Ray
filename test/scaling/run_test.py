@@ -23,10 +23,15 @@ parser.add_argument("-o", default="benchmark_result.pkl", type=str)
 args = parser.parse_args()
 
 # Global parameters
-N = 200                # Mesh size
 use_gpu = args.gpu
 fgamma = 0.02
 t_s = 3*MYR
+sim = pc2r.C2Ray_Test("parameters.yml")
+boxsize = sim.boxsize
+N = sim.N
+#sigma_HI_at_ion_freq = 6.30e-18
+#dr = boxsize/N
+#minlogtau, dlogtau, NumTau = -20., 0.0012, 20000
 
 outfn = str(args.o)
 
@@ -42,28 +47,16 @@ if((args.batchsize == None) and (args.numsrc != None)):
     # case 1: benchmark sources batch size (fix number of sources)
     src_batch_size = np.array([16, 32, 64, 128])
     nsrc_range = np.array([int(args.numsrc)])
-elif((args.batchsize != None) and (args.numsrc != None)):
+elif((args.batchsize != None) and (args.numsrc == None)):
     # case 2: benchmark number of sources (fix batch size)
     nsrc_range = np.array([1, 10, 100, 1000, 10000, 100000, 1000000])
-    src_batch_size = np.array([int(args.batchsize)])
-
+    #src_batch_size = np.array([int(args.batchsize)])
+    src_batch_size = int(args.batchsize)
     # allocate memory on GPU (need just once)
     device_init(N, src_batch_size)
 
     # timeing array
     timings = np.empty(len(nsrc_range))
-
-    # Read sources and convert to flux
-    sources_list = np.random.randint(low=0, high=N, size=(nsrc_range.max(), 3))
-    
-    for k, nsrc in enumerate(nsrc_range):
-
-        fact = fgamma*msun2g*0.0044/(0.30966*t_s*m_p)
-        srcpos = sources_list[:nsrc,:3].T
-        normflux = fact*sources_list[:nsrc,3]/1e48
-
-        srcpos_flat, normflux_flat = format_sources(srcpos, normflux)
-
 elif((args.batchsize == None) and (args.numsrc == None)):
     # error
     raise ValueError('Either -batchsize or -numreps must be fixed (int).')
@@ -71,20 +64,16 @@ elif((args.batchsize == None) and (args.numsrc == None)):
 
 timings = np.empty(len(nsrc_range))
 
+# Create random sources
+sources_list_full = np.random.randint(low=0, high=N, size=(nsrc_range.max(), 3))
+normflux_full = fgamma*np.random.uniform(low=1e9, high=5e11, size=nsrc_range.max())/1e48
+
 for k, nsrc in enumerate(nsrc_range):
     print(f"Doing benchmark for {nsrc:n} sources...")
 
     # Read sources and convert to flux
-    with open("./cosmo_sources_sorted.refbin","rb") as f:
-        sources_list = pkl.load(f)
-    print("ok")
-
-    t_s = 3*MYR
-    fact = fgamma*msun2g*sim.cosmology.Ob0/(sim.cosmology.Om0*t_s*m_p)
-    srcpos = sources_list[:nsrc,:3].T
-    normflux = fact*sources_list[:nsrc,3]/1e48
-    print("ok")
-
+    srcpos = sources_list_full[:nsrc]
+    normflux = normflux_full[:nsrc]
     srcpos_flat, normflux_flat = format_sources(srcpos, normflux)
 
     # Copy positions & fluxes of sources to the GPU in advance
@@ -92,14 +81,14 @@ for k, nsrc in enumerate(nsrc_range):
     coldensh_out_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
     phi_ion_flat = np.ravel(np.zeros((N,N,N), dtype='float64'))
 
-    print("ok")
+    #print("ok")
 
     ndens_flat = np.ravel(ndens).astype('float64', copy=True)
 
     pc2r.evolve.libasora.density_to_device(ndens_flat, N)
     xh_av_flat = np.ravel(xh_av).astype('float64', copy=True)
 
-    print("ok")
+    #print("ok")
 
     t_ave = 0
     nreps = int(args.numreps)
