@@ -149,7 +149,7 @@ Sources:
   # bursty star-formation time-scale at z=0
   tB0: 300.
   # fraction of the quiescent time-scale
-  tQ_frac: 1.5
+  tQ_frac: 0.95
   # reference redshif for the bursty star-formation model
   z0: 30.0
   # randominze the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(t_start, t_rnd))
@@ -177,7 +177,7 @@ Cosmology:
 # ------------
 Output:
   # Directory where results and log files are stored (don't forget slash at end)
-  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty5/
+  results_basename: /scratch/snx3000/mibianco/results_c2ray/200Mpc_fstar_256/200Mpc_Nion_4_Source1_SinkA_stoch_instbursty10/
   # Directory where inputs files are stored (set to None for test case)
   inputs_basename: /store/ska/sk025/CDM_200Mpc_2048/
   # Directory where inputs files are stored (set to None for test case)
