@@ -74,37 +74,6 @@ class C2Ray_Test(C2Ray):
         """
         self.set_constant_average_density(self.avg_dens,z)
 
-    def write_output(self,z):
-        """Write ionization fraction & ionization rates as pickle files
-
-        Parameters
-        ----------
-        z : float
-            Redshift (used to name the file)
-        """
-        np.save("%sxfrac_%.3f.npy" %(self.results_basename, z), self.xh)
-        np.save("%sIonRates_%.3f.npy" %(self.results_basename, z), self.phi_ion)
-        """
-        suffix = f"_{z:.3f}.pkl"
-        with open(self.results_basename + "xfrac" + suffix,"wb") as f:
-            pkl.dump(self.xh,f)
-        with open(self.results_basename + "IonRates" + suffix,"wb") as f:
-            pkl.dump(self.phi_ion,f)
-        """
-    def write_output_numbered(self,n):
-        """Write ionization fraction & ionization rates as pickle files with number rather than redshift
-
-        Parameters
-        ----------
-        n : int
-            Number of the file
-        """
-        suffix = f"_{n:n}.pkl"
-        with open(self.results_basename + "xfrac" + suffix,"wb") as f:
-            pkl.dump(self.xh,f)
-        with open(self.results_basename + "IonRates" + suffix,"wb") as f:
-            pkl.dump(self.phi_ion,f)
-
     def set_constant_average_density(self,ndens,z):
         """Helper function to set the density grid to a constant value
 
@@ -150,39 +119,3 @@ class C2Ray_Test(C2Ray):
         for i in range(num_zred):
             zred_array[i] = self.time2zred(self.age_0 + i*step)
         return zred_array
-
-    # =====================================================================================================
-    # Below are the overridden initialization routines specific to the test case
-    # =====================================================================================================
-
-    def _redshift_init(self):
-        """Initialize time and redshift counter
-        """
-        self.time = self.age_0
-        self.zred = self.zred_0
-
-    def _material_init(self):
-        """Initialize material properties of the grid
-        """
-        xh0 = self._ld['Material']['xh0']
-        temp0 = self._ld['Material']['temp0']
-
-        self.ndens = np.empty(self.shape,order='F')
-        self.xh = xh0 * np.ones(self.shape,order='F')
-        self.temp = temp0 * np.ones(self.shape,order='F')
-        self.phi_ion = np.zeros(self.shape,order='F')
-        self.avg_dens = self._ld['Material']['avg_dens']
-
-    def _output_init(self):
-        """ Set up output & log file
-        """
-        self.results_basename = self._ld['Output']['results_basename']
-        if(self.rank == 0) and not os.path.exists(self.results_basename):
-            os.mkdir(self.results_basename)
-
-        self.logfile = self.results_basename + self._ld['Output']['logfile']
-        title = '                 _________   ____            \n    ____  __  __/ ____/__ \ / __ \____ ___  __\n   / __ \/ / / / /    __/ // /_/ / __ `/ / / /\n  / /_/ / /_/ / /___ / __// _, _/ /_/ / /_/ / \n / .___/\__, /\____//____/_/ |_|\__,_/\__, /  \n/_/    /____/                        /____/   \n'
-        if(self.rank == 0):
-            with open(self.logfile,"w") as f:
-                f.write("\nLog file for pyC2Ray \n\n")
-            self.printlog(title)

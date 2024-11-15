@@ -29,6 +29,11 @@ module chemistry
     real(kind=real64), parameter :: abu_h = 0.926_real64
     real(kind=real64), parameter :: abu_c = 7.1e-7
 
+    ! constants for thermal evolution
+    real(kind=real64), parameter :: gamma = 5.0_real64/3.0_real64   ! monoatomic gas heat capacity ratio
+    real(kind=real64), parameter :: k_B = 1.380649e-16              ! value from astropy==6.0.0
+    real(kind=real64), parameter :: minitemp = 1.0_real64               ! minimum temperature
+
     contains
     ! TODO: pass the column density to global
     subroutine global_pass(dt,ndens, temp, &
@@ -449,13 +454,119 @@ module chemistry
     end subroutine friedrich
 
     ! TODO: here after there should be the heating part (from eq 2.69 in Kay Lee thesis, pag 37)
-    subroutine thermal(dt, end_temper, avg_temper,ndens_electrn,nden_atom,ion,phi)
+    subroutine thermal(dt, end_temper, avg_temper, ndens_electron, ndens_atom, xhi_p, xhei_p, xheii_p, heating)
+    
+    ! The time step
+    real(kind=real64), intent(in) :: dt
+    ! end time temperature of the cell
+    real(kind=real64), intent(inout) :: end_temper
+    ! average temperature of the cell
+    real(kind=real64), intent(out) :: avg_temper
+    ! Electron density of the cell
+    real(kind=real64), intent(in) :: ndens_electron
+    ! Number density of atoms of the cell
+    real(kind=real64), intent(in) :: ndens_atom
+    ! Heating rate of the cells
+    real(kind=real64) intent(in) :: heating
+    ! Ionized fraction of the cell
+    type(ionstates), intent(in) :: xhi_p, xhei_p, xheii_p
 
-    dti = 0.1
+    ! initial temperature
+    real(kind=real64) :: initial_temp
+    ! timestep taken to solve the ODE
+    real(kind=real64) :: dt_ODE
+    ! timestep related to thermal timescale
+    real(kind=real64) :: dt_thermal
+    ! record the time elapsed
+    real(kind=real64) :: cumulative_time
+    ! internal energy of the cell
+    real(kind=real64) :: internal_energy
+    ! thermal timescale, used to calculate the thermal timestep
+    real(kind=real64) :: thermal_timescale
+    ! cooling rate
+    real(kind=real64) :: cooling
+    ! difference of heating and cooling rate
+    real(kind=real64) :: thermal_rate
+    ! cosmological cooling rate
+    real(kind=real64) :: cosmo_cool_rate
+    ! Counter of number of thermal timesteps taken
+    integer :: i_heating
 
-    do i=1,Ni
+    real(kind=real64) :: pressr !< pressure
+    internal_energy = (ndens+ndens_electron)*k_B*end_temper/(1.0d0-gamma)
 
-    enddo
+    ! Thermal process is only done if the temperature of the cell is larger than the minimum temperature requirement
+    if (end_temper > minitemp) then
+
+        ! stores the time elapsed is done
+        cumulative_time = 0.0 
+    
+        ! initialize the counter
+        i_heating = 0
+
+        ! initialize time averaged temperature
+        avg_temper = 0.0 
+
+        ! initial temperature
+        initial_temp = end_temper
+
+        ! thermal process begins
+        do
+            ! update heating counter TODO: don't know if necessary but needed maybe for the table
+            i_heating = i_heating+1
+
+            ! update cooling rate from cooling tables
+            ! TODO: read the cooling tables (?) see function in cooling.f90
+            !cooling 
+
+            ! Find total energy change rate
+            thermal_rate = max(1d-50, abs(cooling-heating))
+            ! TODO: continue checking here after
+
+            ! Calculate thermal time scale
+            thermal_timescale = internal_energy/abs(thermal_rate)
+
+            ! Calculate time step needed to limit energy change to a fraction relative_denergy
+            dt_thermal = relative_denergy*thermal_timescale
+
+            ! Time step to large, change it to dt_thermal. 
+            ! Make sure we do not integrate for longer than the total time step
+            dt_ODE = min(dt_thermal,dt-cumulative_time)
+
+            ! Find new internal energy density
+            internal_energy = internal_energy+dt_ODE*(heating-cooling)
+
+            ! Update avg_temper sum (first part of dt_thermal sub time step)
+            avg_temper = avg_temper+0.5*end_temper*dt_ODE
+
+            ! Find new temperature from the internal energy density
+            end_temper = pressr2temper(internal_energy*gamma1,ndens_atom, &
+                electrondens(ndens_atom,ion%h_av,ion%he_av))
+
+            ! Update avg_temper sum (second part of dt_thermal sub time step)
+            avg_temper = avg_temper+0.5*end_temper*dt_ODE
+                        
+            ! Take measures if temperature drops below minitemp
+            if (end_temper < minitemp) then
+                internal_energy = temper2pressr(minitemp,ndens_atom, &
+                                    electrondens(ndens_atom,ion%h_av,ion%he_av))
+                end_temper = minitemp
+            endif
+                        
+            ! Update fractional cumulative_time
+            cumulative_time = cumulative_time+dt_ODE
+
+            ! Exit if we reach dt
+            if (cumulative_time >= dt.or.abs(cumulative_time-dt) < 1e-6*dt) exit
+
+            ! In case we spend too much time here, we exit
+            if (i_heating > 10000) exit
+        enddo
+
+    endif
+
+
+
     end subroutine thermal
 
 end module chemistry

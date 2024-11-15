@@ -1,7 +1,5 @@
-import yaml
-import atexit
-import re
-import numpy as np, os
+import yaml, atexit, re
+import numpy as np, os, pickle as pkl
 import tools21cm as t2c
 from astropy import units as u
 from astropy import constants as c
@@ -328,8 +326,14 @@ class C2Ray:
             elif(suffix.endswith('.npy')):
                 np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
                 np.save(file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion)
+                # TODO: replace this by the differential brightness?
                 #np.save(file=self.results_basename + "coldens" + suffix, arr=self.coldens)
-
+            elif(suffix.endswith('.pkl')):
+                with open(self.results_basename + "xfrac" + suffix,"wb") as f:
+                    pkl.dump(self.xh,f)
+                with open(self.results_basename + "IonRates" + suffix,"wb") as f:
+                    pkl.dump(self.phi_ion,f)
+                
             # print min, max and average quantities
             self.printlog('\n--- Reionization History ----')
             self.printlog(' min, mean, max xHII : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
@@ -394,14 +398,7 @@ class C2Ray:
         src_pos : 2D-array of shape (3,numsrc)
             Array containing the 3D grid position of each source, in Fortran indexing (from 1)
         """
-        gamma = do_raytracing(
-            self.dr,src_flux,src_pos,
-            self.gpu,self.max_subbox,self.subboxsize,
-            self.loss_fraction,self.ndens,self.xh,
-            self.photo_thin_table,self.photo_thick_table,
-            self.minlogtau,self.dlogtau,
-            self.R_max_LLS,self.sig,self.logfile
-        )
+        gamma = do_raytracing(self.dr,src_flux,src_pos,self.gpu,self.max_subbox,self.subboxsize,self.loss_fraction,self.ndens,self.xh,self.photo_thin_table,self.photo_thick_table,self.minlogtau,self.dlogtau,self.R_max_LLS,self.sig,self.logfile)
         self.phi_ion = gamma
         return gamma
     
@@ -628,11 +625,22 @@ class C2Ray:
     def _redshift_init(self):
         """Initialize time and redshift counter
         """
+        self.time = self.age_0
+        self.zred = self.zred_0
         pass
 
     def _material_init(self):
         """Initialize material properties of the grid
         """
+        xh0 = self._ld['Material']['xh0']
+        temp0 = self._ld['Material']['temp0']
+
+        self.ndens = np.empty(self.shape,order='F')
+        self.xh = xh0 * np.ones(self.shape,order='F')
+        self.temp = temp0 * np.ones(self.shape,order='F')
+        self.phi_ion = np.zeros(self.shape,order='F')
+        self.avg_dens = self._ld['Material']['avg_dens']
+        # TODO: add option of resuming simulation
         pass
 
     def _sources_init(self):
