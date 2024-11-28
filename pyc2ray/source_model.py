@@ -172,6 +172,8 @@ class BurstySFR:
 			self.get_bursty = self.instant_burst_or_quiescent_galaxies
 		elif(self.model == 'integrate'):
 			ValueError(' Sorry, model not yet implemented : %s' %self.model)
+		elif(self.model == 'no'):
+			ValueError(' You have selected %s model. You should not call this class or change the variable in the parameter file.' %self.model)
 		else:
 			ValueError(' Selected burstiness model that does not exist : %s' %self.model)
 
