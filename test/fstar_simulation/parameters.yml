@@ -140,7 +140,7 @@ Sources:
   accretion_model: 'EXP'
   # accreation rate parameter (see Schneider+ 2021)
   alpha_h: 0.79
-  # select the bursty star-formation model (can be 'instant' or 'integrate', it require accretion_model: 'EXP' or None to switch off) 
+  # select the bursty star-formation model (can be 'no', 'instant' or 'integrate', it require accretion_model: 'EXP' or None to switch off) 
   bursty_sfr: 'instant'
   # index power-low of the bursty star-formation model mass relation
   beta1: 0.1

@@ -43,8 +43,7 @@ class C2Ray_fstar(C2Ray):
 
         """
         super().__init__(paramfile)
-        if(self.rank == 0):
-            self.printlog('Running: "C2Ray for %d Mpc/h volume"' %self.boxsize)
+        self.printlog('Running: "C2Ray for %d Mpc/h volume"' %self.boxsize)
 
     # =====================================================================================================
     # USER DEFINED METHODS
@@ -105,6 +104,10 @@ class C2Ray_fstar(C2Ray):
                 fstar = fstar[burst_mask]
             else:
                 fstar, fesc = fstar[burst_mask], fesc[burst_mask]
+        else:
+            # no bursty model
+            pass
+
 
         # get stellar mass
         mstar_msun = fesc*fstar*srcmass_msun
@@ -147,19 +150,17 @@ class C2Ray_fstar(C2Ray):
             # calculate total number of ionizing photons
             self.tot_phots = np.sum(normflux * dt * S_star_ref)
 
-            if(self.rank == 0):
-                self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
-                self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
-                self.printlog(' Total number of ionizaing photons : %e' %self.tot_phots)
-                self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-                self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+            self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
+            self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
+            self.printlog(' Total number of ionizaing photons : %e' %self.tot_phots)
+            self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
+            self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
             
             return srcpos, normflux
         
         else:
-            if(self.rank == 0):
-                self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(srcmass_msun.size, file))
-                self.printlog(' No sources switch on. Skip computing the raytracing.')
+            self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(srcmass_msun.size, file))
+            self.printlog(' No sources switch on. Skip computing the raytracing.')
 
             self.tot_phots = 0
             return 0, 0
@@ -219,9 +220,8 @@ class C2Ray_fstar(C2Ray):
         file = self.density_basename+fbase
         rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
         self.ndens = self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 * (1.+rdr.load_density_field(file)) / (self.mean_molecular * m_p) * (1+z)**3
-        if(self.rank == 0):
-            self.printlog('\n---- Reading density file:\n  %s' %file)
-            self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
+        self.printlog('\n---- Reading density file:\n  %s' %file)
+        self.printlog(' min, mean and max density : %.3e  %.3e  %.3e [1/cm3]' %(self.ndens.min(), self.ndens.mean(), self.ndens.max()))
 
     # =====================================================================================================
     # Below are the overridden initialization routines specific to the f_star case
@@ -264,9 +264,8 @@ class C2Ray_fstar(C2Ray):
             else:
                 raise FileNotFoundError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
             
-            if(self.rank == 0):
-                self.printlog('\n---- Reading ionized fraction field:\n %s' %fname)
-                self.printlog(' min, mean and max density : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
+            self.printlog('\n---- Reading ionized fraction field:\n %s' %fname)
+            self.printlog(' min, mean and max density : %.5e  %.5e  %.5e' %(self.xh.min(), self.xh.mean(), self.xh.max()))
 
             # TODO: implement heating
             temp0 = self._ld['Material']['temp0']
@@ -311,21 +310,21 @@ class C2Ray_fstar(C2Ray):
         if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
             self.bursty_pars = {'beta1': self._ld['Sources']['beta1'], 'beta2': self._ld['Sources']['beta2'], 'tB0': self._ld['Sources']['tB0'], 'tQ_frac': self._ld['Sources']['tQ_frac'], 'z0': self._ld['Sources']['z0'], 't_rnd': self._ld['Sources']['t_rnd']}
 
-            if(self.rank == 0):
-                self.printlog(f"Using {self.bursty_kind} bustiness to model the star formation history with parameters: {self.bursty_pars}.")
-            
-        # define the burstiness SF model class
-        self.bursty_model = BurstySFR(model=self.bursty_kind, pars=self.bursty_pars, alpha_h=self.alph_h, cosmo=self.cosmology)
+            self.printlog(f"Using {self.bursty_kind} bustiness to model the star formation history with parameters: {self.bursty_pars}.")
+        
+            # define the burstiness SF model class
+            self.bursty_model = BurstySFR(model=self.bursty_kind, pars=self.bursty_pars, alpha_h=self.alph_h, cosmo=self.cosmology)
+        else:
+            self.printlog(f"No bustiness model for the star formation history.")
 
         # --- Escaping fraction Model ---
         self.fesc_kind = self._ld['Sources']['fesc_model']
         self.fesc_pars = {'f0_esc': self._ld['Sources']['f0_esc'], 'Mp_esc': self._ld['Sources']['Mp_esc'], 'al_esc': self._ld['Sources']['al_esc']}
-        if(self.rank == 0):
-            if(self.fesc_kind == 'constant'):
-                self.printlog(f"Using constant escaping fraction model model with f0_esc = %.1f" %(self.fesc_pars['f0_esc']))
-            elif(self.fesc_kind == 'power'):
-                self.printlog(f"Using mass-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
-            elif(self.fesc_kind == 'Gelli2024'):
-                self.printlog(f"Using UV magnitude-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
+        if(self.fesc_kind == 'constant'):
+            self.printlog(f"Using constant escaping fraction model model with f0_esc = %.1f" %(self.fesc_pars['f0_esc']))
+        elif(self.fesc_kind == 'power'):
+            self.printlog(f"Using mass-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
+        elif(self.fesc_kind == 'Gelli2024'):
+            self.printlog(f"Using UV magnitude-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
 
         self.fesc_model = EscapeFraction(model=self.fesc_kind, pars=self.fesc_pars)

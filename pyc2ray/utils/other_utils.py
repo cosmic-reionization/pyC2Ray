@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np, time
 import glob, os
 
 def get_extension_in_folder(path):
@@ -133,3 +133,61 @@ def _get_redshifts_in_range(redshifts, z_low, z_high, bracket):
     redshifts = redshifts[idx]
 
     return np.array(redshifts)
+
+class TimerError(Exception): 
+    """A custom exception used to report errors in use of Timer class""" 
+
+class Timer: 
+    def __init__(self): 
+        self._start_time = None
+        self._prevlap_time = None
+        self._summary = '\n--- TIMER SUMMARY ---\n'
+        self._lap_counter = 0
+
+    def _display(self, chrn):
+        if(chrn >= 60): 
+            secs = chrn % 60 
+            mins = chrn // 60 
+            if(mins >= 60): 
+                mins = mins % 60
+                hrs = chrn // 60 // 60 
+                display = '%d hrs %d min %.2f sec'  %(hrs, mins, secs)
+            else: 
+                display = '%d mins %.2f sec'  %(mins, secs)
+        else: 
+            display = '%.2f sec'  %chrn
+        return display
+
+    def start(self): 
+        """Start a new timer""" 
+        if(self._start_time != None): 
+            raise TimerError(f"Timer is running. Use .stop() to stop it") 
+        self._start_time = time.perf_counter()
+
+    def lap(self, mess=None): 
+        """Stop the timer, and report the elapsed time"""
+        self._lap_counter += 1
+        if(self._start_time == None): 
+            raise TimerError(f"Timer is not running. Use .start() to start it") 
+        lap_time = time.perf_counter()
+        if(self._prevlap_time != None):
+            elapsed_time = lap_time - self._prevlap_time
+        else:
+            elapsed_time = lap_time - self._start_time
+        self._prevlap_time = lap_time
+        mess = '- '+str(mess) if mess!=None else ''
+        new_mess = self._display(elapsed_time)
+        text_lap = "step %d: %s %s" %(self._lap_counter, new_mess, mess)
+        self._summary += ' ' + text_lap+'\n'
+        return new_mess
+
+    def stop(self, mess=''): 
+        """Stop the timer, and report the elapsed time""" 
+        if(self._start_time == None): 
+            raise TimerError(f"Timer is not running. Use .start() to start it")
+        time_stop = time.perf_counter()        
+        elapsed_time = time_stop - self._start_time
+        mess = ' - '+str(mess) if mess!='' else mess       
+        self.summary = self._summary+"Elapsed time: %s %s" %(self._display(elapsed_time), mess)
+        self._start_time = None
+        #print(self.summary)

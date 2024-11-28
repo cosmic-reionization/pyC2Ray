@@ -1,4 +1,4 @@
-import sys, os, time
+import sys, os
 import numpy as np
 import pyc2ray as pc2r
 import astropy.units as u
@@ -26,18 +26,15 @@ if(sim.resume):
 else:
     i_start = 0
 
-# Measure time
-tinit = time.time()
+# Start the timer ot measure the wall clock time
+timer = pc2r.Timer()
 
 # Loop over redshifts
 for k in range(i_start, len(zred_array)-1):
 
     zi = zred_array[k]       # Start redshift
     zf = zred_array[k+1]     # End redshift
-
-    pc2r.printlog(f"\n=================================", sim.logfile)
-    pc2r.printlog(f"Doing redshift {zi:.3f} to {zf:.3f}", sim.logfile)
-    pc2r.printlog(f"=================================\n", sim.logfile)
+    sim.printlog("\n=================================\nDoing redshift %.3f to %.3f\n=================================\n" %(zi, zf), sim.logfile)
 
     # Compute timestep of current redshift slice
     dt = sim.set_timestep(zi, zf, num_steps_between_slices)
@@ -45,8 +42,7 @@ for k in range(i_start, len(zred_array)-1):
     # Read input files
     sim.read_density(fbase='CDM_200Mpc_2048.%05d.den.256.0' %idx_zred[k], z=zi)
 
-
-    #TODO: move this after time-loop and change for zf
+    #TODO: move this after time-loop and change for zf but then you need to implement the saving the first snapshot (init value), which is not yet implemented in the c2ray class
     if(sim.rank == 0 and k != i_start):    
         # Write output
         sim.write_output(z=zi, ext='.npy')
@@ -61,8 +57,8 @@ for k in range(i_start, len(zred_array)-1):
         z = sim.time2zred(t_age)
         srcpos, normflux = sim.ionizing_flux(file='CDM_200Mpc_2048.%05d.fof.txt' %idx_zred[k], z=z, dt=dt) #, save_Mstar=sim.results_basename+'/sources')
 
-        tnow = time.time()
-        pc2r.printlog(f"\n --- Timestep {t+1:n}. Redshift: z = {sim.zred : .3f} Wall clock time: {tnow - tinit : .3f} seconds --- \n", sim.logfile)
+        tnow = timer.lap('z = %.3f' %z)
+        sim.printlog("\n --- Timestep %d: z = %.3f, Wall clock time: %s --- \n" %(t+1, sim.zred, tnow), sim.logfile)
 
         # Evolve Cosmology: increment redshift and scale physical quantities (density, proper cell size, etc.)
         sim.cosmo_evolve(dt)
@@ -90,6 +86,10 @@ for k in range(i_start, len(zred_array)-1):
     # Evolve cosmology over final half time step to reach the correct time for next slice (see note in c2ray_base.py)
     #sim.cosmo_evolve(0)
     sim.cosmo_evolve_to_now()
+
+# stop the timer and print the summary
+timer.stop()
+sim.printlog(timer.summary, sim.logfile)
 
 # Write final output
 sim.write_output(zf)
