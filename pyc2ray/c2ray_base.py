@@ -4,7 +4,7 @@ import re
 import numpy as np, os
 import tools21cm as t2c
 from astropy import units as u
-from astropy import constants as c
+from astropy import constants as cst
 from astropy.cosmology import FlatLambdaCDM, z_at_value
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -76,7 +76,7 @@ from .sinks_model import SinksPhysics
 pc = (1*u.pc).cgs.value                 # C2Ray value: 3.086e18
 YEAR = (1*u.yr).cgs.value               # C2Ray value: 3.15576E+07
 ev2fr = 1./(cst.h*u.Hz).to('eV').value  # eV to Frequency (Hz)
-ev2k = 1./(cst.k_B*u.K).to('eV')        # eV to Kelvin
+ev2k = 1./(cst.k_B*u.K).to('eV').value  # eV to Kelvin
 kpc = (1*u.kpc).cgs.value               # kiloparsec in cm
 Mpc = (1*u.Mpc).cgs.value               # megaparsec in cm
 msun2g = (1*u.Msun).cgs.value           # solar mass to grams
@@ -492,7 +492,7 @@ class C2Ray:
             radsource = BlackBodySource(self.bb_Teff, self.grey, ion_freq_HI, self.cs_pl_idx_h)
 
             # Print info
-            self.printlog(f"Using Black-Body sources with effective temperature T = {radsource.temp :.1e} K and Radius {(radsource.R_star/c.R_sun.to('cm')).value : .3e} rsun")
+            self.printlog(f"Using Black-Body sources with effective temperature T = {radsource.temp :.1e} K and Radius {(radsource.R_star/cst.R_sun.to('cm')).value : .3e} rsun")
             self.printlog(f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz")
             self.printlog(f"This is Energy:           {freq_min/ev2fr:.3e} to {freq_max/ev2fr:.3e} eV")
         elif self.SourceType == 'powerlaw':

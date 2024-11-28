@@ -106,6 +106,8 @@ class C2Ray_fstar(C2Ray):
                 fstar, fesc = fstar[burst_mask], fesc[burst_mask]
         else:
             # no bursty model
+            nr_switchon = srcmass_msun.size
+            self.perc_switchon = 100.
             pass
 
 
@@ -290,9 +292,9 @@ class C2Ray_fstar(C2Ray):
         self.fstar_pars = {'Nion': self._ld['Sources']['Nion'], 'f0': self._ld['Sources']['f0'], 'Mt': self._ld['Sources']['Mt'], 'Mp': self._ld['Sources']['Mp'], 'g1': self._ld['Sources']['g1'], 'g2': self._ld['Sources']['g2'], 'g3': self._ld['Sources']['g3'], 'g4': self._ld['Sources']['g4'], 'alpha_h': self._ld['Sources']['alpha_h']}
 
         # print message that inform of the f_star model employed
-        if(self.fstar_kind == 'fgamma' and self.rank == 0):
-            self.printlog(f"Using constant stellar-to-alo relation model with fgamma_hm = {self.fstar_pars['f0']:.1f}, Nion = {self.fstar_pars['Nion']:.1f}")
-        elif(self.rank == 0 and (self.fstar_kind == 'dpl' or self.fstar_kind == 'lognorm')):
+        if(self.fstar_kind == 'fgamma'):
+            self.printlog(f"Using constant stellar-to-halo relation model with f_star = {self.fstar_pars['f0']:.1f}, Nion = {self.fstar_pars['Nion']:.1f}")
+        elif(self.fstar_kind == 'dpl' or self.fstar_kind == 'lognorm'):
             self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation with parameters: {self.fstar_pars}.")
 
         # define the f_star model class (to call self.fstar_model.get_fstar(Mhalo) when reading the sources)
@@ -301,6 +303,7 @@ class C2Ray_fstar(C2Ray):
         # --- Halo Accretion Model --- 
         # TODO: Create class etc...
         self.acc_kind = self._ld['Sources']['accretion_model']
+        self.printlog(f"Using {self.acc_kind} accretion to model.")
         self.alph_h = self.fstar_pars['alpha_h']
 
         # --- Burstiness Model for Star Formation ---
@@ -321,7 +324,7 @@ class C2Ray_fstar(C2Ray):
         self.fesc_kind = self._ld['Sources']['fesc_model']
         self.fesc_pars = {'f0_esc': self._ld['Sources']['f0_esc'], 'Mp_esc': self._ld['Sources']['Mp_esc'], 'al_esc': self._ld['Sources']['al_esc']}
         if(self.fesc_kind == 'constant'):
-            self.printlog(f"Using constant escaping fraction model model with f0_esc = %.1f" %(self.fesc_pars['f0_esc']))
+            self.printlog(f"Using constant escaping fraction model with f0_esc = %.1f" %(self.fesc_pars['f0_esc']))
         elif(self.fesc_kind == 'power'):
             self.printlog(f"Using mass-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
         elif(self.fesc_kind == 'Gelli2024'):

@@ -36,6 +36,7 @@ class StellarToHaloRelation:
 		self.alph_h = pars['alpha_h']
 
 		if(self.model == 'fgamma'):
+			# TODO: there is something wrong with this, The photoionization gets super high like 1e-5?????? to check
 			self.get = lambda Mhalo : self.cosmo.Ob0/self.cosmo.Om0*Mhalo*self.f0
 		elif(self.model == 'dpl'):
 			self.get = self.deterministic

@@ -14,7 +14,7 @@ paramfile = sys.argv[1]             # Name of the parameter file
 sim = pc2r.C2Ray_fstar(paramfile=paramfile)
 
 # copy parameter file into the output directory
-os.system('cp %s %s' %(paramfile, sim.results_basename))
+if(sim.rank == 0): os.system('cp %s %s' %(paramfile, sim.results_basename))
 
 # Get redshift list (test case)
 idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float, unpack=True)
@@ -28,7 +28,8 @@ else:
 
 # Start the timer ot measure the wall clock time
 timer = pc2r.Timer()
-
+timer.start()
+    
 # Loop over redshifts
 for k in range(i_start, len(zred_array)-1):
 
