@@ -144,50 +144,71 @@ class Timer:
         self._summary = '\n--- TIMER SUMMARY ---\n'
         self._lap_counter = 0
 
-    def _display(self, chrn):
-        if(chrn >= 60): 
-            secs = chrn % 60 
-            mins = chrn // 60 
-            if(mins >= 60): 
-                mins = mins % 60
-                hrs = chrn // 60 // 60 
-                display = '%d hrs %d min %.2f sec'  %(hrs, mins, secs)
-            else: 
-                display = '%d mins %.2f sec'  %(mins, secs)
-        else: 
-            display = '%.2f sec'  %chrn
+    def _display(self, time_in_seconds):
+        hrs, residual = divmod(time_in_seconds, 3600.)
+        mins, secs = divmod(residual, 60.)
+        if(hrs == 0):
+            if(mins == 0):
+                display = '%.2fs'  %(secs)
+            else:
+                display = '%dm %.2fs'  %(mins, secs)
+        else:
+            display = '%dh %dm %.2fs'  %(hrs, mins, secs)
         return display
 
     def start(self): 
-        """Start a new timer""" 
+        """ Start the timer """ 
+        # check if there isn't another timer running
         if(self._start_time != None): 
             raise TimerError(f"Timer is running. Use .stop() to stop it") 
+        
+        # register starting time
         self._start_time = time.perf_counter()
 
     def lap(self, mess=None): 
-        """Stop the timer, and report the elapsed time"""
+        """ Register a lap time """
+        # increase the laps counter
         self._lap_counter += 1
+
+        # check if the timer is initialized
         if(self._start_time == None): 
             raise TimerError(f"Timer is not running. Use .start() to start it") 
+        
+        # register the lap time
         lap_time = time.perf_counter()
         if(self._prevlap_time != None):
             elapsed_time = lap_time - self._prevlap_time
         else:
             elapsed_time = lap_time - self._start_time
+        
+        # register the time since the start
+        elapsed_time_from_start = lap_time - self._start_time
+        
+        # overwrite previous lap time for next one
         self._prevlap_time = lap_time
-        mess = '- '+str(mess) if mess!=None else ''
-        new_mess = self._display(elapsed_time)
-        text_lap = "step %d: %s %s" %(self._lap_counter, new_mess, mess)
-        self._summary += ' ' + text_lap+'\n'
-        return new_mess
+
+        # register a message
+        mess = '- '+str(mess) if mess!=None else ''        
+        self._summary += " step %d: %s %s\n" %(self._lap_counter, self._display(elapsed_time), mess)
+        
+        # return elapsed time since the start
+        return self._display(elapsed_time_from_start)
 
     def stop(self, mess=''): 
         """Stop the timer, and report the elapsed time""" 
+        # check if the timer is initialized
         if(self._start_time == None): 
             raise TimerError(f"Timer is not running. Use .start() to start it")
+        
+        # register the end time
         time_stop = time.perf_counter()        
+        
+        # calculate the elapsed time since the start
         elapsed_time = time_stop - self._start_time
+
+        # write the timer summary message
         mess = ' - '+str(mess) if mess!='' else mess       
         self.summary = self._summary+"Elapsed time: %s %s" %(self._display(elapsed_time), mess)
+
+        # init the start time in case you want to start a new timer in the same run
         self._start_time = None
-        #print(self.summary)
