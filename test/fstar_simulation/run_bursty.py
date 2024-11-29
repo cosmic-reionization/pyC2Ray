@@ -18,11 +18,11 @@ if(sim.rank == 0): os.system('cp %s %s' %(paramfile, sim.results_basename))
 
 # Get redshift list (test case)
 idx_zred, zred_array = np.loadtxt(sim.inputs_basename+'redshift_checkpoints.txt', dtype=float, unpack=True)
+idx_zred, zred_array = idx_zred[:94], zred_array[:94]
 
 # check for resume simulation
 if(sim.resume):
-    i_start = np.argmin(np.abs(zred_array - sim.zred))
-    sim.resume = i_start+1
+    i_start = np.argmin(np.abs(zred_array - sim.zred))+1
 else:
     i_start = 0
 

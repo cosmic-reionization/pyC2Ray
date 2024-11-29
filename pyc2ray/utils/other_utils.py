@@ -20,12 +20,12 @@ def get_redshifts_from_output(output_dir, z_low=None, z_high=None, bracket=False
     redshifts = []
     for f in output_files:
         try:
-            z = float(f.split('_')[-1][:-4])
+            z = float(f.split('z')[-1][:-4])
             redshifts.append(z)
         except: 
             pass
     
-    return np.sort(np.array(redshifts))
+    return np.sort(np.array(redshifts))[::-1]
 
 def find_bins(input_array, binning_array):
     """ For a given bin array and an input array get the indexes of the bins for each element of the input array """

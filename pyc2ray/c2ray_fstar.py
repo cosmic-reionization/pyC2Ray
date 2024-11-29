@@ -78,7 +78,10 @@ class C2Ray_fstar(C2Ray):
             ts = dt
 
         # get stellar-to-halo ratio
-        fstar = self.fstar_model.get(Mhalo=srcmass_msun)
+        if(self.fstar_kind == 'Muv'):
+            fstar = self.fstar_model.get(Mhalo=srcmass_msun, z=z)
+        else:
+            fstar = self.fstar_model.get(Mhalo=srcmass_msun)
 
         # get escaping fraction
         if(self.fesc_kind == 'constant'):
@@ -109,7 +112,6 @@ class C2Ray_fstar(C2Ray):
             nr_switchon = srcmass_msun.size
             self.perc_switchon = 100.
             pass
-
 
         # get stellar mass
         mstar_msun = fesc*fstar*srcmass_msun
@@ -256,13 +258,13 @@ class C2Ray_fstar(C2Ray):
             # get extension of the output file
             ext = get_extension_in_folder(path=self.results_basename)
             if(ext == '.dat'):
-                fname = '%sxfrac_%.3f.dat' %(self.results_basename, self.zred)
+                fname = '%sxfrac_z%.3f.dat' %(self.results_basename, self.zred)
                 self.xh = t2c.read_cbin(filename=fname, bits=64, order='F')
-                self.phi_ion = t2c.read_cbin(filename='%sIonRates_%.3f.dat' %(self.results_basename, self.zred), bits=32, order='F')
+                self.phi_ion = t2c.read_cbin(filename='%sIonRates_z%.3f.dat' %(self.results_basename, self.zred), bits=32, order='F')
             elif(ext == '.npy'):
-                fname = '%sxfrac_%.3f.npy' %(self.results_basename, self.zred)
+                fname = '%sxfrac_z%.3f.npy' %(self.results_basename, self.zred)
                 self.xh = np.load(fname)
-                self.phi_ion = np.load('%sIonRates_%.3f.npy' %(self.results_basename, self.zred))
+                self.phi_ion = np.load('%sIonRates_z%.3f.npy' %(self.results_basename, self.zred))
             else:
                 raise FileNotFoundError(' Resume file not found: %sxfrac_%.3f.npy' %(self.results_basename, self.zred))
             
@@ -296,6 +298,8 @@ class C2Ray_fstar(C2Ray):
             self.printlog(f"Using constant stellar-to-halo relation model with f_star = {self.fstar_pars['f0']:.1f}, Nion = {self.fstar_pars['Nion']:.1f}")
         elif(self.fstar_kind == 'dpl' or self.fstar_kind == 'lognorm'):
             self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation with parameters: {self.fstar_pars}.")
+        elif(self.fstar_kind == 'Muv'):
+            self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation with scatter and average value with parameters: {self.fstar_pars}.")
 
         # define the f_star model class (to call self.fstar_model.get_fstar(Mhalo) when reading the sources)
         self.fstar_model = StellarToHaloRelation(model=self.fstar_kind, pars=self.fstar_pars, cosmo=self.cosmology)

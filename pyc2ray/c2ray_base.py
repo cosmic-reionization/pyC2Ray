@@ -318,7 +318,7 @@ class C2Ray:
             Redshift (used to name the file)
         """
         if(self.rank == 0):
-            suffix = f"_{z:.3f}"+ext
+            suffix = f"_z{z:.3f}"+ext
             if(suffix.endswith('.dat')):
                 t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order='F')
                 t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order='F')
