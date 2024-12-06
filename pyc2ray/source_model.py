@@ -145,7 +145,7 @@ class EscapeFraction:
 
 	def deterministic(self, Mhalo):
 		fesc_mean = self.f0_esc*(Mhalo/self.Mp_esc)**self.al_esc
-		return fesc_mean
+		return np.clip(fesc_mean, 0, 1)
 
 	def fesc_Muv(self, delta_Muv):
 		# Similar to Gelli+ (2024) model

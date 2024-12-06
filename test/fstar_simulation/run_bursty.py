@@ -93,4 +93,4 @@ timer.stop()
 sim.printlog(timer.summary, sim.logfile)
 
 # Write final output
-sim.write_output(zf)
+sim.write_output(zf, ext='.npy')

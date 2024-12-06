@@ -70,4 +70,4 @@ for k in range(i_start, len(zred_array)-1):
     sim.cosmo_evolve_to_now()
 
 # Write final output
-sim.write_output(zf)
+sim.write_output(zf, ext='.npy')

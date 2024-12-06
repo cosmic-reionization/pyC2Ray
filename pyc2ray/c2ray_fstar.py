@@ -88,9 +88,16 @@ class C2Ray_fstar(C2Ray):
             fesc = self.fesc_model.f0_esc
         elif(self.fesc_kind == 'power'):
             fesc = self.fesc_model.get(Mhalo=srcmass_msun)
-        elif(self.fesc_kind == 'Muv'):
+        elif(self.fesc_kind == 'Gelli2024'):
+            # mean quantities
+            mean_fstar = self.fstar_model.stellar_to_halo_fraction(Mhalo=srcmass_msun)
+            mean_Muv = self.fstar_model.UV_magnitude(fstar=mean_fstar, mdot=srcmass_msun/ts)
+
+            # absolute magnitude with scatter
             Muv = self.fstar_model.UV_magnitude(fstar=fstar, mdot=srcmass_msun/ts)
-            fesc = self.fesc_model.get(Muv=Muv, Mhalo=srcmass_msun)
+
+            # magnitude dependent escaping fraction
+            fesc = self.fesc_model.get(delta_Muv=mean_Muv-Muv)
             
         # get for star formation history 
         if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
