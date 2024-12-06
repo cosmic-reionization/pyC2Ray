@@ -249,12 +249,7 @@ class BlackBodySource_Multifreq:
         integrand_thin = lambda f : self._photo_thin_integrand_vec(f, tau)
         integrand_thick = lambda f : self._photo_thick_integrand_vec(f, tau)
 
-        # limit the frequency integration based on the provided limit
-        #assert freq_min >= self.freqs_tab.min(), "Minimum frequency (freq_min = %.3e Hz) is below value in table %.3e Hz" %(freq_min, self.freqs_tab.min())
-        #assert freq_max <= self.freqs_tab.max(), "Maximum frequency (freq_max = %.3e Hz) exceed value in table %.3e Hz" %(freq_max, self.freqs_tab.max())
-        
-        #freqs = self.freqs_tab[(self.freqs_tab >= freq_min) * (self.freqs_tab <= freq_max)]
-        #freqs = np.linspace(self.freqs_tab.min(), self.freqs_tab.max(), 100)    # TODO: need to be carefull as this can lead to error if the sub-bin is not mentioned in the raytracing
+        # limit the frequency integration based on the provided frequency
         freqs = self.freqs_tab
 
         # empty tables
@@ -274,12 +269,7 @@ class BlackBodySource_Multifreq:
         integrand_thin = lambda f : self._heat_thin_integrand_vec(f, tau)
         integrand_thick = lambda f : self._heat_thick_integrand_vec(f, tau)
         
-        # limit the frequency integration based on the provided limit
-        #assert freq_min >= self.freqs_tab.min(), "Minimum frequency (freq_min = %.3e Hz) is below value in table %.3e Hz" %(freq_min, self.freqs_tab.min())
-        #assert freq_max <= self.freqs_tab.max(), "Maximum frequency (freq_max = %.3e Hz) exceed value in table %.3e Hz" %(freq_max, self.freqs_tab.max())
-        
-        #freqs = self.freqs_tab[(self.freqs_tab >= freq_min) * (self.freqs_tab <= freq_max)]
-        #freqs = np.linspace(self.freqs_tab.min(), self.freqs_tab.max(), 100)    # TODO: need to be carefull as this can lead to error if the sub-bin is not mentioned in the raytracing
+        # limit the frequency integration based on the provided frequency
         freqs = self.freqs_tab
 
         # empty tables
