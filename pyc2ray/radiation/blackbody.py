@@ -188,9 +188,9 @@ class BlackBodySource_Multifreq:
         #self.freq0 = freq0
         #self.pl_index = pl_index
         self.R_star = 1.0
-        self.freq0_HI = (13.598*u.eV/cst.h).to('Hz').value
-        self.freq0_HeI = (24.587*u.eV/cst.h).to('Hz').value
-        self.freq0_HeII = (54.416*u.eV/cst.h).to('Hz').value
+        #self.freq0_HI = (13.598*u.eV/cst.h).to('Hz').value
+        #self.freq0_HeI = (24.587*u.eV/cst.h).to('Hz').value
+        #self.freq0_HeII = (54.416*u.eV/cst.h).to('Hz').value
         
         self.freqs_tab, self.pl_index_HI, self.pl_index_HeI, self.pl_index_HeII = np.loadtxt(pc2r.__path__[0]+'/tables/multifreq/Verner1996_spectidx.txt', unpack=True)
 
