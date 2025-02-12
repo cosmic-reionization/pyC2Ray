@@ -3,6 +3,7 @@ import atexit
 import re
 import numpy as np, os
 import tools21cm as t2c
+import subprocess
 from astropy import units as u
 from astropy import constants as cst
 from astropy.cosmology import FlatLambdaCDM, z_at_value
@@ -116,9 +117,13 @@ class C2Ray:
 
         # Set Raytracing mode
         if self.gpu:
+            # Number of GPUs
+            nr_gpus = int(subprocess.check_output('nvidia-smi  -L | wc -l', shell=True))
+            
             # Allocate GPU memory
             src_batch_size = self._ld["Raytracing"]["source_batch_size"]
-            device_init(self.N, src_batch_size)
+            device_init(self.N, src_batch_size, self.rank, nr_gpus)
+
             # Register deallocation function (automatically calls this on program termination)
             atexit.register(self._gpu_close)
         else:

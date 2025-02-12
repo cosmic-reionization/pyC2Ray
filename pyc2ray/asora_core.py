@@ -18,7 +18,7 @@ def cuda_is_init():
     global cuda_init
     return cuda_init
 
-def device_init(N,source_batch_size):
+def device_init(N, source_batch_size, rank, nr_gpus):
     """Initialize GPU and allocate memory for grid data
 
     Parameters
@@ -32,7 +32,7 @@ def device_init(N,source_batch_size):
     """
     global cuda_init
     if libasora is not None:
-        libasora.device_init(N,source_batch_size)
+        libasora.device_init(N, source_batch_size, rank, nr_gpus)
         cuda_init = True
     else:
         raise RuntimeError("Could not initialize GPU: ASORA library not loaded")
