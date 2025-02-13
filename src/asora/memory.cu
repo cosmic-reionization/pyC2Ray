@@ -36,6 +36,7 @@ void device_init(const int & N, const int & num_src_par, const int & mpi_rank, c
     //int dev_id = 0;  
 
     // Here num_gpus is the number of gpus per node
+    std::cout << "Number of GPUS " << num_gpus << std::endl;
     int dev_id = mpi_rank % num_gpus;
 
     cudaDeviceProp device_prop;
