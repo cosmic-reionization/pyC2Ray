@@ -111,17 +111,17 @@ def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping)
 
 
 # TODO: here you can plug at the place of the doric in the do_chemistry (making the right changes)
-def friedrich(NHI, NHeI, NHeII, xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e, phi_HI, phi_HeI, phi_HeII, heat_HI, heat_HeI, heat_HeII, X, Y):
+def friedrich(n_gas, xHII_old, xHeII_old, xHeIII_old, dt, dr, temp_p, n_e, phi_HI, phi_HeI, phi_HeII, heat_HI, heat_HeI, heat_HeII, X, Y):
     """
         Chemistry equation solver for H and He.
 
         Inputs:
-            - NH (float):           hydrogen column density
-            - NHe (float):          helium column density
+            - n_gas (float):        gas number density
             - xHI_old (float):      hydrogen ionized fraction of the cell
             - xHeI_old (float):     helium first ionized fraction of the cell
             - xHeII_old (float):    helium second ionized fraction of the cell
             - dt (float):           time step in cgs units
+            - dr (float):           cell size in cgs units
             - n_e (float):          electron number density of the cell
             - phi_HI (float):       photoionization rate for hydrogen of the cell
             - phi_HeI (float):      photoionization rate for first ionized helium of the cell
@@ -153,6 +153,12 @@ def friedrich(NHI, NHeI, NHeII, xHII_old, xHeII_old, xHeIII_old, dt, temp_p, n_e
 
     # two photons emission from recombination of HeIII
     nu = 0.285 * np.power(temp_p/1e4, 0.119)
+
+    # column density of half a cell
+    NHI = n_gas*(1.0 - xHII_old)/(dr/2)
+    NHeI = n_gas*xHeI_old/(dr/2)
+    NHeII = n_gas*xHII_old/(dr/2)
+    
 
     # opt depth of HI at HeI ion threshold
     sigma_H_heth = 1.238e-18    # HI cross-section at HeI ionization threshold

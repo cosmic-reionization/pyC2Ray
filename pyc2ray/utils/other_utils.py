@@ -1,5 +1,6 @@
 import numpy as np, time
 import glob, os
+from scipy import stats
 
 def get_extension_in_folder(path):
     arr = glob.glob(path+'xfrac*')
@@ -133,6 +134,20 @@ def _get_redshifts_in_range(redshifts, z_low, z_high, bracket):
     redshifts = redshifts[idx]
 
     return np.array(redshifts)
+
+def bin_sources(srcpos_mpc, mstar_msun, boxsize, meshsize):
+    # define bin for position of sources
+    mesh_bin = np.linspace(0, boxsize, meshsize+1)
+
+    # sum toghete the mass of sources 
+    binned_mass, _, _ = stats.binned_statistic_dd(srcpos_mpc, mstar_msun, statistic='sum', bins=[mesh_bin, mesh_bin, mesh_bin])        
+
+    # get a list of the source positon and mass
+    srcpos = np.argwhere(binned_mass>0) 
+    srcmstar = binned_mass[binned_mass>0] 
+
+    return srcpos, srcmstar
+
 
 class TimerError(Exception): 
     """A custom exception used to report errors in use of Timer class""" 

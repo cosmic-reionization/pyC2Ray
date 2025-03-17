@@ -614,12 +614,22 @@ class C2Ray:
     # The following initialization methods are simulation kind-dependent and need to be overridden in the subclasses
     def _redshift_init(self):
         """Initialize time and redshift counter
-        """
+        """ 
+        self.zred = self.zred_0
+        self.time = self.zred2time(self.zred)
         pass
 
     def _material_init(self):
         """Initialize material properties of the grid
         """
+        xh0 = self._ld['Material']['xh0']
+        temp0 = self._ld['Material']['temp0']
+        avg_dens = self._ld['Material']['avg_dens']
+
+        self.ndens = avg_dens * np.empty(self.shape, order='F')
+        self.xh = xh0 * np.ones(self.shape, order='F')
+        self.temp = temp0 * np.ones(self.shape, order='F')
+        self.phi_ion = np.zeros(self.shape, order='F')
         pass
 
     def _sources_init(self):

@@ -10,10 +10,10 @@
 # Parameters to set up the simulation volume
 # ------------------------------------------
 Grid:
-  # Box size in Mpc
-  boxsize: 0.014
+  # Box size in Mpc/h
+  boxsize: 128
   # size per side of the mesh grid
-  meshsize: 128
+  meshsize: 256
   # boolean varible to switch on ASORA raytracing
   gpu: 1
   # boolean varible to switch on MPI parallelization on the sources list
@@ -96,7 +96,7 @@ Sinks:
   clumping: 1.0
   # define the mean-free-path model to use (can be 'constant' or 'Worseck2014')
   mfp_model: 'constant'
-  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
+  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not usge this, set to a value >> boxsize)
   R_max_cMpc: 15.0
   # free parameter for the Worseck2014 mean-free-path model in cMpc units
   A_mfp: 210.0
@@ -120,7 +120,7 @@ BlackBodySource:
 # -----------------------
 Cosmology:
   # Global flag to use cosmology
-  cosmological: 0
+  cosmological: 1
   # Reduced Hubble constant
   h: 0.6766
   # Omega matter t=0
@@ -130,7 +130,7 @@ Cosmology:
   # Temperature of CMB in Kelvins
   cmbtemp: 2.7255
   # Initial redshift of the simulation
-  zred_0: 9.0
+  zred_0: 12.0
 
 # ------------
 # Output setup
