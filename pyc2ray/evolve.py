@@ -1,5 +1,5 @@
 import numpy as np, array
-from .utils import printlog
+from .utils import printlog, display_time
 from .utils.sourceutils import format_sources
 from .load_extensions import load_c2ray, load_asora
 from .asora_core import cuda_is_init
@@ -172,7 +172,10 @@ def evolve3D(dt, dr,
 
         # Copy density field to GPU once at the beginning of timestep (!! do_all_sources assumes this !!)
         libasora.density_to_device(ndens_flat, N)
-        printlog("Copied source data to device.",logfile,quiet)
+        if use_mpi:
+            printlog("Copied source data to device.", logfile, quiet)
+        else:
+            printlog("Rank %d copied source data to device." %rank, logfile, quiet)
 
     # -----------------------------------------------------------
     # Start Evolve step, Iterate until convergence in <x> and <y>
@@ -193,7 +196,11 @@ def evolve3D(dt, dr,
         # (1): Raytracing Step
         # --------------------
         trt0 = time.time()
-        printlog("Doing Raytracing...",logfile,quiet,' ')
+        if use_mpi:
+            printlog("Doing Raytracing...", logfile,quiet, ' ')
+        else:
+            printlog("Rank=%d is doing Raytracing..." %rank, logfile, quiet, ' ')
+            
         # Set rates to 0. When using ASORA, this is done internally by the library (directly on the GPU)
         if not use_gpu:
             phi_ion = np.zeros((N,N,N),order='F')
@@ -212,10 +219,12 @@ def evolve3D(dt, dr,
                                                                      photo_thin_table,photo_thick_table,
                                                                      np.zeros(NumTau),np.zeros(NumTau), # Eventually we'll add heating tables here
                                                                      minlogtau,dlogtau,R_max_LLS)
+        
+        trt1 = time.time()-trt0
         if use_mpi:
-            printlog(f"rank={rank:n} took {(time.time()-trt0) : .1e} s.", logfile, quiet)
+            printlog("rank=%d took %s." %(rank, display_time(trt1)), logfile, quiet)
         else:
-            printlog(f"took {(time.time()-trt0) : .1f} s.", logfile,quiet)
+            printlog("took %s." %display_time(trt1), logfile, quiet)
 
         # Since chemistry (ODE solving) is done on the CPU in Fortran, flattened CUDA arrays need to be reshaped
         if use_gpu:
@@ -240,7 +249,10 @@ def evolve3D(dt, dr,
             printlog("Doing Chemistry...",logfile,quiet,' ')
             # Apply the global rates to compute the updated ionization fraction
             conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
+            
+            # TODO: the line blow is the same function but completely in python (much slower then the fortran version, due to a lot of loops)
             #xh_intermed, xh_av, conv_flag = global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
+            
             printlog(f"took {(time.time()-tch0) : .1f} s.", logfile,quiet)
 
             # ----------------------------

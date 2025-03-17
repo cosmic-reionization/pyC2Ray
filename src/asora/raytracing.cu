@@ -121,8 +121,7 @@ void do_all_sources_gpu(
         for (int ns = 0; ns < NumSrc; ns += NUM_SRC_PAR)
         {   
             // Raytrace the current batch of sources in parallel
-            evolve0D_gpu<<<gs,bs>>>(R,max_q,ns,NumSrc,NUM_SRC_PAR,src_pos_dev,src_flux_dev,cdh_dev, sig,dr,n_dev,x_dev,phi_dev,m1,photo_thin_table_dev,photo_thick_table_dev,
- minlogtau,dlogtau,NumTau,last_l,last_r);
+            evolve0D_gpu<<<gs,bs>>>(R,max_q,ns,NumSrc,NUM_SRC_PAR,src_pos_dev,src_flux_dev,cdh_dev,sig,dr,n_dev,x_dev,phi_dev,m1,photo_thin_table_dev,photo_thick_table_dev,minlogtau,dlogtau,NumTau,last_l,last_r);
 
             // Check for errors
             cudaError_t error = cudaGetLastError();
@@ -136,7 +135,7 @@ void do_all_sources_gpu(
 
         // Copy the accumulated ionization fraction back to the host
         cudaError_t error = cudaMemcpy(phi_ion,phi_dev,meshsize,cudaMemcpyDeviceToHost);
-        cudaError_t error2 = cudaMemcpy(coldensh_out,cdh_dev,meshsize,cudaMemcpyDeviceToHost);
+        //cudaError_t error2 = cudaMemcpy(coldensh_out,cdh_dev,meshsize,cudaMemcpyDeviceToHost);
     }
 
 
@@ -289,7 +288,8 @@ __global__ void evolve0D_gpu(
 
                             // Compute outgoing column density and add to array for subsequent interpolations
                             double cdho = coldensh_in + nHI_p * path;
-                            
+                            coldensh_out[cdh_offset + mem_offst_gpu(pos[0],pos[1],pos[2],m1)] = cdho;
+
                             // Compute photoionization rates from column density. WARNING: for now this is limited to the grey-opacity test case source
                             if ((coldensh_in <= MAX_COLDENSH) && (dist2/(dr*dr) <= Rmax_LLS*Rmax_LLS))
                             {
@@ -303,7 +303,7 @@ __global__ void evolve0D_gpu(
 
                                 // Add the computed ionization rate and the column density to the array ATOMICALLY since multiple blocks could be writing to the same cell at the same time!
                                 atomicAdd(phi_ion + mem_offst_gpu(pos[0],pos[1],pos[2],m1),phi);
-                                atomicAdd(coldensh_out + mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);
+                                //atomicAdd(coldensh_out + mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);    TODO: this seems to induce some double precision floating error
                             }                          
                         }
                     }

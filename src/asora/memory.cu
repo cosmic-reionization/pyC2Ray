@@ -31,12 +31,18 @@ int NUM_SRC_PAR;
 // ========================================================================
 // Initialization function to allocate device memory (pointers above)
 // ========================================================================
-void device_init(const int & N, const int & num_src_par)
+void device_init(const int & N, const int & num_src_par, const int & mpi_rank, const int & num_gpus)
 {
-    int dev_id = 0;
+    //int dev_id = 0;  
 
+    // Here num_gpus is the number of gpus per node
+    std::cout << "Number of GPUS " << num_gpus << std::endl;
+    int dev_id = mpi_rank % num_gpus;
+    
+    // Explicitly set the device before querying
+    cudaSetDevice(dev_id);
+    
     cudaDeviceProp device_prop;
-    cudaGetDevice(&dev_id);
     cudaGetDeviceProperties(&device_prop, dev_id);
     if (device_prop.computeMode == cudaComputeModeProhibited) {
         std::cerr << "Error: device is running in <Compute Mode Prohibited>, no threads can use ::cudaSetDevice()" << std::endl;
@@ -46,12 +52,15 @@ void device_init(const int & N, const int & num_src_par)
     if (error != cudaSuccess) {
         std::cout << "cudaGetDeviceProperties returned error code " << error << ", line(" << __LINE__ << ")" << std::endl;
     } else {
-        std::cout << "GPU Device " << dev_id << ": \"" << device_prop.name << "\" with compute capability " << device_prop.major << "." << device_prop.minor << std::endl;
+        if (num_gpus > 1){
+            std::cout << "MPI Rank " << mpi_rank << " has GPU Device ID " << dev_id << ": \"" << device_prop.name << "\" with compute capability " << device_prop.major << "." << device_prop.minor << std::endl;
+        } else {
+            std::cout << "GPU Device ID " << dev_id << ": \"" << device_prop.name << "\" with compute capability " << device_prop.major << "." << device_prop.minor << std::endl;
+        }
     }
 
     // Byte-size of grid data
     long unsigned int bytesize = N*N*N*sizeof(double);
-    //std::cout << bytesize << std::endl;
 
     // Set the source batch size, i.e. the number of sources done in parallel (on the same GPU)
     NUM_SRC_PAR = num_src_par;

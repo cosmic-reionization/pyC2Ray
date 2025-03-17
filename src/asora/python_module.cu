@@ -75,9 +75,11 @@ extern "C"
     {
         int N;
         int num_src_par;
-        if (!PyArg_ParseTuple(args,"ii",&N,&num_src_par))
+        int mpi_rank;
+        int num_gpus;
+        if (!PyArg_ParseTuple(args,"iiii",&N,&num_src_par,&mpi_rank,&num_gpus))
             return NULL;
-        device_init(N,num_src_par);
+        device_init(N,num_src_par,mpi_rank,num_gpus);
         return Py_None;
     }
 

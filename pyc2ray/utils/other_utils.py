@@ -148,6 +148,18 @@ def bin_sources(srcpos_mpc, mstar_msun, boxsize, meshsize):
 
     return srcpos, srcmstar
 
+def display_time(time_in_seconds):
+    """ Return a string that display nicely the lapsed time """
+    hrs, residual = divmod(time_in_seconds, 3600.)
+    mins, secs = divmod(residual, 60.)
+    if(hrs == 0):
+        if(mins == 0):
+            display = '%.2fs'  %(secs)
+        else:
+            display = '%dm %.2fs'  %(mins, secs)
+    else:
+        display = '%dh %dm %.2fs'  %(hrs, mins, secs)
+    return display
 
 class TimerError(Exception): 
     """A custom exception used to report errors in use of Timer class""" 

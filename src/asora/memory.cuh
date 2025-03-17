@@ -1,7 +1,7 @@
 #pragma once
 
 // Allocate grid memory
-void device_init(const int &, const int &);
+void device_init(const int &, const int &, const int &, const int &);
 
 // Deallocate grid memory
 void device_close();
