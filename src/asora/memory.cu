@@ -38,9 +38,11 @@ void device_init(const int & N, const int & num_src_par, const int & mpi_rank, c
     // Here num_gpus is the number of gpus per node
     std::cout << "Number of GPUS " << num_gpus << std::endl;
     int dev_id = mpi_rank % num_gpus;
-
+    
+    // Explicitly set the device before querying
+    cudaSetDevice(dev_id);
+    
     cudaDeviceProp device_prop;
-    cudaGetDevice(&dev_id);
     cudaGetDeviceProperties(&device_prop, dev_id);
     if (device_prop.computeMode == cudaComputeModeProhibited) {
         std::cerr << "Error: device is running in <Compute Mode Prohibited>, no threads can use ::cudaSetDevice()" << std::endl;

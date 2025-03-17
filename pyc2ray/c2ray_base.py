@@ -117,8 +117,16 @@ class C2Ray:
 
         # Set Raytracing mode
         if self.gpu:
+            #node_name = os.getenv('SLURMD_NODENAME', default='Unknown Node.')
+            #task_id = int(os.getenv('SLURM_PROCID', default='Unknown Task ID.'))
+            #local_task_id = int(os.getenv('SLURM_LOCALID', default='Unknown Local Task ID.'))
+            #gpu_ids = os.getenv("CUDA_VISIBLE_DEVICES", default="No GPU Assigned.")
+            #tot_gpus = os.getenv('SLURM_JOB_GPUS', default="No GPU on node.")
+            
             # Number of GPUs
-            nr_gpus = int(subprocess.check_output('nvidia-smi  -L | wc -l', shell=True))
+            #nr_gpus = int(subprocess.check_output('nvidia-smi  -L | wc -l', shell=True)) 
+            nr_gpus = int(os.getenv('SLURM_GPUS_ON_NODE', default="No GPU on node."))
+            
             # Allocate GPU memory
             src_batch_size = self._ld["Raytracing"]["source_batch_size"]
             device_init(self.N, src_batch_size, self.rank, nr_gpus)
@@ -139,6 +147,7 @@ class C2Ray:
         self._radiation_init()
         self._sinks_init()
         if self.gpu:
+            #self.printlog('\tNode name: %s\n\ttask_id: %d\n\tlocal task id: %d\n\tgpu_ids: %s\n\ttot gpu job: %s\n\ttot gpu on node: %d' %(node_name, task_id, local_task_id, gpu_ids, tot_gpus, nr_gpus))
             # Print maximum shell size for info, based on LLS (qmax is s.t. Rmax fits inside of it)
             q_max = np.ceil(np.sqrt(3)*min(self.R_max_LLS, np.sqrt(3)*self.N/2))
             self.printlog("Using ASORA Raytracing ( q_max = %d )" %q_max)

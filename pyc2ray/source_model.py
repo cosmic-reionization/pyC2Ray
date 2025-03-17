@@ -91,7 +91,8 @@ class StellarToHaloRelation:
 
 		# following Gelli+ (2024), Muv scatter is proportional to halo circular velocity: ~M^(-1/3) 
 		std_Muv = -np.log10(Mhalo)/3.0 + 4.5 # same as: np.log10(np.power(mass/10**(13.5), -1./3))
-
+		#std_Muv = 2.0
+		
 		# absolute magnitude with scatter
 		Muv = np.random.normal(loc=mean_Muv, scale=std_Muv)
 
