@@ -8,10 +8,10 @@ INC+=$(PYTHONINC) $(NUMPYINC)
 CXXFLAGS+=-std=c++14 -O2 -pedantic -fPIC -D PERIODIC -D RATES #-Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wno-unused
 CUDAFLAGS+=-std=c++14 -O2  -Xcompiler -fPIC -D PERIODIC -D LOCALRATES --gpu-architecture=sm_60 #-Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wno-unused
 
-all: libasora.so
+all: libasora_anisotr.so
 
-libasora.so: memory.o rates.o raytracing.o python_module.o
-	$(NVCC) $(CUDAFLAGS) $(INC) -shared -o libasora.so memory.o rates.o raytracing.o python_module.o
+libasora_anisotr.so: memory.o rates.o raytracing.o python_module.o
+	$(NVCC) $(CUDAFLAGS) $(INC) -shared -o libasora_anisotr.so memory.o rates.o raytracing.o python_module.o
 
 raytracing.o: raytracing.cu
 	$(NVCC) $(CUDAFLAGS) $(INC) -dc raytracing.cu

@@ -125,8 +125,8 @@ class C2Ray:
             
             # Number of GPUs
             #nr_gpus = int(subprocess.check_output('nvidia-smi  -L | wc -l', shell=True)) 
-            nr_gpus = int(os.getenv('SLURM_GPUS_ON_NODE', default="No GPU on node."))
-            
+            #nr_gpus = int(os.getenv('SLURM_GPUS_ON_NODE', default="No GPU on node."))
+            nr_gpus = 1 
             # Allocate GPU memory
             src_batch_size = self._ld["Raytracing"]["source_batch_size"]
             device_init(self.N, src_batch_size, self.rank, nr_gpus)
