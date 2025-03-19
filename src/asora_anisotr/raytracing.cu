@@ -95,7 +95,6 @@ void do_all_sources_gpu(
         // Byte-size of grid data
         int meshsize = m1*m1*m1*sizeof(double);
 
-        //std::cout << "R: " << R << std::endl;
         // Determine how large the octahedron should be, based on the raytracing radius. Currently, this is set s.t. the radius equals the distance from the source to the middle of the faces of the octahedron. To raytrace the whole box, the octahedron bust be 1.5*N in size
         int max_q = std::ceil(SQRT3 * min(R,SQRT3*m1/2.0));
         //std::cout << "max_q: " << max_q << std::endl;
@@ -303,7 +302,7 @@ __global__ void evolve0D_gpu(
                             // Compute photoionization rates from column density. WARNING: for now this is limited to the grey-opacity test case source
                             if ((coldensh_in <= MAX_COLDENSH) && (dist2/(dr*dr) <= Rmax_LLS*Rmax_LLS))
                             {
-                                // Aplly condition of solid angle
+                                // Apply condition of solid angle
                                 if((i == i0 && j == j0 && k == k0) || (abs(cos_thet) >= cos_thet_max)){
                                     double phi = photoion_rates_gpu(strength, coldensh_in, cdho, vol_ph, sig, photo_thin_table, photo_thick_table, minlogtau, dlogtau, NumTau);
                                     

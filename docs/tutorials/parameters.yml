@@ -87,6 +87,49 @@ Photo:
   compute_heating_rates: 0
 
 # ------------------------------------
+# Parameters for the sources of radiation
+# ------------------------------------
+Sources:
+  # stellar-to-halo mass relation: 'fgamma' for classical mass independent model, 'dpl' for double power law (Schneider, Giri, Mirocha 2021) or 'lognorm' for a stochastic with lognorm distribution and std ~Mhalo^(-1/3).
+  fstar_kind: 'dpl'
+  # efficiency High-Mass Atomically Cooling Halo (HMACH) - used only for fstar_kind: 'fgamma'
+  fgamma_hm: 30
+  # efficiency Low-Mass Atomically Cooling Halo (LMACH)
+  fgamma_lm: 0.
+  # Double power law parameter - these are used only when fstar_kind: 'dpl'
+  Nion: 2000.0
+  f0: 0.1 
+  Mt: 1e8 
+  Mp: 1e10
+  g1: -0.3
+  g2: -0.3
+  g3: 0
+  g4: -0.0
+  # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Gelli2024' for a UV dependent model (Gelli+ 2024)
+  fesc_model: 'power'
+  f0_esc: 0.02
+  Mp_esc: 1e10
+  al_esc: -0.25
+  # define the accreation model (can be 'constant' or 'EXP')
+  accretion_model: 'EXP'
+  # accreation rate parameter (see Schneider+ 2021)
+  alpha_h: 0.79
+  # select the bursty star-formation model (can be 'no', 'instant' or 'integrate', it require accretion_model: 'EXP' or None to switch off) 
+  bursty_sfr: 'no'
+  # index power-low of the bursty star-formation model mass relation
+  beta1: 0.1
+  # index power-low of the bursty star-formation model time relation
+  beta2: 1.5
+  # bursty star-formation time-scale at z=0
+  tB0: 200.
+  # fraction of the quiescent time-scale
+  tQ_frac: 1.6
+  # reference redshif for the bursty star-formation model
+  z0: 30.0
+  # randominze the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(t_start, t_rnd))
+  t_rnd: 0
+
+# ------------------------------------
 # Parameters of the radiation sinks
 # ------------------------------------
 Sinks:
