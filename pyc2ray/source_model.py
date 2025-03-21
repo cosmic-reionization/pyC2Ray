@@ -1,9 +1,11 @@
 import numpy as np 
 from scipy.spatial import cKDTree
 from scipy.stats import binned_statistic_dd
-import h5py
-import tools21cm as t2c
+from scipy.integrate import quad_vec
+from sklearn.neighbors import KNeighborsRegressor
 
+import pyc2ray as pc2r
+import h5py
 from .c2ray_base import YEAR, Mpc, msun2g, ev2fr, ev2k
 
 # Conversion Factors.
@@ -202,7 +204,7 @@ class BurstySFR:
 		else:
 			return 0
 		
-	def integrated_burst_or_quiescent_galaxies(self, mass, z, zi, zf):
+	def integrated_burst_or_quiescent_galaxies(self, mass, z, zi, zf, cosmo):
 		""" This case integrate the burst or quench time withing the time-step. It return a factor between 0 and 1 for quenched (value 0) or bursting (value 1). In bewteen values indicate that the sources are quencing for a period of time withing the time-step. """
 		# TODO: It is computationally expensive, for some reason, due to the quad_vec method.... to investiage
 		
@@ -240,6 +242,58 @@ class BurstySFR:
 		#print(' A total of %.2f %% of galaxies have bursty star-formation.' %(100*np.count_nonzero(burst_mask)/burst_mask.size))
 		return burst_or_quench
 
+
+
+class SPICE_scatterSFR:
+    def __init__(self, model):
+        """
+        Initialize the KNN interpolator.
+
+        Parameters:
+        - model: string of the model for the scatter in SFR
+        """
+
+        self.model = model 
+        path_model = pc2r.__path__[0]+'/tables/SPICE_scatter_SFR/'
+        self.redshift_fit, self.mass_fit = np.loadtxt(path_model+'mvir_z_bins.txt', unpack=True)
+        if(self.model == 'bursty'):
+            self.tab = np.loadtxt(path_model+'sigma_SFR_bursty.txt', unpack=True)
+        elif(self.model == 'hyper'):
+            self.tab = np.loadtxt(path_model+'sigma_SFR_hyper.txt', unpack=True)
+        elif(self.model == 'smooth'):
+            self.tab = np.loadtxt(path_model+'sigma_SFR_smooth.txt', unpack=True)
+        
+        # Create the feature matrix (m, z) and the corresponding target values
+        M, Z = np.meshgrid(self.mass_fit, self.redshift_fit, indexing='ij')
+        self.X_train = np.column_stack([M.ravel(), Z.ravel()])
+        self.y_train = self.tab.ravel()
+        
+        # Train KNN regressor
+        self.interp = KNeighborsRegressor(n_neighbors=2, weights='distance')
+        self.interp.fit(self.X_train, self.y_train)
+
+    def get(self, m, z):
+        """
+        Interpolates values given a mass and redshift.
+
+        Parameters:
+        - m: A single value for virial mass or 1D array
+        - z: A single redshift value or 1D array
+        """
+        # For larger mass we assume the same scatter as the tables limit, i.e M > 10^11.325 
+        m = np.clip(a=m, a_min=self.mass_fit, a_max=self.mass_fit)
+
+        # REMARKS: strangely the K-neighbours regressor works just fine for redshift beyond the tables limits
+
+        # allowing to pass and array an a value
+        if(np.ndim(m) == 0) and (np.ndim(z) == 0):
+            query_points = np.array([[m, z]])
+        elif(np.ndim(m) == 1) and (np.ndim(z) == 0):
+            query_points = np.vstack((m, [z]*len(m))).T
+        elif(np.ndim(m) == 0) and (np.ndim(z) == 1):
+            query_points = np.vstack(([m]*len(z), z)).T
+            
+        return self.interp.predict(query_points)
 
 
 

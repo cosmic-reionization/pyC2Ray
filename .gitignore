@@ -15,3 +15,4 @@ docs/tutorials/test_results/
 docs/tutorials/test_results/*
 pyc2ray/tables/multifreq/*png
 test/debug/*png
+pyc2ray/tables/SPICE_scatter_SFR/*txt
