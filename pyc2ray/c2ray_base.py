@@ -81,7 +81,7 @@ ev2k = 1./(cst.k_B*u.K).to('eV').value  # eV to Kelvin
 kpc = (1*u.kpc).cgs.value               # kiloparsec in cm
 Mpc = (1*u.Mpc).cgs.value               # megaparsec in cm
 msun2g = (1*u.Msun).cgs.value           # solar mass to grams
-
+m_p = cst.m_p.cgs.value                 # proton mass to grams
 
 class C2Ray:
     def __init__(self, paramfile):

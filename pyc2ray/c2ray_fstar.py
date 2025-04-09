@@ -13,10 +13,10 @@ from .asora_core import device_init, device_close, photo_table_to_device
 from .radiation import BlackBodySource, make_tau_table
 from .utils.other_utils import get_extension_in_folder, get_redshifts_from_output, find_bins
 
-from .utils import get_source_redshifts
-from .c2ray_base import C2Ray, YEAR, Mpc, msun2g, ev2fr, ev2k
+from .utils import get_source_redshifts, bin_sources
+from .c2ray_base import C2Ray, YEAR, Mpc, msun2g, ev2fr, ev2k, m_p
 
-from .source_model import StellarToHaloRelation, BurstySFR, EscapeFraction, Halo2Grid, m_p
+from .source_model import StellarToHaloRelation, BurstySFR, EscapeFraction, Halo2Grid
 from scipy.stats import binned_statistic_dd
 
 __all__ = ['C2Ray_fstar']
@@ -67,6 +67,8 @@ class C2Ray_fstar(C2Ray):
         normflux : array
             Normalization of the flux of each source (relative to S_star)
         """
+        S_star_ref = 1e48
+
         # read halo list       
         srcpos_mpc, srcmass_msun = self.read_haloes(self.sources_basename+file, self.boxsize)
 
@@ -120,43 +122,26 @@ class C2Ray_fstar(C2Ray):
             self.perc_switchon = 100.
             pass
 
-        # get stellar mass
-        mstar_msun = fesc*fstar*srcmass_msun
-        
-        # sum together masses into a mesh grid
+        # if there are sources shitched on then calculate flux
         if(nr_switchon > 0):
-            mesh_bin = np.linspace(0, self.boxsize/self.cosmology.h, self.N+1)
-            binned_mass, bin_edges, bin_num = binned_statistic_dd(srcpos_mpc, mstar_msun, statistic='sum', bins=[mesh_bin, mesh_bin, mesh_bin])        
-            
-            # get a list of the source positon and mass
-            srcpos = np.argwhere(binned_mass>0) 
-            srcmstar = binned_mass[binned_mass>0] 
+            if('spice' in self.fstar_kind):
+                # get star formation rate from SPICE tables
+                sfr_spice = self.fstar_model.sfr_SPICE(Mhalo=srcmass_msun, z=z)
 
-            """
-            if save_Mstar:
-                folder_path = save_Mstar
-                fname_hdf5 = folder_path+f'/{z:.3f}-Mstar_sources.hdf5'
-                if not os.path.exists(folder_path):
-                    os.makedirs(folder_path)
-                    print(f"Folder '{folder_path}' created successfully.")
-                else:
-                    pass
-                    # print(f"Folder '{folder_path}' already exists.")
-                # Create HDF5 file from the data
-                with h5py.File(fname_hdf5,"w") as f:
-                    # Store Data
-                    dset_pos = f.create_dataset("sources_positions", data=srcpos)
-                    dset_mass = f.create_dataset("sources_mass", data=srcmstar)
-                    # Store Metadata
-                    f.attrs['z'] = z
-                    f.attrs['h'] = self.cosmology.h
-                    f.attrs['numhalo'] = srcmstar.shape[0]
-                    f.attrs['units'] = 'cMpc   Msun'
-            """
-            S_star_ref = 1e48
+                # sum together masses into a mesh grid and get a list of the source positon and mass
+                srcpos, sfr = bin_sources(srcpos_mpc=srcpos_mpc, mstar_msun=sfr_spice*fesc, boxsize=self.boxsize/self.cosmology.h, meshsize=self.N+1)
+                
+                # normalize flux
+                normflux = msun2g * self.fstar_pars['Nion'] * sfr / (m_p * S_star_ref)
+            else:
+                # get stellar mass
+                mstar_msun = fesc*fstar*srcmass_msun
 
-            # normalize flux
-            normflux = msun2g * self.fstar_pars['Nion'] * srcmstar / (m_p * ts * S_star_ref)
+                # sum together masses into a mesh grid and get a list of the source positon and mass
+                srcpos, srcmstar = bin_sources(srcpos_mpc=srcpos_mpc, mstar_msun=mstar_msun, boxsize=self.boxsize/self.cosmology.h, meshsize=self.N+1)
+                
+                # normalize flux
+                normflux = msun2g * self.fstar_pars['Nion'] * srcmstar / (m_p * ts * S_star_ref)
 
             # calculate total number of ionizing photons
             self.tot_phots = np.sum(normflux * dt * S_star_ref)
@@ -165,7 +150,10 @@ class C2Ray_fstar(C2Ray):
             self.printlog(' Total Flux : %e [1/s]' %np.sum(normflux*S_star_ref))
             self.printlog(' Total number of ionizaing photons : %e' %self.tot_phots)
             self.printlog(' Source lifetime : %f Myr' %(ts/(1e6*YEAR)))
-            self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+            if('spice' in self.fstar_kind):
+                self.printlog(' min, max SFR (grid) : %.3e  %.3e [Msun/yr] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(sfr.min()/YEAR, sfr.max()/YEAR, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))        
+            else:
+                self.printlog(' min, max stellar (grid) mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(srcmstar.min(), srcmstar.max(), normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
             
             return srcpos, normflux
         
@@ -307,6 +295,8 @@ class C2Ray_fstar(C2Ray):
             self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation with parameters: {self.fstar_pars}.")
         elif(self.fstar_kind == 'Muv'):
             self.printlog(f"Using {self.fstar_kind} to model the stellar-to-halo relation with scatter and average value with parameters: {self.fstar_pars}.")
+        elif(self.fstar_kind == 'spice'):
+            self.printlog(f"Using {self.fstar_kind} to model the star formation rate with scatter (Basu+ 2025). We use a 'dpl' model to define the mean SFR.")
 
         # define the f_star model class (to call self.fstar_model.get_fstar(Mhalo) when reading the sources)
         self.fstar_model = StellarToHaloRelation(model=self.fstar_kind, pars=self.fstar_pars, cosmo=self.cosmology)

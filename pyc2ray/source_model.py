@@ -4,14 +4,14 @@ from scipy.stats import binned_statistic_dd
 from scipy.integrate import quad_vec
 from sklearn.neighbors import KNeighborsRegressor
 
+import astropy.units as u
+
 import pyc2ray as pc2r
 import h5py
-from .c2ray_base import YEAR, Mpc, msun2g, ev2fr, ev2k
+from .c2ray_base import YEAR, Mpc, msun2g, ev2fr, ev2k, m_p
 
 # Conversion Factors.
-# When doing direct comparisons with C2Ray, the difference between astropy.constants and the C2Ray values
-# may be visible, thus we use the same exact value for the constants. This can be changed to the
-# astropy values once consistency between the two codes has been established
+# When doing direct comparisons with C2Ray, the difference between astropy.constants and the C2Ray values may be visible, thus we use the same exact value for the constants. This can be changed to the astropy values once consistency between the two codes has been established
 # pc = 3.086e18           #(1*u.pc).to('cm').value            # C2Ray value: 3.086e18
 # YEAR = 3.15576E+07      #(1*u.yr).to('s').value           # C2Ray value: 3.15576E+07
 # ev2fr = 0.241838e15                     # eV to Frequency (Hz)
@@ -19,7 +19,7 @@ from .c2ray_base import YEAR, Mpc, msun2g, ev2fr, ev2k
 # kpc = 1e3*pc                            # kiloparsec in cm
 # Mpc = 1e6*pc                            # megaparsec in cm
 # msun2g = 1.98892e33 #(1*u.Msun).to('g').value       # solar mass to grams
-m_p = 1.672661e-24
+#m_p = 1.672661e-24
 
 class StellarToHaloRelation:
 	"""Modelling the mass relation between dark matter halo and the residing stars/galaxies."""
@@ -46,6 +46,9 @@ class StellarToHaloRelation:
 			self.get = self.stochastic_lognormal
 		elif(self.model == 'Muv'):
 			self.get = self.fstar_from_Muv
+		elif('spice' in self.model):
+			self.get = self.deterministic
+			self.spice_model = SPICE_scatterSFR(self.model)
 		else:
 			ValueError(' Selected stellar-to-halo relation model that does not exist : %s' %self.model)
 
@@ -127,6 +130,24 @@ class StellarToHaloRelation:
 		
 		M_UV = M0 - 2.5*(np.log10(fstar) + np.log10(self.cosmo.Ob0/self.cosmo.Om0) + np.log10(mdot/k_val))
 		return M_UV
+
+	def sfr_SPICE(self, Mhalo, z):
+		# source life-time (for accreation mass) in yr units
+		ts = (self.source_liftime(z=z)*u.s).to('yr').value
+
+		# mean fstar
+		mean_fstar = self.stellar_to_halo_fraction(Mhalo=Mhalo)
+
+		# mean star formation rate in Msun/yr units
+		mean_sfr = mean_fstar*Mhalo/ts
+
+		# get scatter from SPICE tables
+		scatter_sfr = self.spice_model.get_scatter(Mhalo=np.log10(Mhalo), z=z)
+
+		# get sfr with scatter in Msun/s units
+		sfr_spice = (np.random.normal(mean_sfr, scatter_sfr)*u.Msun/u.yr).to('Msun/s').value
+		
+		return sfr_spice
 
 
 class EscapeFraction:
@@ -252,17 +273,18 @@ class SPICE_scatterSFR:
         Parameters:
         - model: string of the model for the scatter in SFR
         """
-
         self.model = model 
         path_model = pc2r.__path__[0]+'/tables/SPICE_scatter_SFR/'
         self.redshift_fit, self.mass_fit = np.loadtxt(path_model+'mvir_z_bins.txt', unpack=True)
-        if(self.model == 'bursty'):
+        if('bu' in self.model):
             self.tab = np.loadtxt(path_model+'sigma_SFR_bursty.txt', unpack=True)
-        elif(self.model == 'hyper'):
+        elif('hn' in self.model):
             self.tab = np.loadtxt(path_model+'sigma_SFR_hyper.txt', unpack=True)
-        elif(self.model == 'smooth'):
+        elif('sm' in self.model):
             self.tab = np.loadtxt(path_model+'sigma_SFR_smooth.txt', unpack=True)
-        
+        else:
+            ValueError(' Selected SPICE star formation rate model that does not exist : %s' %self.model)
+
         # Create the feature matrix (m, z) and the corresponding target values
         M, Z = np.meshgrid(self.mass_fit, self.redshift_fit, indexing='ij')
         self.X_train = np.column_stack([M.ravel(), Z.ravel()])
@@ -272,7 +294,7 @@ class SPICE_scatterSFR:
         self.interp = KNeighborsRegressor(n_neighbors=2, weights='distance')
         self.interp.fit(self.X_train, self.y_train)
 
-    def get(self, m, z):
+    def get_scatter(self, Mhalo, z):
         """
         Interpolates values given a mass and redshift.
 
@@ -281,17 +303,17 @@ class SPICE_scatterSFR:
         - z: A single redshift value or 1D array
         """
         # For larger mass we assume the same scatter as the tables limit, i.e M > 10^11.325 
-        m = np.clip(a=m, a_min=self.mass_fit, a_max=self.mass_fit)
+        Mhalo = np.clip(a=Mhalo, a_min=self.mass_fit.min(), a_max=self.mass_fit.max())
 
         # REMARKS: strangely the K-neighbours regressor works just fine for redshift beyond the tables limits
 
         # allowing to pass and array an a value
-        if(np.ndim(m) == 0) and (np.ndim(z) == 0):
-            query_points = np.array([[m, z]])
-        elif(np.ndim(m) == 1) and (np.ndim(z) == 0):
-            query_points = np.vstack((m, [z]*len(m))).T
-        elif(np.ndim(m) == 0) and (np.ndim(z) == 1):
-            query_points = np.vstack(([m]*len(z), z)).T
+        if(np.ndim(Mhalo) == 0) and (np.ndim(z) == 0):
+            query_points = np.array([[Mhalo, z]])
+        elif(np.ndim(Mhalo) == 1) and (np.ndim(z) == 0):
+            query_points = np.vstack((Mhalo, [z]*len(Mhalo))).T
+        elif(np.ndim(Mhalo) == 0) and (np.ndim(z) == 1):
+            query_points = np.vstack(([Mhalo]*len(z), z)).T
             
         return self.interp.predict(query_points)
 
