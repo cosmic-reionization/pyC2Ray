@@ -41,6 +41,7 @@ Indices and tables
 
    installation
    tutorials
+   examples
    modules
    contributors
 

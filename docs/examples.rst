@@ -5,7 +5,7 @@ Here you can find a series of scripts you can run to test the installation of ``
 
 .. toctree::
    :maxdepth: 2
-   :caption: Jupyter Notebooks:
+   :caption: Tests:
 
    examples/ifront
    examples/shadow
