@@ -330,6 +330,8 @@ class C2Ray:
         ----------
         z : float
             Redshift (used to name the file)
+        ext : string
+            extension of the output file. If '.dat' save a binary file (with tools21cm), otherwise '.npy'.
         """
         if(self.rank == 0):
             suffix = f"_z{z:.3f}"+ext

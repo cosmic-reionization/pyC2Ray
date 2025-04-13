@@ -1,18 +1,32 @@
-pyc2ray/__pycache__/
-pyc2ray/*/__pycache__/
-pyc2ray/lib/*.so
-src/*/*.so
-src/*/*.o
 src/*.egg-info
 *.egg-info
 build
 work
 run
-.ipynb_checkpoints/
-.vscode/
+
+# Ignore compiled object
+pyc2ray/lib/*.so
+src/*/*.so
+src/*/*.o
+
+# Ignore images and data created by debug and tests
 *.pkl
-docs/tutorials/test_results/
-docs/tutorials/test_results/*
 pyc2ray/tables/multifreq/*png
 test/debug/*png
+
+# Ignore VS code folder
+.vscode/
+
+# Ignore jupyter notebook checkpoints and python cache
+.ipynb_checkpoints/
+pyc2ray/__pycache__/
+pyc2ray/*/__pycache__/
+
+# Ignore SPICE tables (TODO: ask autorization)
 pyc2ray/tables/SPICE_scatter_SFR/*txt
+
+# Ignore docs test results folder
+docs/tutorials/test_results/
+docs/tutorials/test_results/*
+docs/examples/test_results/
+docs/examples/test_results/*
