@@ -13,7 +13,6 @@ import argparse
 # Global parameters
 parser = argparse.ArgumentParser()
 parser.add_argument("-mode",type=str,default="coarse")
-parser.add_argument("--gpu",action='store_true')
 args = parser.parse_args()
 
 mode = str(args.mode)
@@ -28,11 +27,9 @@ else:
 
 num_steps_between_slices = 1        # Number of timesteps between redshift slices
 t_evol = 5e8 # years
-N = 256                             # Mesh size
-use_octa = args.gpu                   # Determines which raytracing algorithm to use
 
 # Create C2Ray object
-sim = pc2r.C2Ray_Test(paramfile, N, use_octa)
+sim = pc2r.C2Ray_Test(paramfile)
 
 # Generate redshift list (test case)
 zred_array = sim.generate_redshift_array(numzred+1,t_evol/numzred)

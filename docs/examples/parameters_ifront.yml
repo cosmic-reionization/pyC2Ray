@@ -10,8 +10,11 @@
 # Parameters to set up the simulation volume
 # ------------------------------------------
 Grid:
-  # Box size in Mpc/h
-  boxsize: 1.62022035
+  # Box size in comoving Mpc !! Here we don't use 1/h units
+  # !! As in C2Ray, when cosmological = false, this box size is
+  # used "as is". When cosmological = true, it is first scaled to zred_0
+  # Maybe this should be changed, as it can induce some confusion ?
+  boxsize: 1.62022035 # 5e24 cm
   # size per side of the mesh grid
   meshsize: 256
   # boolean varible to switch on ASORA raytracing
@@ -20,7 +23,6 @@ Grid:
   mpi: 0
   # boolean variable to indicate if resuming a simulation (no need to change zred_0)
   resume: 0
-
 # --------------------------------------------------------------------
 # (Initial) properties of physical quantities in the simulation volume
 # --------------------------------------------------------------------
@@ -71,23 +73,20 @@ Abundances:
 # Parameters governing photoionization
 # ------------------------------------
 Photo:
-  # HI cross section at its ionzing frequency
+  # HI cross section at its ionzing frequency (weighted by freq_factor)
   sigma_HI_at_ion_freq: 6.30e-18
-  # Minimum optical depth for tables
+    # Minimum optical depth for tables
   minlogtau: -20
   # Maximum optical depth for tables
   maxlogtau: 4
   # Number of table points
   NumTau: 20000
   # Whether or not to use grey opacity (i.e. cross-section is frequency-independent)
-  grey: 0
+  grey: 1
   # Type of source to use
   SourceType: blackbody
   # Whether to compute heating rates arrays (NOT USED BY CHEMISTRY SO FAR)
   compute_heating_rates: 0
-  # Value of maximum comoving distance for photons from source (Type 3 LLS in original C2Ray)
-  # (to not use this, set to a value >> boxsize)
-  R_max_cMpc: 15.0
 
 # ------------------------------------
 # Parameters of the radiation sinks
@@ -96,18 +95,15 @@ Sinks:
   # define the clumping model to use (can be 'constant', 'redshift', 'density' or 'stochastic')
   clumping_model: 'constant'
   # define clumping factor for the constant model
-  clumping: 1.0
-  # define the mean-free-path model to use (can be 'constant' or 'Worseck2014')
-  mfp_model: 'constant'
-  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not usge this, set to a value >> boxsize)
+  clumping: 5.0
+  # define the mean-free-path model to use (can be 'constant', 'Choudhury09')
+  mfp_model: 'constant' #'Choudhury09'
+  # Value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
   R_max_cMpc: 15.0
-  # free parameter for the Worseck2014 mean-free-path model in cMpc units
-  A_mfp: 210.0
-  # spectral index of the Worseck2014 mean-free-path model redshift evolution
-  eta_mfp: -9.0
-  # parameters for the modification to the Worseck2014 fit
-  z1_mfp: 6.0
-  eta1_mfp: 9.0
+  # free parameter for the Choudhury09 mean-free-path model in cMpc units
+  A_mfp: 175.0
+  # spectral index of the Choudhury09 mean-free-path model redshift evolution
+  eta_mfp: -4.4
 
 # -------------------------------------
 # Parameters for Black Body source type
