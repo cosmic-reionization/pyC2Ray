@@ -17,8 +17,8 @@ If you find any bugs or unexpected behavior in the code, please feel free to ope
 .. _issue: https://github.com/cosmic-reionization/pyC2Ray/issues
 
 
-Aknowledgment
-=============
+Acknowledgements
+================
 The update of the original code was initially developed by Patrick Hirling (see his github_) as part of an astrophysics practical workshop for master students supervised by Michele Bianco, when he was part of EPFL. 
 
 If you use this code in one of your scientific publications, please acknowledge it by citing the associated paper_.
