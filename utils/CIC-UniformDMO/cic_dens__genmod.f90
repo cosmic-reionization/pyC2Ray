@@ -1,0 +1,8 @@
+        !COMPILER-GENERATED INTERFACE MODULE: Wed Apr 18 06:09:38 2012
+        MODULE CIC_DENS__genmod
+          INTERFACE 
+            SUBROUTINE CIC_DENS(FCIC)
+              CHARACTER(LEN=180) :: FCIC
+            END SUBROUTINE CIC_DENS
+          END INTERFACE 
+        END MODULE CIC_DENS__genmod

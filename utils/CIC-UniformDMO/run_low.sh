@@ -1,0 +1,12 @@
+./cic.exe  SMD 88 3840 1
+./cic.exe  SMD 88 3840 2
+./cic.exe  SMD 88 3840 4
+./cic.exe  SMD 88 3840 8
+./cic.exe  NewMD 130 3840 1
+./cic.exe  NewMD 130 3840 2
+./cic.exe  NewMD 130 3840 4
+./cic.exe  NewMD 130 3840 8
+./cic.exe  BigMD 80 3840 1
+./cic.exe  BigMD 80 3840 2
+./cic.exe  BigMD 80 3840 4
+./cic.exe  BigMD 80 3840 8
