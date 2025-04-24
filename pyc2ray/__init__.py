@@ -9,3 +9,4 @@ from .c2ray_test import *
 from .c2ray_cubep3m import *
 from .c2ray_244paper import *
 from .c2ray_fstar import *
+from .c2ray_ramses import *
