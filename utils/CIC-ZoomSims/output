@@ -1,0 +1,150 @@
+ HMD                                                                            
+                      
+         128
+        4096
+         512
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.0                                                                   
+                       
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.                                                                    
+                       
+ /store/erebos/nil/MD_CIC/HMD_4096_128.BCIC.512                                 
+                                                                                
+                       
+ /store/erebos/nil/MD_CIC/HMD_4096_128.BCOUNT.512                               
+                                                                                
+                       
+ Parameter line read
+ Number of files:         2000
+ Total number of particles in the simulation:            68719476736
+ Total number of particles in file:            0    32476785           0
+           0           0           0
+ Masses:    7.93868559380528     
+ Boxsize   4.00000000000000     
+ Redshift -2.220446049250313E-016 expn   1.00000000000000     
+ thread           4  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.250                                                                 
+                       
+ Npart_all_types -     36068430
+ thread          20  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1250                                                                
+                       
+ Npart_all_types -     33895626
+ thread           1  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.62                                                                  
+                       
+ Npart_all_types -     32517671
+ thread          15  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.937                                                                 
+                       
+ Npart_all_types -     33809415
+ thread           8  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.500                                                                 
+                       
+ Npart_all_types -     33447593
+ thread          16  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1000                                                                
+                       
+ Npart_all_types -     33715734
+ thread          22  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1375                                                                
+                       
+ Npart_all_types -     31947226
+ thread          17  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1062                                                                
+                       
+ Npart_all_types -     33633476
+ thread           7  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.437                                                                 
+                       
+ Npart_all_types -     33212590
+ thread          14  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.875                                                                 
+                       
+ Npart_all_types -     34494698
+ thread          27  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1687                                                                
+                       
+ Npart_all_types -     32998821
+ thread          19  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1187                                                                
+                       
+ Npart_all_types -     32922524
+ thread           0  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.0                                                                   
+                       
+ Npart_all_types -     32476785
+ thread          23  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1437                                                                
+                       
+ Npart_all_types -     34005695
+ thread           9  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.562                                                                 
+                       
+ Npart_all_types -     34573356
+ thread          21  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1312                                                                
+                       
+ Npart_all_types -     35037688
+ thread          12  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.750                                                                 
+                       
+ thread           3  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.187                                                                 
+                       
+ thread          13  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.812                                                                 
+                       
+ thread          24  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1500                                                                
+                       
+ Npart_all_types -     32119325
+ Npart_all_types -     33115539
+ thread          11  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.687                                                                 
+                       
+ Npart_all_types -     34193663
+ Npart_all_types -     33321851
+ Npart_all_types -     33038726
+ thread           5  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.312                                                                 
+                       
+ thread          31  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1937                                                                
+                       
+ Npart_all_types -     33273174
+ Npart_all_types -     33206515
+ thread          18  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.1125                                                                
+                       
+ Npart_all_types -     34719796
+ thread          10  reading file
+ /store/multidark/HMD_4096_Planck1/HMD_4096_Planck1_seed1027379/SNAPS/snapdir_12
+ 8/snap_128.625                                                                 
+                       
+ Npart_all_types -     33017625
