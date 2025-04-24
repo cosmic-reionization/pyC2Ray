@@ -7,3 +7,6 @@ If postprocessing **RAMSES** simulations:
 If postprocessing **AREPO** DMO sims:
 * Run cic.exe found in CIC-UniformDMO (if running on a uniform DMO sim) or CIC-ZoomSims (if running on zoom sims)
 * Run the produce_baryonic_dens_arepo.py on the generated \*.BCIC.\* files
+
+If your halo finding was done using AHF you can use make_source_list.py in order to generate the source list
+required to use the source models implemented in pyc2ray_ramses class.
