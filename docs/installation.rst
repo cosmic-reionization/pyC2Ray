@@ -112,8 +112,10 @@ This performs a RT simulation with a single source in a uniform volume, and chec
 
 Future Installation
 """""""""""""""""""
-We are currently working to make the installation easier. In the fugure to install ``pyc2ray`` you will simply run:
+We are currently working to make the installation easier. In the future you will simply run:
 
 .. code-block:: bash
 
         pip install pyc2ray
+
+to install ``pyc2ray``.
