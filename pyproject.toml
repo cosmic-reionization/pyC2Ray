@@ -1,8 +1,8 @@
 [build-system]
 requires = [
     "meson-python",
-    "numpy",             # To get paths
-    "charset_normalizer" # This is to prevent bugs with F2PY when it reads Fortran sources
+    "numpy",             
+    "charset_normalizer", 
 ]
 build-backend = "mesonpy"
 
@@ -10,11 +10,14 @@ build-backend = "mesonpy"
 name = "pyc2ray"
 description = "Python-wrapped and Accelerated version of C2Ray"
 version = "0.1.0"
+requires-python = ">=3.9.0"
 dependencies = [
     "numpy",
     "scipy",
-    "tools21cm"]
+    "h5py",
+    "mpi4py",
+    "tools21cm",
+]
 maintainers = [
     {name = "Patrick Hirling & Michele Bianco"},
 ]
-requires-python = ">=3.9.0"
