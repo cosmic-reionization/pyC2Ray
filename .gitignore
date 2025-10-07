@@ -30,3 +30,6 @@ docs/tutorials/test_results/
 docs/tutorials/test_results/*
 docs/examples/test_results/
 docs/examples/test_results/*
+
+*.swp
+*.swo
