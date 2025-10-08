@@ -10,19 +10,14 @@ The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as 
 Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the complete documentation, tutorials, installation instructions, and more.
 
 ## Installation
+Since the automatic build system is not fully working, the extension modules must be manually compiled and placed in the correct directories.
 
 **Requirements**:
 - C Compiler
 - `gfortran` Fortran Compiler
 - `nvcc` CUDA compiler
-
-In your environment simply run
-
-```bash
-pip install .
-```
-
-If the setuptools method doesn't work, you can alway compile the libraries manually.
+- `f2py` $\geq$ 1.24.4, provided by `numpy`
+- `astropy` and `tools21cm` python packages. 
 
 Please see our [documentation](https://pyc2ray.readthedocs.io/en/latest/installation.html) for step-by-step instructions on how to install `pyc2ray`.
 
@@ -91,7 +86,7 @@ A `pyc2ray` simulation is set up by creating an instance of a subclass of `C2Ray
 -->
 
 ## TODO list
-Here we list a series of numerical and astrophysical implementations we would like to include in future version of `pyc2ray`.
+Here we list a series of numerical and astrophysical implementations we would like to include in futre version of `pyc2ray`.
 - Helium ionization, HeII and HeIII
 - Sources radiative feedback
 - Sources X-ray heating
