@@ -242,7 +242,6 @@ def evolve3D(dt, dr,
             conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
             #xh_intermed, xh_av, conv_flag = global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
             printlog(f"took {(time.time()-tch0) : .1f} s.", logfile,quiet)
-
             # ----------------------------
             # (3): Test Global Convergence
             # ----------------------------
@@ -290,6 +289,9 @@ def evolve3D(dt, dr,
             
         else:
             pass
+            
+    # TODO: Theremal here?
+
     if(rank == 0):
         # When converged, return the updated ionization fractions at the end of the timestep
         printlog("Multiple source convergence reached after %d ray-tracing iterations." %n_count, logfile, quiet)
