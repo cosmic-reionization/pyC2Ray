@@ -3,9 +3,9 @@ Installation
 
 This section explains the different steps required to install ``pyc2ray`` on your local machine or on a high-performance computing (HPC) system.
 
-If you are a **user** and only want to run reionization simulations with the latest version of the code, follow instruction **`1`_** and **`5`_** below to install and test your setup.
+If you are a **user** and only want to run reionization simulations with the latest version of the code, follow instruction **`Step 1 <automatic-installation_>`_** and **`Step 5 <test-installation_>`_** below to install and test your setup.
 
-If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the *C++/CUDA* and *Fortran* modules and place them in the correct directories. To do so, follow instruction from **`2`_** to **`5`_** below.
+If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the *C++/CUDA* and *Fortran* modules and place them in the correct directories. To do so, follow instruction from **`Step 2 <python-environment-and-requirements_>`_** to **`Step 5 <test-installation_>`_** below.
 
 Additionally, you can find example Bash scripts summarizing these installation steps in the ``install_scripts/`` directory (`link`_).  You can modify and run the installation script from that directory using:
 
@@ -14,9 +14,7 @@ Additionally, you can find example Bash scripts summarizing these installation s
         cd install_scripts/
         source example_install.sh
 
-.. _1: https://pyc2ray.readthedocs.io/en/latest/installation.html#automatic-installation
-.. _2: https://pyc2ray.readthedocs.io/en/latest/installation.html#python-environment-and-requirements
-.. _5: https://pyc2ray.readthedocs.io/en/latest/installation.html#test-the-installation
+
 .. _link: https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts
 
 *Remark*: If no GPUs are detected, the CPU version of the raytracing module will be compiled and installed instead. This version is not MPI-optimized (work in progress) and is intended primarily for small test cases and tutorials for students to run on a local machine. We strongly recommend **not using the CPU-only version for large cosmological simulations that include millions of ionizing sources**, but rather limiting it to runs with at most a few hundred sources.
@@ -32,11 +30,12 @@ Basic requirements for installation are:
 - ``nvcc`` (CUDA compiler)  
 - ``f2py >= 1.24.4`` (provided by ``numpy``)
 
+.. _automatic-installation:
 
 1. Automatic Installation
 --------------------------------
 
-``pyC2Ray`` provides an automatic build system that allows for easy installation. It is good practice to install the code in a dedicated Python or Conda environment (see instruction **2**) without needing to install the requirements.
+``pyC2Ray`` provides an automatic build system that allows for easy installation. It is good practice to install the code in a dedicated Python or Conda environment (see instruction **`Step 2 <python-environment-and-requirements_>`_**) without needing to install the requirements.
 
 .. code-block:: bash
 
@@ -47,10 +46,13 @@ Basic requirements for installation are:
 After this, no additional steps are required. A compiled version of the code will be available locally and added to your paths.
 
 To unsinstall the code, you can simply: 
+
 .. code-block:: bash
 
         pip uninstall pyc2ray
 
+
+.. _python-environment-and-requirements:
 
 2. Python Environment and Requirements
 --------------------------------
@@ -129,6 +131,7 @@ Finally, add the ``pyc2ray`` path to your ``PYTHONPATH`` environment variable:
         PYC2RAY_PATH=$(pwd)
         export PYTHONPATH="$PYC2RAY_PATH:$PYTHONPATH"
 
+.. _test-installation:
 
 5. Test the Installation
 --------------------------------
