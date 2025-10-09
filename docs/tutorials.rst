@@ -3,8 +3,7 @@ Tutorials
 
 Here you can find tutorials that will help you get started with ``pyc2ray``.
 
-These scripts will help you familiarize yourself with the memory usage and speed-up of the new ray-tracing code, so you can optimize your runs.  
-They also provide explanations of the source and sink models implemented in ``pyc2ray``, an example script to define your own sources and sinks, and a first example showing how to set up a cosmological simulation.
+These scripts will help you familiarize yourself with the memory usage and speed-up of the new ray-tracing code, so you can optimize your runs. They also provide explanations of the source and sink models implemented in ``pyc2ray``, an example script to define your own models, and a first example showing how to set up a cosmological simulation.
 
 .. toctree::
    :maxdepth: 2

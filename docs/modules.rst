@@ -1,4 +1,4 @@
 Modules
 =======
 
-TODO: insert the list of source and sink models.
+TODO: insert information on the utility functions in ``pyc2ray`` and the modules in the c2ray base class.
