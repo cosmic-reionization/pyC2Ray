@@ -21,6 +21,8 @@ Additionally, you can find example Bash scripts summarizing these installation s
 **Requirements**
 ----------------
 
+Basic requirements for installation are:
+
 - C compiler  
 - Python ``>=3.9``  
 - ``gfortran`` (Fortran compiler)  
@@ -29,7 +31,7 @@ Additionally, you can find example Bash scripts summarizing these installation s
 
 
 1. Automatic Installation
-""""""""""""""""""""""""""""""""""""""""
+--------------------------------
 
 ``pyC2Ray`` provides an automatic build system that allows for easy installation.
 
@@ -43,7 +45,7 @@ After this, no additional steps are required. A compiled version of the code wil
 
 
 2. Python Environment and Requirements
-""""""""""""""""""""""""""""""""""""""""
+--------------------------------
 
 Start by cloning the repository:
 
@@ -66,7 +68,7 @@ This approach helps you keep dependencies for different projects separate.
 
 
 3. Build the Fortran Extension Module
-""""""""""""""""""""""""""""""""""""""""
+--------------------------------
 
 The chemistry solver in ``pyc2ray`` remains in its original Fortran90 implementation.  
 Therefore, the build requires ``f2py >= 1.24.4`` (provided by ``numpy``).  
@@ -85,7 +87,7 @@ The last command moves the resulting shared library file (``libc2ray.*.so``) to 
 
 
 4. Build the CUDA Extension Module
-""""""""""""""""""""""""""""""""""""""""
+--------------------------------
 
 .. code-block:: bash
 
@@ -121,7 +123,7 @@ Finally, add the ``pyc2ray`` path to your ``PYTHONPATH`` environment variable:
 
 
 5. Test the Installation
-""""""""""""""""""""""""""""""""""""""""
+--------------------------------
 
 You can quickly verify your installation with:
 
