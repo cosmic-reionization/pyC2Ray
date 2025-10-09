@@ -3,9 +3,9 @@ Installation
 
 This section explains the different steps required to install ``pyc2ray`` on your local machine or on a high-performance computing (HPC) system.
 
-If you are a **user** and only want to run reionization simulations with the latest version of the code, follow instruction **1** and **5** below to install and test your setup.
+If you are a **user** and only want to run reionization simulations with the latest version of the code, follow instruction **`1`_** and **`5`_** below to install and test your setup.
 
-If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the *C++/CUDA* and *Fortran* modules and place them in the correct directories. To do so, follow instruction from **2** to **5** below.
+If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the *C++/CUDA* and *Fortran* modules and place them in the correct directories. To do so, follow instruction from **`2`_** to **`5`_** below.
 
 Additionally, you can find example Bash scripts summarizing these installation steps in the ``install_scripts/`` directory (`link`_).  You can modify and run the installation script from that directory using:
 
@@ -14,6 +14,9 @@ Additionally, you can find example Bash scripts summarizing these installation s
         cd install_scripts/
         source example_install.sh
 
+.. _1: https://pyc2ray.readthedocs.io/en/latest/installation.html#automatic-installation
+.. _2: https://pyc2ray.readthedocs.io/en/latest/installation.html#python-environment-and-requirements
+.. _5: https://pyc2ray.readthedocs.io/en/latest/installation.html#test-the-installation
 .. _link: https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts
 
 *Remark*: If no GPUs are detected, the CPU version of the raytracing module will be compiled and installed instead. This version is not MPI-optimized (work in progress) and is intended primarily for small test cases and tutorials for students to run on a local machine. We strongly recommend **not using the CPU-only version for large cosmological simulations that include millions of ionizing sources**, but rather limiting it to runs with at most a few hundred sources.
