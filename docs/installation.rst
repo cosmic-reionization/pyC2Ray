@@ -33,7 +33,7 @@ Basic requirements for installation are:
 1. Automatic Installation
 --------------------------------
 
-``pyC2Ray`` provides an automatic build system that allows for easy installation.
+``pyC2Ray`` provides an automatic build system that allows for easy installation. It is good practice to install the code in a dedicated Python or Conda environment (see instruction **2**) without needing to install the requirements.
 
 .. code-block:: bash
 
@@ -42,6 +42,11 @@ Basic requirements for installation are:
         pip install .
 
 After this, no additional steps are required. A compiled version of the code will be available locally and added to your paths.
+
+To unsinstall the code, you can simply: 
+.. code-block:: bash
+
+        pip uninstall pyc2ray
 
 
 2. Python Environment and Requirements
