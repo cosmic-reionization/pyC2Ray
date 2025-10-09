@@ -1,13 +1,16 @@
-import numpy as np
-import astropy.units as u
 import astropy.constants as cst
+import astropy.units as u
+import numpy as np
 
 from ..load_extensions import load_c2ray
 
 # TODO: Add chemistry wrapper function
 
-def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, colh0, abu_c):
-    """ Do chemistry on the whole grid
+
+def global_pass(
+    dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, colh0, abu_c
+):
+    """Do chemistry on the whole grid
 
     Parameters
     ----------
@@ -40,8 +43,20 @@ def global_pass(dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, 
     """
     pass
 
-def hydrogenODE(dt, ndens, temp, xh, phi_ion, clump, bh00=2.59e-13, albpow=-0.7, colh0=1.3e-8, abu_c=7.1e-7):
-    """ Do chemistry on the whole grid just for hydrogen.
+
+def hydrogenODE(
+    dt,
+    ndens,
+    temp,
+    xh,
+    phi_ion,
+    clump,
+    bh00=2.59e-13,
+    albpow=-0.7,
+    colh0=1.3e-8,
+    abu_c=7.1e-7,
+):
+    """Do chemistry on the whole grid just for hydrogen.
         This script is in principle for testing or for use of the chemistry alone.
 
     Parameters
@@ -84,13 +99,27 @@ def hydrogenODE(dt, ndens, temp, xh, phi_ion, clump, bh00=2.59e-13, albpow=-0.7,
 
     xh_intermed = xh
     libc2ray = load_c2ray()
-    
-    temph0 = (13.598*u.eV/cst.k_B).cgs.value
+
+    temph0 = (13.598 * u.eV / cst.k_B).cgs.value
 
     # dt, ndens, temp, xh, xh_av, xh_intermed, phi_ion, bh00, albpow, colh0, temph0, abu_c
-    conv_flag = libc2ray.chemistry.global_pass(dt, ndens, temp, xh, xh, xh_intermed, phi_ion, clump, bh00, albpow, colh0, temph0, abu_c)
-    
-    convergence = conv_flag / np.size(xh_intermed) 
+    conv_flag = libc2ray.chemistry.global_pass(
+        dt,
+        ndens,
+        temp,
+        xh,
+        xh,
+        xh_intermed,
+        phi_ion,
+        clump,
+        bh00,
+        albpow,
+        colh0,
+        temph0,
+        abu_c,
+    )
+
+    convergence = conv_flag / np.size(xh_intermed)
     assert convergence < 0.01
 
     return xh_intermed
