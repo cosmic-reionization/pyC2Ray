@@ -5,7 +5,7 @@ This section explains the different steps required to install ``pyc2ray`` on you
 
 If you are a **user** and only want to run reionization simulations with the latest version of the code, follow instruction **1** and **5** below to install and test your setup.
 
-If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the C++/CUDA and Fortran modules and place them in the correct directories. To do so, follow instruction from **2** to **5** below.
+If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the *C++/CUDA* and *Fortran* modules and place them in the correct directories. To do so, follow instruction from **2** to **5** below.
 
 Additionally, you can find example Bash scripts summarizing these installation steps in the ``install_scripts/`` directory (`link`_).  You can modify and run the installation script from that directory using:
 
