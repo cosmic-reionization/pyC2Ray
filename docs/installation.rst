@@ -45,10 +45,10 @@ Basic requirements for installation are:
 
 After this, no additional steps are required. A compiled version of the code will be available locally and added to your paths.
 
-To unsinstall the code, you can simply: 
+To uninstall the code, you can simply: 
 
 .. code-block:: bash
-
+        
         pip uninstall pyc2ray
 
 
