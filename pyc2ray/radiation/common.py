@@ -1,16 +1,14 @@
 import numpy as np
-from scipy.integrate import quad,quad_vec
-import astropy.constants as ac
 
-#h_over_k = (ac.h/(ac.k_B)).cgs.value
+# h_over_k = (ac.h/(ac.k_B)).cgs.value
 
-#two_pi_over_c_square = 2*np.pi/ac.c.cgs.value**2
-c = 2.997925e+10
+# two_pi_over_c_square = 2*np.pi/ac.c.cgs.value**2
+c = 2.997925e10
 
-__all__ = ['make_tau_table']
+__all__ = ["make_tau_table"]
 
-    
-def make_tau_table(minlogtau,maxlogtau,NumTau):
+
+def make_tau_table(minlogtau, maxlogtau, NumTau):
     """Utility function to create optical depth array for C2Ray
 
     Parameters
@@ -21,7 +19,7 @@ def make_tau_table(minlogtau,maxlogtau,NumTau):
         Base 10 log of the maximum value of the table in τ
     NumTau : int
         Number of points in the table, excluding τ = 0
-    
+
     Returns
     -------
     tau : 1D-array of shape (NumTau + 1)
@@ -30,8 +28,8 @@ def make_tau_table(minlogtau,maxlogtau,NumTau):
     dlogtau : float
         Table step size in log10
     """
-    dlogtau = (maxlogtau-minlogtau)/NumTau
-    tau = np.empty(NumTau+1)
+    dlogtau = (maxlogtau - minlogtau) / NumTau
+    tau = np.empty(NumTau + 1)
     tau[0] = 0.0
-    tau[1:] = 10**(minlogtau + np.arange(NumTau)*dlogtau)
+    tau[1:] = 10 ** (minlogtau + np.arange(NumTau) * dlogtau)
     return tau, dlogtau

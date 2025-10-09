@@ -1,23 +1,40 @@
 [build-system]
-requires = [
-    "meson-python",
-    "numpy>=2.0",
-    "charset_normalizer",
-]
 build-backend = "mesonpy"
+requires = [
+  "charset-normalizer",
+  "meson-python",
+  "numpy>=2",
+]
 
 [project]
 name = "pyc2ray"
-description = "Python-wrapped and Accelerated version of C2Ray"
 version = "0.1.0"
-requires-python = ">=3.9"
-dependencies = [
-    "numpy",
-    "scipy",
-    "h5py",
-    "mpi4py",
-    "tools21cm",
-]
+description = "Python-wrapped and Accelerated version of C2Ray"
 maintainers = [
-    {name = "Patrick Hirling & Michele Bianco"},
+  { name = "Patrick Hirling & Michele Bianco" },
+]
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+  "h5py",
+  "mpi4py",
+  "numpy",
+  "scipy",
+  "tools21cm",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pre-commit",
+  "ruff",
+  "clang-format",
+  "meson",
 ]
