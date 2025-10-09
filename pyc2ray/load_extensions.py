@@ -4,8 +4,9 @@ _c2ray_lib = None
 _c2ray_lib_loaded = None
 _asora_lib = None
 _asora_lib_loaded = None
-#_asora_he_lib = None
-#_asora_he_lib_loaded = None
+# _asora_he_lib = None
+# _asora_he_lib_loaded = None
+
 
 # Load the f2py-compiled C2Ray subroutines
 def load_c2ray():
@@ -16,6 +17,7 @@ def load_c2ray():
     if _c2ray_lib_loaded is None:
         try:
             from .lib import libc2ray
+
             _c2ray_lib_loaded = True
             _c2ray_lib = libc2ray
             return _c2ray_lib
@@ -27,7 +29,8 @@ def load_c2ray():
         return _c2ray_lib
     else:
         return None
-    
+
+
 # Load the ASORA raytracing library
 def load_asora():
     global _asora_lib
@@ -37,6 +40,7 @@ def load_asora():
     if _asora_lib_loaded is None:
         try:
             from .lib import libasora
+
             _asora_lib_loaded = True
             _asora_lib = libasora
             return _asora_lib
@@ -48,6 +52,7 @@ def load_asora():
         return _asora_lib
     else:
         return None
+
 
 """
 # Load the ASORA (with Helium) raytracing library
