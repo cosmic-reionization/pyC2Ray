@@ -3,9 +3,9 @@ Installation
 
 This section explains the different steps required to install ``pyc2ray`` on your local machine or on a high-performance computing (HPC) system.
 
-If you are a **user** and only want to run reionization simulations with the latest version of the code, follow instructions `**Step 1** <automatic-installation_>`_ and `**Step 5** <test-installation_>`_ below to install and test your setup.
+If you are a **user** and only want to run reionization simulations with the latest version of the code, follow instructions `Step 1 <automatic-installation_>`_ and `Step 5 <test-installation_>`_ below to install and test your setup.
 
-If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the *C++/CUDA* and *Fortran* modules and place them in the correct directories. To do so, follow instructions from `**Step 2** <python-environment-and-requirements_>`_ to `**Step 5** <test-installation_>`_ below.
+If you are a **developer** and need to substantially modify the components of ``pyc2ray``, you will need to manually compile the *C++/CUDA* and *Fortran* modules and place them in the correct directories. To do so, follow instructions from `Step 2 <python-environment-and-requirements_>`_ to `Step 5 <test-installation_>`_ below.
 
 Additionally, you can find example Bash scripts summarizing these installation steps in the ``install_scripts/`` directory (`link`_).  You can modify and run the installation script from that directory using:
 
@@ -35,7 +35,7 @@ Basic requirements for installation are:
 1. Automatic Installation
 --------------------------------
 
-``pyC2Ray`` provides an automatic build system that allows for easy installation. It is good practice to install the code in a dedicated Python or Conda environment (see instruction `**Step 2** <python-environment-and-requirements_>`_, no need to install the requirements).
+``pyC2Ray`` provides an automatic build system that allows for easy installation. It is good practice to install the code in a dedicated Python or Conda environment (see instruction `Step 2 <python-environment-and-requirements_>`_, no need to install the requirements).
 
 .. code-block:: bash
 
