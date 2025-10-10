@@ -29,14 +29,25 @@ c2ray_wrapper_sources = custom_target(
     ],
 )
 
+# Find f2py headers
+incdir_f2py = run_command(
+    py,
+    [
+        '-c',
+        'import os; import numpy.f2py; print(os.path.relpath(numpy.f2py.get_include()))',
+    ],
+    check: true,
+).stdout().strip()
+inc_f2py = include_directories(incdir_f2py)
+
 # Build C2Ray extension module
 py.extension_module(
     'libc2ray',
     c2ray_wrapper_sources,
     c2ray_sources,
     incdir_f2py / 'fortranobject.c',
-    include_directories: inc_np,
-    dependencies: py_dep,
+    include_directories: inc_f2py,
+    dependencies: [py_dep, np_dep],
     install: true,
     subdir: 'pyc2ray/lib',
     fortran_args: '-DUSE_SUBBOX',

@@ -40,8 +40,7 @@ nvlink_flags = ['-arch', compute_cap]
 py.extension_module(
     'libasora',
     asora_sources,
-    include_directories: inc_np,
-    dependencies: py_dep,
+    dependencies: [py_dep, np_dep],
     install: true,
     subdir: 'pyc2ray/lib',
     cuda_args: nvcc_flags,

@@ -1,8 +1,8 @@
 [build-system]
 requires = [
     "meson-python",
-    "numpy",             
-    "charset_normalizer", 
+    "numpy>=2.0",
+    "charset_normalizer",
 ]
 build-backend = "mesonpy"
 
@@ -10,7 +10,7 @@ build-backend = "mesonpy"
 name = "pyc2ray"
 description = "Python-wrapped and Accelerated version of C2Ray"
 version = "0.1.0"
-requires-python = ">=3.9.0"
+requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "scipy",
