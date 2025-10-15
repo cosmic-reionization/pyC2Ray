@@ -218,7 +218,7 @@ class C2Ray:
             # Set cell size to current proper size
             # self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
             self.dr /= dilution_factor
-            self.printlog(f"zfactor = {1.0 / dilution_factor: .10f}")
+            #self.printlog(f"zfactor = {1.0 / dilution_factor: .10f}")
         # Set new time and redshift (after timestep)
         self.zred = z_now
 
