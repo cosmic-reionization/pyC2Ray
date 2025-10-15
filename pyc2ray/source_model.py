@@ -5,11 +5,7 @@ import numpy as np
 from scipy.integrate import quad_vec
 from scipy.spatial import cKDTree
 from scipy.stats import binned_statistic_dd
-<<<<<<< Updated upstream
-=======
-from scipy.integrate import quad_vec
 from scipy.interpolate import RegularGridInterpolator
->>>>>>> Stashed changes
 from sklearn.neighbors import KNeighborsRegressor
 
 import pyc2ray as pc2r
@@ -27,192 +23,6 @@ import pyc2ray as pc2r
 
 
 class StellarToHaloRelation:
-<<<<<<< Updated upstream
-    """Modelling the mass relation between dark matter halo and the residing stars/galaxies."""
-
-    def __init__(self, model, pars, cosmo=None):
-        self.cosmo = cosmo
-        self.model = model
-        self.Nion = pars["Nion"]
-        self.f0 = pars["f0"]
-        self.Mt = pars["Mt"]
-        self.Mp = pars["Mp"]
-        self.g1 = pars["g1"]
-        self.g2 = pars["g2"]
-        self.g3 = pars["g3"]
-        self.g4 = pars["g4"]
-        self.alph_h = pars["alpha_h"]
-
-        if self.model == "fgamma":
-            # TODO: there is something wrong with this, The photoionization gets super high like 1e-5?????? to check
-            self.get = lambda Mhalo: self.cosmo.Ob0 / self.cosmo.Om0 * Mhalo * self.f0
-        elif self.model == "dpl":
-            self.get = self.deterministic
-        elif self.model == "lognorm":
-            self.get = self.stochastic_lognormal
-        elif self.model == "Muv":
-            self.get = self.fstar_from_Muv
-        elif "spice" in self.model:
-            self.get = self.deterministic
-            self.spice_model = SPICE_scatterSFR(self.model)
-        else:
-            ValueError(
-                " Selected stellar-to-halo relation model that does not exist : %s"
-                % self.model
-            )
-
-    def source_liftime(self, z):
-        ts = 1.0 / (self.alph_h * (1 + z) * self.cosmo.H(z=z).cgs.value)
-        return ts
-
-    def deterministic(self, Mhalo):
-        fstar_mean = self.stellar_to_halo_fraction(Mhalo)
-        return fstar_mean
-
-    def stochastic_Gaussian(self, Mhalo, sigma):
-        fstar_mean = self.stellar_to_halo_fraction(Mhalo)
-
-        if isinstance(sigma, float):
-            # FIXME: fstar_std is used as a scalar later, this is a bug
-            fstar_std = lambda M: sigma * np.ones_like(Mhalo)  # noqa: E731
-        else:
-            fstar_std = sigma
-
-        fstar = np.clip(
-            fstar_mean * (1 + np.random.normal(0, fstar_std)), a_min=0, a_max=1
-        )
-
-        return fstar
-
-    def stochastic_lognormal(self, Mhalo, sigma=None):
-        fstar_mean = self.stellar_to_halo_fraction(Mhalo)
-
-        if isinstance(sigma, (np.ndarray, list)):
-            log_fstar_std = sigma
-        elif isinstance(sigma, float):
-            log_fstar_std = sigma * np.ones_like(Mhalo)
-        elif sigma is None:
-            log_fstar_std = np.power(Mhalo / self.Mp, -1.0 / 3)
-
-        log_fstar = np.log(fstar_mean) + np.random.normal(0, log_fstar_std)
-        fstar = np.clip(a=np.exp(log_fstar), a_min=0, a_max=1)
-        return fstar
-
-    def fstar_from_Muv(self, Mhalo, z):
-        # source life-time (for accreation mass) in cgs units
-        ts = self.source_liftime(z=z)
-
-        # mean absolute magnitude
-        mean_fstar = self.stellar_to_halo_fraction(Mhalo=Mhalo)
-        mean_Muv = self.UV_magnitude(fstar=mean_fstar, mdot=Mhalo / ts)
-
-        # following Gelli+ (2024), Muv scatter is proportional to halo circular velocity: ~M^(-1/3)
-        std_Muv = (
-            -np.log10(Mhalo) / 3.0 + 4.5
-        )  # same as: np.log10(np.power(mass/10**(13.5), -1./3))
-        # std_Muv = 2.0
-
-        # absolute magnitude with scatter
-        Muv = np.random.normal(loc=mean_Muv, scale=std_Muv)
-
-        # calibrated for 1500 Å dust-corrected rest-frame UV luminosity
-        M0, k_val = 51.6, 3.64413e-36  # in [Msun/s * Hz / (s erg)]
-        fstar = (
-            self.cosmo.Om0
-            / self.cosmo.Ob0
-            * k_val
-            / (Mhalo / ts)
-            * np.power(10.0, (M0 - Muv) / 2.5)
-        )
-        return np.clip(fstar, 0.0, 1.0)
-
-    def stellar_to_halo_fraction(self, Mhalo):
-        """
-        A parameterised stellar to halo relation (2011.12308, 2201.02210, 2302.06626).
-        """
-        # Double power law, motivated by UVLFs
-        dpl = (
-            2
-            * self.cosmo.Ob0
-            / self.cosmo.Om0
-            * self.f0
-            / ((Mhalo / self.Mp) ** self.g1 + (Mhalo / self.Mp) ** self.g2)
-        )
-
-        # Suppression at the small-mass end
-        S_M = (1 + (self.Mt / Mhalo) ** self.g3) ** self.g4
-
-        fstar = dpl * S_M
-
-        return fstar
-
-    def UV_magnitude(self, fstar, mdot):
-        # corresponding to AB magnitude system (Oke 1974)
-        M0 = 51.6
-
-        # calibrated for 1500 Å dust-corrected rest-frame UV luminosity
-        # k_val = 1.15e-28 # in [Msun/yr * Hz / (s erg)]
-        k_val = 3.64413e-36  # in [Msun/s * Hz / (s erg)]
-
-        M_UV = M0 - 2.5 * (
-            np.log10(fstar)
-            + np.log10(self.cosmo.Ob0 / self.cosmo.Om0)
-            + np.log10(mdot / k_val)
-        )
-        return M_UV
-
-    def sfr_SPICE(self, Mhalo, z):
-        # source life-time (for accreation mass) in yr units
-        ts = (self.source_liftime(z=z) * u.s).to("yr").value
-
-        # mean fstar
-        mean_fstar = self.stellar_to_halo_fraction(Mhalo=Mhalo)
-
-        # mean star formation rate in Msun/yr units
-        mean_sfr = mean_fstar * Mhalo / ts
-
-        # get scatter from SPICE tables
-        scatter_sfr = self.spice_model.get_scatter(Mhalo=np.log10(Mhalo), z=z)
-
-        # get sfr with scatter in Msun/s units
-        sfr_spice = (
-            (np.random.normal(mean_sfr, scatter_sfr) * u.Msun / u.yr).to("Msun/s").value
-        )
-
-        return sfr_spice
-
-
-class EscapeFraction:
-    """Modelling the escape of photons from the stars/galaxies inside dark matter haloes."""
-
-    def __init__(self, model, pars):
-        self.model = model
-        self.f0_esc = pars["f0_esc"]
-        self.Mp_esc = pars["Mp_esc"]
-        self.al_esc = pars["al_esc"]
-
-        if self.model == "constant":
-            self.get = lambda Mhalo: self.f0_esc
-        elif self.model == "power":
-            self.get = self.deterministic
-        elif self.model == "Gelli2024":
-            self.get = self.fesc_Muv
-        else:
-            ValueError(
-                " Selected escaping fraction model that does not exist : %s"
-                % self.model
-            )
-
-    def deterministic(self, Mhalo):
-        fesc_mean = self.f0_esc * (Mhalo / self.Mp_esc) ** self.al_esc
-        return np.clip(fesc_mean, 0, 1)
-
-    def fesc_Muv(self, delta_Muv):
-        # Similar to Gelli+ (2024) model
-        fesc = np.exp(delta_Muv - 5)  # self.f0_esc * (delta_Muv**self.al_esc + 1.)
-        # fesc[delta_Muv < 0] = self.f0_esc
-        return np.clip(fesc, 0, 1)
-=======
 	"""Modelling the mass relation between dark matter halo and the residing stars/galaxies."""
 	def __init__(self, model, pars, cosmo=None):
 
@@ -384,7 +194,6 @@ class EscapeFraction:
 		fesc = np.exp(delta_Muv - 5) #self.f0_esc * (delta_Muv**self.al_esc + 1.)
 		#fesc[delta_Muv < 0] = self.f0_esc
 		return np.clip(fesc, 0, 1)
->>>>>>> Stashed changes
 
 	def fesc_Thesan(self, Mhalo, z):
 		if(z > self.redshift_tab.max()):
