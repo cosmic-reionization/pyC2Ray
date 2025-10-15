@@ -1,5 +1,4 @@
 #pragma once
-#include <cuda_runtime.h>
 
 // Photoionization rate from tables
 __device__ double photoion_rates_gpu(const double &strength, const double &coldens_in,

@@ -3,6 +3,8 @@
 #include "memory.cuh"
 #include "rates.cuh"
 
+#include "hip/hip_runtime.h"
+
 #include <exception>
 #include <iostream>
 #include <string>
@@ -14,8 +16,8 @@
 #define FOURPI 12.566370614359172463991853874177  // 4π
 #define INV4PI 0.079577471545947672804111050482   // 1/4π
 #define SQRT3 1.73205080757                       // Square root of 3
-#define MAX_COLDENSH 2e30    // Column density limit (rates are set to zero above this)
-#define CUDA_BLOCK_SIZE 256  // Size of blocks used to treat sources
+#define MAX_COLDENSH 2e30   // Column density limit (rates are set to zero above this)
+#define HIP_BLOCK_SIZE 256  // Size of blocks used to treat sources
 
 // ========================================================================
 // Utility Device Functions
@@ -67,6 +69,7 @@ __device__ void linthrd2cart(const int &s, const int &q, int &i, int &j) {
     }
 }
 
+// FIXME: is this also valid on AMD?
 // When using a GPU with compute capability < 6.0, we must manually define the
 // atomicAdd function for doubles
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 600
@@ -101,24 +104,24 @@ void do_all_sources_gpu(const double &R, double *coldensh_out, const double &sig
     int max_q = std::ceil(SQRT3 * min(R, SQRT3 * m1 / 2.0));
     // std::cout << "max_q: " << max_q << std::endl;
 
-    // CUDA Grid size: since 1 block = 1 source, this sets the number of sources
+    // HIP Grid size: since 1 block = 1 source, this sets the number of sources
     // treated in parallel
     dim3 gs(NUM_SRC_PAR);
 
     // CUDA Block size: more of a tuning parameter (see above), in practice
     // anything ~128 is fine
-    dim3 bs(CUDA_BLOCK_SIZE);
+    dim3 bs(HIP_BLOCK_SIZE);
 
     // Here we fill the ionization rate array with zero before raytracing all
     // sources. The LOCALRATES flag is for debugging purposes and will be removed
     // later on
-    cudaMemset(phi_dev, 0, meshsize);
+    hipMemset(phi_dev, 0, meshsize);
 
     // Copy current ionization fraction to the device
-    // cudaMemcpy(n_dev,ndens,meshsize,cudaMemcpyHostToDevice);  < --- !! density
+    // hipMemcpy(n_dev,ndens,meshsize,hipMemcpyHostToDevice);  < --- !! density
     // array is not modified, asora assumes that it has been copied to the device
     // before
-    cudaMemcpy(x_dev, xh_av, meshsize, cudaMemcpyHostToDevice);
+    hipMemcpy(x_dev, xh_av, meshsize, hipMemcpyHostToDevice);
 
     // Since the grid is periodic, we limit the maximum size of the raytraced
     // region to a cube as large as the mesh around the source. See line 93 of
@@ -136,21 +139,21 @@ void do_all_sources_gpu(const double &R, double *coldensh_out, const double &sig
                                  photo_thick_table_dev, minlogtau, dlogtau, NumTau, last_l, last_r);
 
         // Check for errors
-        cudaError_t error = cudaGetLastError();
-        if (error != cudaSuccess) {
+        hipError_t error = hipGetLastError();
+        if (error != hipSuccess) {
             throw std::runtime_error(
-                "Error Launching Kernel: " + std::string(cudaGetErrorName(error)) + " - " +
-                std::string(cudaGetErrorString(error)));
+                "Error Launching Kernel: " + std::string(hipGetErrorName(error)) + " - " +
+                std::string(hipGetErrorString(error)));
         }
 
         // Sync device to be sure (is this required ??)
-        cudaDeviceSynchronize();
+        hipDeviceSynchronize();
     }
 
     // Copy the accumulated ionization fraction back to the host
-    cudaError_t error = cudaMemcpy(phi_ion, phi_dev, meshsize, cudaMemcpyDeviceToHost);
-    // cudaError_t error2 =
-    // cudaMemcpy(coldensh_out,cdh_dev,meshsize,cudaMemcpyDeviceToHost);
+    hipError_t error = hipMemcpy(phi_ion, phi_dev, meshsize, hipMemcpyDeviceToHost);
+    // hipError_t error2 =
+    // hipMemcpy(coldensh_out,cdh_dev,meshsize,hipMemcpyDeviceToHost);
 }
 
 // ========================================================================

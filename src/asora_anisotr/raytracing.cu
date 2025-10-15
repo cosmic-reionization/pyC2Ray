@@ -3,6 +3,8 @@
 #include "memory.cuh"
 #include "rates.cuh"
 
+#include "hip/hip_runtime.h"
+
 #include <math.h>
 #include <exception>
 #include <iostream>
@@ -112,13 +114,13 @@ void do_all_sources_gpu(const double &R, double *coldensh_out, const double &sig
     // Here we fill the ionization rate array with zero before raytracing all
     // sources. The LOCALRATES flag is for debugging purposes and will be removed
     // later on
-    cudaMemset(phi_dev, 0, meshsize);
+    hipMemset(phi_dev, 0, meshsize);
 
     // Copy current ionization fraction to the device
-    // cudaMemcpy(n_dev,ndens,meshsize,cudaMemcpyHostToDevice);  < --- !! density
+    // hipMemcpy(n_dev,ndens,meshsize,hipMemcpyHostToDevice);  < --- !! density
     // array is not modified, asora assumes that it has been copied to the device
     // before
-    cudaMemcpy(x_dev, xh_av, meshsize, cudaMemcpyHostToDevice);
+    hipMemcpy(x_dev, xh_av, meshsize, hipMemcpyHostToDevice);
 
     // Since the grid is periodic, we limit the maximum size of the raytraced
     // region to a cube as large as the mesh around the source. See line 93 of
@@ -137,21 +139,21 @@ void do_all_sources_gpu(const double &R, double *coldensh_out, const double &sig
                                  dlogtau, NumTau, last_l, last_r);
 
         // Check for errors
-        cudaError_t error = cudaGetLastError();
-        if (error != cudaSuccess) {
+        hipError_t error = hipGetLastError();
+        if (error != hipSuccess) {
             throw std::runtime_error(
-                "Error Launching Kernel: " + std::string(cudaGetErrorName(error)) + " - " +
-                std::string(cudaGetErrorString(error)));
+                "Error Launching Kernel: " + std::string(hipGetErrorName(error)) + " - " +
+                std::string(hipGetErrorString(error)));
         }
 
         // Sync device to be sure (is this required ??)
-        cudaDeviceSynchronize();
+        hipDeviceSynchronize();
     }
 
     // Copy the accumulated ionization fraction back to the host
-    cudaError_t error = cudaMemcpy(phi_ion, phi_dev, meshsize, cudaMemcpyDeviceToHost);
-    // cudaError_t error2 =
-    // cudaMemcpy(coldensh_out,cdh_dev,meshsize,cudaMemcpyDeviceToHost);
+    hipError_t error = hipMemcpy(phi_ion, phi_dev, meshsize, hipMemcpyDeviceToHost);
+    // hipError_t error2 =
+    // hipMemcpy(coldensh_out,cdh_dev,meshsize,hipMemcpyDeviceToHost);
 }
 
 // ========================================================================

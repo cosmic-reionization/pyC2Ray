@@ -1,5 +1,4 @@
 #pragma once
-#include <cuda_runtime.h>
 
 // ========================================================================
 // Header file for OCTA raytracing library.

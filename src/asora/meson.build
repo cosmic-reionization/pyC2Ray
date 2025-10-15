@@ -36,11 +36,15 @@ nvcc_flags = [
 ]
 nvlink_flags = ['-arch', compute_cap]
 
+rocm_root = get_option('rocm-root')
+hip_headers = include_directories(rocm_root / 'include')
+
 # Build ASORA module with nvcc
 py.extension_module(
     'libasora',
     asora_sources,
     dependencies: [py_dep, np_dep],
+    include_directories: hip_headers,
     install: true,
     subdir: 'pyc2ray/lib',
     cuda_args: nvcc_flags,

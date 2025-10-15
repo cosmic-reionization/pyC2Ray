@@ -1,5 +1,7 @@
 #include "memory.cuh"
 
+#include "hip/hip_runtime.h"
+
 #include <iostream>
 
 // ========================================================================
@@ -42,20 +44,20 @@ void device_init(const int &N, const int &num_src_par, const int &mpi_rank, cons
     int dev_id = mpi_rank % num_gpus;
 
     // Explicitly set the device before querying
-    cudaSetDevice(dev_id);
+    hipSetDevice(dev_id);
 
-    cudaDeviceProp device_prop;
-    cudaGetDeviceProperties(&device_prop, dev_id);
-    if (device_prop.computeMode == cudaComputeModeProhibited) {
+    hipDeviceProp_t device_prop;
+    hipGetDeviceProperties(&device_prop, dev_id);
+    if (device_prop.computeMode == hipComputeModeProhibited) {
         std::cerr << "Error: device is running in <Compute Mode Prohibited>, no "
-                     "threads can use ::cudaSetDevice()"
+                     "threads can use ::hipSetDevice()"
                   << std::endl;
     }
 
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        std::cout << "cudaGetDeviceProperties returned error code " << error << ", line("
-                  << __LINE__ << ")" << std::endl;
+    hipError_t error = hipGetLastError();
+    if (error != hipSuccess) {
+        std::cout << "hipGetDeviceProperties returned error code " << error << ", line(" << __LINE__
+                  << ")" << std::endl;
     } else {
         if (num_gpus > 1) {
             std::cout << "MPI Rank " << mpi_rank << " has GPU Device ID " << dev_id << ": \""
@@ -76,16 +78,16 @@ void device_init(const int &N, const int &num_src_par, const int &mpi_rank, cons
     NUM_SRC_PAR = num_src_par;
 
     // Allocate memory
-    cudaMalloc(&cdh_dev, NUM_SRC_PAR * bytesize);
-    cudaMalloc(&n_dev, bytesize);
-    cudaMalloc(&x_dev, bytesize);
-    cudaMalloc(&phi_dev, bytesize);
+    hipMalloc(&cdh_dev, NUM_SRC_PAR * bytesize);
+    hipMalloc(&n_dev, bytesize);
+    hipMalloc(&x_dev, bytesize);
+    hipMalloc(&phi_dev, bytesize);
 
-    error = cudaGetLastError();
-    if (error != cudaSuccess) {
+    error = hipGetLastError();
+    if (error != hipSuccess) {
         throw std::runtime_error(
             "Couldn't allocate memory: " + std::to_string((3 + NUM_SRC_PAR) * bytesize / 1e6) +
-            std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
+            std::string(hipGetErrorName(error)) + " - " + std::string(hipGetErrorString(error)));
     } else {
         std::cout << "Successfully allocated " << (3 + NUM_SRC_PAR) * bytesize / 1e6
                   << " Mb of device memory for grid of size N = " << N;
@@ -97,35 +99,35 @@ void device_init(const int &N, const int &num_src_par, const int &mpi_rank, cons
 // Utility functions to copy data to device
 // ========================================================================
 void density_to_device(double *ndens, const int &N) {
-    cudaMemcpy(n_dev, ndens, N * N * N * sizeof(double), cudaMemcpyHostToDevice);
+    hipMemcpy(n_dev, ndens, N * N * N * sizeof(double), hipMemcpyHostToDevice);
 }
 
 void photo_table_to_device(double *thin_table, double *thick_table, const int &NumTau) {
     // Copy thin table
-    cudaMalloc(&photo_thin_table_dev, NumTau * sizeof(double));
-    cudaMemcpy(photo_thin_table_dev, thin_table, NumTau * sizeof(double), cudaMemcpyHostToDevice);
+    hipMalloc(&photo_thin_table_dev, NumTau * sizeof(double));
+    hipMemcpy(photo_thin_table_dev, thin_table, NumTau * sizeof(double), hipMemcpyHostToDevice);
     // Copy thick table
-    cudaMalloc(&photo_thick_table_dev, NumTau * sizeof(double));
-    cudaMemcpy(photo_thick_table_dev, thick_table, NumTau * sizeof(double), cudaMemcpyHostToDevice);
+    hipMalloc(&photo_thick_table_dev, NumTau * sizeof(double));
+    hipMemcpy(photo_thick_table_dev, thick_table, NumTau * sizeof(double), hipMemcpyHostToDevice);
 }
 void source_data_to_device(int *pos, double *flux, double *rdir, double *angl, const int &NumSrc) {
     // Free arrays from previous evolve call
-    cudaFree(src_pos_dev);
-    cudaFree(src_flux_dev);
-    cudaFree(rad_dir_dev);
-    cudaFree(angles_dev);
+    hipFree(src_pos_dev);
+    hipFree(src_flux_dev);
+    hipFree(rad_dir_dev);
+    hipFree(angles_dev);
 
     // Allocate memory for sources of current evolve call
-    cudaMalloc(&src_pos_dev, 3 * NumSrc * sizeof(int));
-    cudaMalloc(&src_flux_dev, NumSrc * sizeof(double));
-    cudaMalloc(&rad_dir_dev, 3 * NumSrc * sizeof(double));
-    cudaMalloc(&angles_dev, NumSrc * sizeof(double));
+    hipMalloc(&src_pos_dev, 3 * NumSrc * sizeof(int));
+    hipMalloc(&src_flux_dev, NumSrc * sizeof(double));
+    hipMalloc(&rad_dir_dev, 3 * NumSrc * sizeof(double));
+    hipMalloc(&angles_dev, NumSrc * sizeof(double));
 
     // Copy source data (positions & strengths) to device
-    cudaMemcpy(src_pos_dev, pos, 3 * NumSrc * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(src_flux_dev, flux, NumSrc * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(rad_dir_dev, rdir, 3 * NumSrc * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(angles_dev, angl, NumSrc * sizeof(double), cudaMemcpyHostToDevice);
+    hipMemcpy(src_pos_dev, pos, 3 * NumSrc * sizeof(int), hipMemcpyHostToDevice);
+    hipMemcpy(src_flux_dev, flux, NumSrc * sizeof(double), hipMemcpyHostToDevice);
+    hipMemcpy(rad_dir_dev, rdir, 3 * NumSrc * sizeof(double), hipMemcpyHostToDevice);
+    hipMemcpy(angles_dev, angl, NumSrc * sizeof(double), hipMemcpyHostToDevice);
 }
 
 // ========================================================================
@@ -133,13 +135,13 @@ void source_data_to_device(int *pos, double *flux, double *rdir, double *angl, c
 // ========================================================================
 void device_close() {
     printf("Deallocating device memory...\n");
-    cudaFree(cdh_dev);
-    cudaFree(n_dev);
-    cudaFree(x_dev);
-    cudaFree(phi_dev);
-    cudaFree(photo_thin_table_dev);
-    cudaFree(src_pos_dev);
-    cudaFree(src_flux_dev);
-    cudaFree(rad_dir_dev);
-    cudaFree(angles_dev);
+    hipFree(cdh_dev);
+    hipFree(n_dev);
+    hipFree(x_dev);
+    hipFree(phi_dev);
+    hipFree(photo_thin_table_dev);
+    hipFree(src_pos_dev);
+    hipFree(src_flux_dev);
+    hipFree(rad_dir_dev);
+    hipFree(angles_dev);
 }

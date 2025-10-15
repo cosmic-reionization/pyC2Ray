@@ -3,6 +3,8 @@
 #include "memory_He.cuh"
 #include "rates.cuh"
 
+#include "hip/hip_runtime.h"
+
 #include <exception>
 #include <iostream>
 #include <string>
@@ -126,20 +128,20 @@ void do_all_sources_gpu(const double &R, double *coldensh_out_hi, double *colden
     // Here we fill the ionization and heating rate array with zero before
     // raytracing all sources. The LOCALRATES flag is for debugging purposes and
     // will be removed later on
-    cudaMemset(phi_HI_dev, 0, meshsize);
-    cudaMemset(phi_HeI_dev, 0, meshsize);
-    cudaMemset(phi_HeII_dev, 0, meshsize);
-    cudaMemset(heat_HI_dev, 0, meshsize);
-    cudaMemset(heat_HeI_dev, 0, meshsize);
-    cudaMemset(heat_HeII_dev, 0, meshsize);
+    hipMemset(phi_HI_dev, 0, meshsize);
+    hipMemset(phi_HeI_dev, 0, meshsize);
+    hipMemset(phi_HeII_dev, 0, meshsize);
+    hipMemset(heat_HI_dev, 0, meshsize);
+    hipMemset(heat_HeI_dev, 0, meshsize);
+    hipMemset(heat_HeII_dev, 0, meshsize);
 
     // Copy current ionization fraction to the device
-    cudaMemcpy(xHI_dev, xHII_av, meshsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(xHeI_dev, xHeII_av, meshsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(xHeII_dev, xHeIII_av, meshsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(sig_hi_dev, sig_hi, freqsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(sig_hei_dev, sig_hei, freqsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(sig_heii_dev, sig_heii, freqsize, cudaMemcpyHostToDevice);
+    hipMemcpy(xHI_dev, xHII_av, meshsize, hipMemcpyHostToDevice);
+    hipMemcpy(xHeI_dev, xHeII_av, meshsize, hipMemcpyHostToDevice);
+    hipMemcpy(xHeII_dev, xHeIII_av, meshsize, hipMemcpyHostToDevice);
+    hipMemcpy(sig_hi_dev, sig_hi, freqsize, hipMemcpyHostToDevice);
+    hipMemcpy(sig_hei_dev, sig_hei, freqsize, hipMemcpyHostToDevice);
+    hipMemcpy(sig_heii_dev, sig_heii, freqsize, hipMemcpyHostToDevice);
 
     // Since the grid is periodic, we limit the maximum size of the raytraced
     // region to a cube as large as the mesh around the source. See line 93 of
@@ -164,28 +166,28 @@ void do_all_sources_gpu(const double &R, double *coldensh_out_hi, double *colden
                                  NumTau, NumBin1, NumBin2, NumBin3, NUM_FREQ, last_l, last_r);
 
         // Check for errors
-        auto error = cudaGetLastError();
-        if (error != cudaSuccess) {
+        auto error = hipGetLastError();
+        if (error != hipSuccess) {
             throw std::runtime_error(
-                "Error Launching Kernel: " + std::string(cudaGetErrorName(error)) + " - " +
-                std::string(cudaGetErrorString(error)));
+                "Error Launching Kernel: " + std::string(hipGetErrorName(error)) + " - " +
+                std::string(hipGetErrorString(error)));
         }
 
         // Sync device to be sure (is this required ??)
-        cudaDeviceSynchronize();
+        hipDeviceSynchronize();
     }
 
     // Copy the accumulated ionization fraction and column density back to the
     // host
-    auto error1 = cudaMemcpy(phi_ion_HI, phi_HI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error2 = cudaMemcpy(phi_ion_HeI, phi_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error3 = cudaMemcpy(phi_ion_HeII, phi_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error4 = cudaMemcpy(phi_heat_HI, heat_HI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error5 = cudaMemcpy(phi_heat_HeI, heat_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error6 = cudaMemcpy(phi_heat_HeII, heat_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error7 = cudaMemcpy(coldensh_out_hi, cdh_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error8 = cudaMemcpy(coldensh_out_hei, cdhei_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error9 = cudaMemcpy(coldensh_out_heii, cdheii_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error1 = hipMemcpy(phi_ion_HI, phi_HI_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error2 = hipMemcpy(phi_ion_HeI, phi_HeI_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error3 = hipMemcpy(phi_ion_HeII, phi_HeII_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error4 = hipMemcpy(phi_heat_HI, heat_HI_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error5 = hipMemcpy(phi_heat_HeI, heat_HeI_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error6 = hipMemcpy(phi_heat_HeII, heat_HeII_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error7 = hipMemcpy(coldensh_out_hi, cdh_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error8 = hipMemcpy(coldensh_out_hei, cdhei_dev, meshsize, hipMemcpyDeviceToHost);
+    auto error9 = hipMemcpy(coldensh_out_heii, cdheii_dev, meshsize, hipMemcpyDeviceToHost);
 }
 
 // ========================================================================

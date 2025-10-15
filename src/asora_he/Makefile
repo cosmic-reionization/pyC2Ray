@@ -6,21 +6,21 @@ HIPCC_LINK_FLAGS := -O3 -fgpu-rdc --hip-link
 PY_INC := -I$(shell python -c "import sysconfig; print(sysconfig.get_path('include'))") \
           -I$(shell python -c "import numpy; print(numpy.get_include())")
 
-all: libasora.so
+all: libasora_He.so
 
-libasora.so: memory.o rates.o raytracing.o python_module.o
+libasora_He.so: memory_He.o rates.o raytracing_He.o python_module_He.o
 	$(HIPCC) -shared $(HIPCC_LINK_FLAGS) -o $@ $+
 
-raytracing.o: raytracing.cu
+raytracing_He.o: raytracing_He.cu
 	$(HIPCC) $(HIPCC_FLAGS) -o $@ -c $<
 
 rates.o: rates.cu
 	$(HIPCC) $(HIPCC_FLAGS) -o $@ -c $<
 
-memory.o: memory.cu
+memory_He.o: memory_He.cu
 	$(HIPCC) $(HIPCC_FLAGS) -o $@ -c $<
 
-python_module.o: python_module.cu
+python_module_He.o: python_module_He.cu
 	$(HIPCC) $(HIPCC_FLAGS) $(PY_INC) -o $@ -c $<
 
 clean:
