@@ -4,6 +4,12 @@ build
 work
 run
 
+# Ignore log directory and files
+test/logs/
+test/logs/*
+test/pasc_arts4ska/logs
+test/pasc_arts4ska/logs/*
+
 # Ignore compiled object
 pyc2ray/lib/*.so
 src/*/*.so
@@ -30,6 +36,9 @@ docs/tutorials/test_results/
 docs/tutorials/test_results/*
 docs/examples/test_results/
 docs/examples/test_results/*
+<<<<<<< Updated upstream
 
 *.swp
 *.swo
+=======
+>>>>>>> Stashed changes

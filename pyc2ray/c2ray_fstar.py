@@ -75,8 +75,13 @@ class C2Ray_fstar(C2Ray):
             ts = dt
 
         # get stellar-to-halo ratio
+<<<<<<< Updated upstream
         if self.fstar_kind == "Muv":
             fstar = self.fstar_model.get(Mhalo=srcmass_msun, z=z)
+=======
+        if(self.fstar_kind == 'Muv'):
+            fstar = self.fstar_model.get(Mhalo=srcmass_msun, z=z, a_s=self.fstar_pars['a_s'], b_s=self.fstar_pars['b_s'])
+>>>>>>> Stashed changes
         else:
             fstar = self.fstar_model.get(Mhalo=srcmass_msun)
 
@@ -85,7 +90,14 @@ class C2Ray_fstar(C2Ray):
             fesc = self.fesc_model.f0_esc
         elif self.fesc_kind == "power":
             fesc = self.fesc_model.get(Mhalo=srcmass_msun)
+<<<<<<< Updated upstream
         elif self.fesc_kind == "Gelli2024":
+=======
+        elif(self.fesc_kind == 'power_obs'):
+            # here the escaping fraction is fitted to data that uses stellar mass
+            fesc = self.fesc_model.get(Mhalo=fstar*srcmass_msun)
+        elif(self.fesc_kind == 'Gelli2024'):
+>>>>>>> Stashed changes
             # mean quantities
             mean_fstar = self.fstar_model.stellar_to_halo_fraction(Mhalo=srcmass_msun)
             mean_Muv = self.fstar_model.UV_magnitude(
@@ -96,10 +108,19 @@ class C2Ray_fstar(C2Ray):
             Muv = self.fstar_model.UV_magnitude(fstar=fstar, mdot=srcmass_msun / ts)
 
             # magnitude dependent escaping fraction
+<<<<<<< Updated upstream
             fesc = self.fesc_model.get(delta_Muv=mean_Muv - Muv)
 
         # get for star formation history
         if self.bursty_kind == "instant" or self.bursty_kind == "integrate":
+=======
+            fesc = self.fesc_model.get(delta_Muv=mean_Muv-Muv)
+        elif(self.fesc_kind == 'thesan'):
+            fesc = self.fesc_model.get(Mhalo=srcmass_msun, z=z)
+            
+        # get for star formation history 
+        if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
+>>>>>>> Stashed changes
             burst_mask = self.bursty_model.get_bursty(mass=srcmass_msun, z=z)
 
             nr_switchon = np.count_nonzero(burst_mask)
@@ -348,6 +369,7 @@ class C2Ray_fstar(C2Ray):
         self.fstar_kind = self._ld["Sources"]["fstar_kind"]
 
         # dictionary with all the f_star parameters
+<<<<<<< Updated upstream
         self.fstar_pars = {
             "Nion": self._ld["Sources"]["Nion"],
             "f0": self._ld["Sources"]["f0"],
@@ -359,6 +381,9 @@ class C2Ray_fstar(C2Ray):
             "g4": self._ld["Sources"]["g4"],
             "alpha_h": self._ld["Sources"]["alpha_h"],
         }
+=======
+        self.fstar_pars = {'Nion': self._ld['Sources']['Nion'], 'f0': self._ld['Sources']['f0'], 'Mt': self._ld['Sources']['Mt'], 'Mp': self._ld['Sources']['Mp'], 'g1': self._ld['Sources']['g1'], 'g2': self._ld['Sources']['g2'], 'g3': self._ld['Sources']['g3'], 'g4': self._ld['Sources']['g4'], 'alpha_h': self._ld['Sources']['alpha_h'], 'a_s': self._ld['Sources']['a_s'], 'b_s': self._ld['Sources']['b_s']}
+>>>>>>> Stashed changes
 
         # print message that inform of the f_star model employed
         if self.fstar_kind == "fgamma":
@@ -393,6 +418,7 @@ class C2Ray_fstar(C2Ray):
         self.bursty_kind = self._ld["Sources"]["bursty_sfr"]
 
         # dictionary with all the burstiness parameters
+<<<<<<< Updated upstream
         if self.bursty_kind == "instant" or self.bursty_kind == "integrate":
             self.bursty_pars = {
                 "beta1": self._ld["Sources"]["beta1"],
@@ -406,6 +432,10 @@ class C2Ray_fstar(C2Ray):
             self.printlog(
                 f"Using {self.bursty_kind} bustiness to model the star formation history with parameters: {self.bursty_pars}."
             )
+=======
+        if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
+            self.bursty_pars = {'beta1': self._ld['Sources']['beta1'], 'beta2': self._ld['Sources']['beta2'], 'tB0': self._ld['Sources']['tB0'], 'tQ_frac': self._ld['Sources']['tQ_frac'], 'z0': self._ld['Sources']['z0']}
+>>>>>>> Stashed changes
 
             # define the burstiness SF model class
             self.bursty_model = BurstySFR(
@@ -418,6 +448,7 @@ class C2Ray_fstar(C2Ray):
             self.printlog("No bustiness model for the star formation history.")
 
         # --- Escaping fraction Model ---
+<<<<<<< Updated upstream
         self.fesc_kind = self._ld["Sources"]["fesc_model"]
         self.fesc_pars = {
             "f0_esc": self._ld["Sources"]["f0_esc"],
@@ -437,5 +468,15 @@ class C2Ray_fstar(C2Ray):
             self.printlog(
                 f"Using UV magnitude-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}"
             )
+=======
+        self.fesc_kind = self._ld['Sources']['fesc_model']
+        self.fesc_pars = {'f0_esc': self._ld['Sources']['f0_esc'], 'Mp_esc': self._ld['Sources']['Mp_esc'], 'al_esc': self._ld['Sources']['al_esc']}
+        if(self.fesc_kind == 'constant'):
+            self.printlog(f"Using constant escaping fraction model with f0_esc = %.1f" %(self.fesc_pars['f0_esc']))
+        elif(self.fesc_kind == 'power' or self.fesc_kind == 'power_obs'):
+            self.printlog(f"Using mass-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
+        elif(self.fesc_kind == 'Gelli2024'):
+            self.printlog(f"Using UV magnitude-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}")
+>>>>>>> Stashed changes
 
         self.fesc_model = EscapeFraction(model=self.fesc_kind, pars=self.fesc_pars)

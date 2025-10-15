@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=4
 #SBATCH --constraint=gpu
 #SBATCH --gres=gpu:4
-#SBATCH --time=08:00:00
+#SBATCH --time=12:00:00
 #SBATCH -e logs/pyc2ray.%j.err
 #SBATCH -o logs/pyc2ray.%j.out
 #SBATCH --mail-type=ALL
@@ -18,10 +18,7 @@ module load cce/17.0.0
 module load cray-mpich/8.1.28
 #module load nvidia/24.3	# this is needed only to compile asora
 
-cd $HOME/codes/pyC2Ray/test/fstar_simulation
-
 export HDF5_USE_FILE_LOCKING='FALSE'
-
 export PYTHONPATH="$HOME/codes/pyC2Ray:$PYTHONPATH"
 source $HOME/myvenv/pyc2ray-env/bin/activate
 
@@ -30,7 +27,6 @@ source $HOME/myvenv/pyc2ray-env/bin/activate
 export MPICH_GPU_SUPPORT_ENABLED=0	# for CUDA aware MPI
 #export MPICH_GTL_NVIDIA_DISABLE=0
 
-#srun python run_test.py parameters.yml 
-srun python run_bursty.py parameters.yml 
+srun python run_test.py parameters.yml 
 
 deactivate
