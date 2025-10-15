@@ -218,7 +218,7 @@ class C2Ray:
             # Set cell size to current proper size
             # self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
             self.dr /= dilution_factor
-            #self.printlog(f"zfactor = {1.0 / dilution_factor: .10f}")
+            # self.printlog(f"zfactor = {1.0 / dilution_factor: .10f}")
         # Set new time and redshift (after timestep)
         self.zred = z_now
 
@@ -739,7 +739,7 @@ class C2Ray:
                 print(title)
                 with open(self.logfile, "w") as f:
                     # Clear file and write header line
-                    f.write(title+"\nLog file for pyC2Ray.\n\n") 
+                    f.write(title + "\nLog file for pyC2Ray.\n\n")
 
         # all processor wait for rank=0 to be done. This is to avoid that some ranks go ahead.
         self.comm.Barrier()

@@ -75,8 +75,13 @@ class C2Ray_fstar(C2Ray):
             ts = dt
 
         # get stellar-to-halo ratio
-        if(self.fstar_kind == 'Muv'):
-            fstar = self.fstar_model.get(Mhalo=srcmass_msun, z=z, a_s=self.fstar_pars['a_s'], b_s=self.fstar_pars['b_s'])
+        if self.fstar_kind == "Muv":
+            fstar = self.fstar_model.get(
+                Mhalo=srcmass_msun,
+                z=z,
+                a_s=self.fstar_pars["a_s"],
+                b_s=self.fstar_pars["b_s"],
+            )
         else:
             fstar = self.fstar_model.get(Mhalo=srcmass_msun)
 
@@ -85,10 +90,10 @@ class C2Ray_fstar(C2Ray):
             fesc = self.fesc_model.f0_esc
         elif self.fesc_kind == "power":
             fesc = self.fesc_model.get(Mhalo=srcmass_msun)
-        elif(self.fesc_kind == 'power_obs'):
+        elif self.fesc_kind == "power_obs":
             # here the escaping fraction is fitted to data that uses stellar mass
-            fesc = self.fesc_model.get(Mhalo=fstar*srcmass_msun)
-        elif(self.fesc_kind == 'Gelli2024'):
+            fesc = self.fesc_model.get(Mhalo=fstar * srcmass_msun)
+        elif self.fesc_kind == "Gelli2024":
             # mean quantities
             mean_fstar = self.fstar_model.stellar_to_halo_fraction(Mhalo=srcmass_msun)
             mean_Muv = self.fstar_model.UV_magnitude(
@@ -99,12 +104,12 @@ class C2Ray_fstar(C2Ray):
             Muv = self.fstar_model.UV_magnitude(fstar=fstar, mdot=srcmass_msun / ts)
 
             # magnitude dependent escaping fraction
-            fesc = self.fesc_model.get(delta_Muv=mean_Muv-Muv)
-        elif(self.fesc_kind == 'thesan'):
+            fesc = self.fesc_model.get(delta_Muv=mean_Muv - Muv)
+        elif self.fesc_kind == "thesan":
             fesc = self.fesc_model.get(Mhalo=srcmass_msun, z=z)
-            
-        # get for star formation history 
-        if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
+
+        # get for star formation history
+        if self.bursty_kind == "instant" or self.bursty_kind == "integrate":
             burst_mask = self.bursty_model.get_bursty(mass=srcmass_msun, z=z)
 
             nr_switchon = np.count_nonzero(burst_mask)
@@ -363,8 +368,8 @@ class C2Ray_fstar(C2Ray):
             "g3": self._ld["Sources"]["g3"],
             "g4": self._ld["Sources"]["g4"],
             "alpha_h": self._ld["Sources"]["alpha_h"],
-            'a_s': self._ld['Sources']['a_s'],
-            'b_s': self._ld['Sources']['b_s']
+            "a_s": self._ld["Sources"]["a_s"],
+            "b_s": self._ld["Sources"]["b_s"],
         }
 
         # print message that inform of the f_star model employed
@@ -406,7 +411,7 @@ class C2Ray_fstar(C2Ray):
                 "beta2": self._ld["Sources"]["beta2"],
                 "tB0": self._ld["Sources"]["tB0"],
                 "tQ_frac": self._ld["Sources"]["tQ_frac"],
-                "z0": self._ld["Sources"]["z0"]
+                "z0": self._ld["Sources"]["z0"],
             }
 
             self.printlog(
