@@ -100,7 +100,20 @@ Here we list a series of numerical and astrophysical implementations we would li
 
 ## CONTRIBUTING
 
-If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues). The issue page is also good if you seek help or have suggestions for us.
+If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues).
+The issue page is also good if you seek help or have suggestions for us.
+
+### Submitting changes to the code
+
+Please follow these instructions to ensure a smooth integration, at least until a CI system is put into place:
+
+0. **Only the first time**, install `pre-commit` in your enviornment and the pre-commit hooks with `pre-commit install`.
+1. Create a new branch off the main trunk and make your modifications there.
+2. Commit your changes and fix any issue highlighted by the pre-commit hooks; code format is automatically fixed.
+3. Push your branch to the remote repository.
+4. Open a Pull Request on GitHub to the main branch.
+5. It is strongly suggested to squash all the commits into one.
+6. Ask the code to be reviewed before merging.
 
 ## AKNOWLEDGMENT
 
