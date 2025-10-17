@@ -37,4 +37,8 @@ dev = [
   "ruff",
   "clang-format",
   "meson",
+  "pytest",
 ]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
