@@ -113,7 +113,8 @@ Please follow these instructions to ensure a smooth integration, at least until 
 3. Push your branch to the remote repository.
 4. Open a Pull Request on GitHub to the main branch.
 5. It is strongly suggested to squash all the commits into one.
-6. Ask the code to be reviewed before merging.
+6. In the PR's description on GitHub, specify blocking dependencies with the message "Depends on #..." and close issues with "Closes #...".
+7. Ask the code to be reviewed before merging.
 
 ## AKNOWLEDGMENT
 
