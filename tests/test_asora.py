@@ -13,6 +13,11 @@ if asora is None:
     pytest.skip("libasora.so missing, skipping tests", allow_module_level=True)
 
 
+def test_device_init():
+    asora.device_init(100, 8, 0, 1)
+    asora.device_close()
+
+
 def test_do_all_sources(request):
     N = 50
     # allocate GPU memory for the grid and sources batch size
