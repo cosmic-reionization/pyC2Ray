@@ -25,7 +25,7 @@ classifiers = [
 ]
 dependencies = [
   "h5py",
-  "mpi4py",
+  "mpi4py==4.0.3",
   "numpy",
   "scipy",
   "tools21cm",
