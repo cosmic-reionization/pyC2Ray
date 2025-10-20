@@ -389,7 +389,7 @@ def evolve3D(
             comm.Bcast([xh_intermed, use_mpi.DOUBLE], root=0)
 
             # convert the bool variable to bit
-            #converged_array = array.array("i", [converged])
+            # converged_array = array.array("i", [converged])
             converged_array = array.array("i", [int(converged)])
 
             # braodcast convergence to the other ranks
