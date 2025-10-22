@@ -4,7 +4,7 @@ if not has_cuda
 endif
 
 # CUDA sources for ASORA
-asora_sources = ['memory.cu', 'rates.cu', 'raytracing.cu', 'python_module.cu']
+asora_sources = ['memory.cu', 'rates.cu', 'raytracing.cu', 'python_module.cu', 'utils.cu']
 
 # Get CUDA architecture to be used for compilation
 compute_cap = get_option('gpu-architecture')
