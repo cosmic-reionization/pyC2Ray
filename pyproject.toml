@@ -39,6 +39,10 @@ dev = [
   "meson",
   "pytest",
 ]
+profile = [
+  "pytest",
+  "pytest-benchmark",
+]
 
 [tool.pytest.ini_options]
 testpaths = "tests"
