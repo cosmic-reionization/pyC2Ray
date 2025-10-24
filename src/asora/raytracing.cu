@@ -259,6 +259,10 @@ namespace asora {
                     (k < last_l) || (k > last_r))
                     continue;
 
+                // TODO: early exit on distance can be done here:
+                // auto dist2 = i * i + j * j + k * k;
+                // if (dist2 > Rmax_LLS * Rmax_LLS) continue;
+
                 // Center to source
                 i += i0;
                 j += j0;
@@ -269,10 +273,7 @@ namespace asora {
                 if (!in_box_gpu(i, j, k, m1)) continue;
 #endif
                 // Map to periodic grid
-                int pos[3];
-                pos[0] = modulo_gpu(i, m1);
-                pos[1] = modulo_gpu(j, m1);
-                pos[2] = modulo_gpu(k, m1);
+                int pos[] = {modulo_gpu(i, m1), modulo_gpu(j, m1), modulo_gpu(k, m1)};
 
                 auto offset = mem_offst_gpu(pos[0], pos[1], pos[2], m1);
 
@@ -307,12 +308,10 @@ namespace asora {
                     cinterp_gpu(i, j, k, i0, j0, k0, coldensh_in, path, coldensh_out,
                                 sig, m1);
                     path *= dr;
-                    // Find the distance to the source
                     auto xs = dr * (i - i0);
                     auto ys = dr * (j - j0);
                     auto zs = dr * (k - k0);
                     dist2 = xs * xs + ys * ys + zs * zs;
-                    // vol_ph = dist2 * path;
                     vol_ph = dist2 * path * FOURPI;
                 }
 
@@ -324,9 +323,8 @@ namespace asora {
                 // Compute photoionization rates from column density.
                 // WARNING: for now this is limited to the grey-opacity
                 // test case source
-                if ((coldensh_in > MAX_COLDENSH) ||
-                    (dist2 / (dr * dr) > Rmax_LLS * Rmax_LLS))
-                    continue;
+                if (coldensh_in > MAX_COLDENSH) continue;
+                if (dist2 / (dr * dr) > Rmax_LLS * Rmax_LLS) continue;
 
 #if defined(GREY_NOTABLES)
                 double phi = photoion_rates_test_gpu(strength, coldensh_in,
