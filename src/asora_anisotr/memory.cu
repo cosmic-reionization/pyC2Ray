@@ -34,7 +34,9 @@ int NUM_SRC_PAR;
 // ========================================================================
 // Initialization function to allocate device memory (pointers above)
 // ========================================================================
-void device_init(const int &N, const int &num_src_par, const int &mpi_rank, const int &num_gpus) {
+void device_init(
+    const int &N, const int &num_src_par, const int &mpi_rank, const int &num_gpus
+) {
     // int dev_id = 0;
 
     // Here num_gpus is the number of gpus per node
@@ -54,13 +56,13 @@ void device_init(const int &N, const int &num_src_par, const int &mpi_rank, cons
 
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess) {
-        std::cout << "cudaGetDeviceProperties returned error code " << error << ", line("
-                  << __LINE__ << ")" << std::endl;
+        std::cout << "cudaGetDeviceProperties returned error code " << error
+                  << ", line(" << __LINE__ << ")" << std::endl;
     } else {
         if (num_gpus > 1) {
-            std::cout << "MPI Rank " << mpi_rank << " has GPU Device ID " << dev_id << ": \""
-                      << device_prop.name << "\" with compute capability " << device_prop.major
-                      << "." << device_prop.minor << std::endl;
+            std::cout << "MPI Rank " << mpi_rank << " has GPU Device ID " << dev_id
+                      << ": \"" << device_prop.name << "\" with compute capability "
+                      << device_prop.major << "." << device_prop.minor << std::endl;
         } else {
             std::cout << "GPU Device ID " << dev_id << ": \"" << device_prop.name
                       << "\" with compute capability " << device_prop.major << "."
@@ -84,8 +86,11 @@ void device_init(const int &N, const int &num_src_par, const int &mpi_rank, cons
     error = cudaGetLastError();
     if (error != cudaSuccess) {
         throw std::runtime_error(
-            "Couldn't allocate memory: " + std::to_string((3 + NUM_SRC_PAR) * bytesize / 1e6) +
-            std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
+            "Couldn't allocate memory: " +
+            std::to_string((3 + NUM_SRC_PAR) * bytesize / 1e6) +
+            std::string(cudaGetErrorName(error)) + " - " +
+            std::string(cudaGetErrorString(error))
+        );
     } else {
         std::cout << "Successfully allocated " << (3 + NUM_SRC_PAR) * bytesize / 1e6
                   << " Mb of device memory for grid of size N = " << N;
@@ -103,12 +108,20 @@ void density_to_device(double *ndens, const int &N) {
 void photo_table_to_device(double *thin_table, double *thick_table, const int &NumTau) {
     // Copy thin table
     cudaMalloc(&photo_thin_table_dev, NumTau * sizeof(double));
-    cudaMemcpy(photo_thin_table_dev, thin_table, NumTau * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(
+        photo_thin_table_dev, thin_table, NumTau * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
     // Copy thick table
     cudaMalloc(&photo_thick_table_dev, NumTau * sizeof(double));
-    cudaMemcpy(photo_thick_table_dev, thick_table, NumTau * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(
+        photo_thick_table_dev, thick_table, NumTau * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
 }
-void source_data_to_device(int *pos, double *flux, double *rdir, double *angl, const int &NumSrc) {
+void source_data_to_device(
+    int *pos, double *flux, double *rdir, double *angl, const int &NumSrc
+) {
     // Free arrays from previous evolve call
     cudaFree(src_pos_dev);
     cudaFree(src_flux_dev);

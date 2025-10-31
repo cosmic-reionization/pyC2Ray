@@ -7,7 +7,8 @@
 // compile-time constants for now
 // ========================================================================
 #define TAU_PHOTO_LIMIT 1.0e-7  // Limit to consider a cell "optically thin/thick"
-#define S_STAR_REF 1e48  // Reference ionizing flux (strength of source is given in this unit)
+#define S_STAR_REF \
+    1e48  // Reference ionizing flux (strength of source is given in this unit)
 
 // ========================================================================
 // Compute photoionization rate from in/out column density by looking up
@@ -15,11 +16,12 @@
 // tables are assumed to have been copied to device memory in advance using
 // photo_table_to_device()
 // ========================================================================
-__device__ double photoion_rates_gpu(const double &strength, const double &coldens_in,
-                                     const double &coldens_out, const double &Vfact,
-                                     const double &sig, const double *photo_thin_table,
-                                     const double *photo_thick_table, const double &minlogtau,
-                                     const double &dlogtau, const int &NumTau) {
+__device__ double photoion_rates_gpu(
+    const double &strength, const double &coldens_in, const double &coldens_out,
+    const double &Vfact, const double &sig, const double *photo_thin_table,
+    const double *photo_thick_table, const double &minlogtau, const double &dlogtau,
+    const int &NumTau
+) {
     // Compute optical depth and ionization rate depending on whether the cell is
     // optically thick or thin
     double tau_in = coldens_in * sig;
@@ -32,11 +34,13 @@ __device__ double photoion_rates_gpu(const double &strength, const double &colde
     // radiation_photoionrates.F90 lines 276 - 303 but without true
     // understanding... Names are slightly different to simpify notatio
     double phi_photo_in =
-        prefact * photo_lookuptable(photo_thick_table, tau_in, minlogtau, dlogtau, NumTau);
+        prefact *
+        photo_lookuptable(photo_thick_table, tau_in, minlogtau, dlogtau, NumTau);
 
     if (abs(tau_out - tau_in) > TAU_PHOTO_LIMIT) {
         double phi_photo_out =
-            prefact * photo_lookuptable(photo_thick_table, tau_out, minlogtau, dlogtau, NumTau);
+            prefact *
+            photo_lookuptable(photo_thick_table, tau_out, minlogtau, dlogtau, NumTau);
         return phi_photo_in - phi_photo_out;
     } else {
         return prefact * (tau_out - tau_in) *
@@ -52,9 +56,10 @@ __device__ double photoion_rates_gpu(const double &strength, const double &colde
 // expression rather than using tables. To use this version, compile
 // with the -DGREY_NOTABLES flag
 // ========================================================================
-__device__ double photoion_rates_test_gpu(const double &strength, const double &coldens_in,
-                                          const double &coldens_out, const double &Vfact,
-                                          const double &sig) {
+__device__ double photoion_rates_test_gpu(
+    const double &strength, const double &coldens_in, const double &coldens_out,
+    const double &Vfact, const double &sig
+) {
     // Compute optical depth and ionization rate depending on whether the cell is
     // optically thick or thin
     double tau_in = coldens_in * sig;
@@ -76,8 +81,10 @@ __device__ double photoion_rates_test_gpu(const double &strength, const double &
 // Utility function to look up the integral value corresponding to an
 // optical depth τ by doing linear interpolation.
 // ========================================================================
-__device__ double photo_lookuptable(const double *table, const double &tau, const double &minlogtau,
-                                    const double &dlogtau, const int &NumTau) {
+__device__ double photo_lookuptable(
+    const double *table, const double &tau, const double &minlogtau,
+    const double &dlogtau, const int &NumTau
+) {
     double logtau;
     double real_i, residual;
     int i0, i1;

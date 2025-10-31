@@ -32,9 +32,10 @@ static PyObject *asora_do_all_sources(PyObject *self, PyObject *args) {
     double dlogtau;
     int num_tau;
 
-    if (!PyArg_ParseTuple(args, "dOddOOOiiddi", &R, &coldensh_out, &sig, &dr, &ndens,
-                          &xh_av, &phi_ion, &NumSrc, &m1, &minlogtau, &dlogtau,
-                          &num_tau))
+    if (!PyArg_ParseTuple(
+            args, "dOddOOOiiddi", &R, &coldensh_out, &sig, &dr, &ndens, &xh_av,
+            &phi_ion, &NumSrc, &m1, &minlogtau, &dlogtau, &num_tau
+        ))
         return NULL;
 
     // Error checking
@@ -49,8 +50,10 @@ static PyObject *asora_do_all_sources(PyObject *self, PyObject *args) {
     auto phi_ion_data = static_cast<double *>(PyArray_DATA(phi_ion));
     auto xh_av_data = static_cast<double *>(PyArray_DATA(xh_av));
 
-    asora::do_all_sources_gpu(R, coldensh_out_data, sig, dr, ndens_data, xh_av_data,
-                              phi_ion_data, NumSrc, m1, minlogtau, dlogtau, num_tau);
+    asora::do_all_sources_gpu(
+        R, coldensh_out_data, sig, dr, ndens_data, xh_av_data, phi_ion_data, NumSrc, m1,
+        minlogtau, dlogtau, num_tau
+    );
 
     return Py_None;
 }
@@ -153,7 +156,8 @@ static struct PyModuleDef asoramodule = {
                                                                   may be NULL */
     -1, /* size of per-interpreter state of the module,
           or -1 if the module keeps state in global variables. */
-    asoraMethods};
+    asoraMethods
+};
 
 PyMODINIT_FUNC PyInit_libasora(void) {
     PyObject *module = PyModule_Create(&asoramodule);

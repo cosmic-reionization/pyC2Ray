@@ -80,7 +80,6 @@ def setup_do_all_sources(
         # Size of a cell
         box = 50.0 * u.pc
         dr = (box / mesh_size).cgs.value
-        print(f"size of cell {dr}")
 
         yield (
             R_max,
@@ -110,9 +109,9 @@ def test_do_all_sources():
         assert np.allclose(phi_ion, expected_phi_ion)
 
 
-@pytest.mark.parametrize("mesh_size", [64, 128, 256])
+@pytest.mark.parametrize("mesh_size", [32, 64, 128])
 @pytest.mark.parametrize("batch_size", [8, 16, 32])
-@pytest.mark.parametrize("num_sources", [100, 10000, 1000000])
+@pytest.mark.parametrize("num_sources", [100, 1000, 10000])
 def test_benchmark_do_all_sources(benchmark, mesh_size, batch_size, num_sources):
     # Manual warmup
     with setup_do_all_sources(mesh_size, batch_size, num_sources) as args:

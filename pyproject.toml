@@ -38,11 +38,11 @@ dev = [
   "clang-format",
   "meson",
   "pytest",
-]
-profile = [
-  "pytest",
   "pytest-benchmark",
 ]
 
 [tool.pytest.ini_options]
 testpaths = "tests"
+
+[tool.meson-python.args]
+setup = ["-Dbuildtype=release"]

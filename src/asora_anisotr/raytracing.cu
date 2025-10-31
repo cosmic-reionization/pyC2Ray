@@ -35,7 +35,9 @@ inline __device__ int sign_gpu(const double &x) {
 }
 
 // Flat-array index from 3D (i,j,k) indices
-inline __device__ int mem_offst_gpu(const int &i, const int &j, const int &k, const int &N) {
+inline __device__ int mem_offst_gpu(
+    const int &i, const int &j, const int &k, const int &N
+) {
     return N * N * i + N * j + k;
 }
 
@@ -46,7 +48,9 @@ __device__ inline double weightf_gpu(const double &cd, const double &sig) {
 
 // Mapping from cartesian coordinates of a cell to reduced cache memory space
 // (here N = 2qmax + 1 in general)
-__device__ inline int cart2cache(const int &i, const int &j, const int &k, const int &N) {
+__device__ inline int cart2cache(
+    const int &i, const int &j, const int &k, const int &N
+) {
     return N * N * int(k < 0) + N * i + j;
 }
 
@@ -77,8 +81,10 @@ static __inline__ __device__ double atomicAdd(double *address, double val) {
     if (val == 0.0) return __longlong_as_double(old);
     do {
         assumed = old;
-        old = atomicCAS(address_as_ull, assumed,
-                        __double_as_longlong(val + __longlong_as_double(assumed)));
+        old = atomicCAS(
+            address_as_ull, assumed,
+            __double_as_longlong(val + __longlong_as_double(assumed))
+        );
     } while (assumed != old);
     return __longlong_as_double(old);
 }
@@ -87,10 +93,11 @@ static __inline__ __device__ double atomicAdd(double *address, double val) {
 // ========================================================================
 // Raytrace all sources and add up ionization rates
 // ========================================================================
-void do_all_sources_gpu(const double &R, double *coldensh_out, const double &sig, const double &dr,
-                        double *ndens, double *xh_av, double *phi_ion, const int &NumSrc,
-                        const int &m1, const double &minlogtau, const double &dlogtau,
-                        const int &NumTau) {
+void do_all_sources_gpu(
+    const double &R, double *coldensh_out, const double &sig, const double &dr,
+    double *ndens, double *xh_av, double *phi_ion, const int &NumSrc, const int &m1,
+    const double &minlogtau, const double &dlogtau, const int &NumTau
+) {
     // Byte-size of grid data
     int meshsize = m1 * m1 * m1 * sizeof(double);
 
@@ -131,17 +138,20 @@ void do_all_sources_gpu(const double &R, double *coldensh_out, const double &sig
     // Loop over batches of sources
     for (int ns = 0; ns < NumSrc; ns += NUM_SRC_PAR) {
         // Raytrace the current batch of sources in parallel
-        evolve0D_gpu<<<gs, bs>>>(R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev,
-                                 rad_dir_dev, angles_dev, cdh_dev, sig, dr, n_dev, x_dev, phi_dev,
-                                 m1, photo_thin_table_dev, photo_thick_table_dev, minlogtau,
-                                 dlogtau, NumTau, last_l, last_r);
+        evolve0D_gpu<<<gs, bs>>>(
+            R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, rad_dir_dev,
+            angles_dev, cdh_dev, sig, dr, n_dev, x_dev, phi_dev, m1,
+            photo_thin_table_dev, photo_thick_table_dev, minlogtau, dlogtau, NumTau,
+            last_l, last_r
+        );
 
         // Check for errors
         cudaError_t error = cudaGetLastError();
         if (error != cudaSuccess) {
             throw std::runtime_error(
-                "Error Launching Kernel: " + std::string(cudaGetErrorName(error)) + " - " +
-                std::string(cudaGetErrorString(error)));
+                "Error Launching Kernel: " + std::string(cudaGetErrorName(error)) +
+                " - " + std::string(cudaGetErrorString(error))
+            );
         }
 
         // Sync device to be sure (is this required ??)
@@ -158,16 +168,16 @@ void do_all_sources_gpu(const double &R, double *coldensh_out, const double &sig
 // Raytracing kernel, adapted from C2Ray. Calculates in/out column density
 // to the current cell and finds the photoionization rate
 // ========================================================================
-__global__ void evolve0D_gpu(const double Rmax_LLS,
-                             const int q_max,  // Is now the size of max q
-                             const int ns_start, const int NumSrc, const int num_src_par,
-                             int *src_pos, double *src_flux, double *rad_dir, double *angles,
-                             double *coldensh_out, const double sig, const double dr,
-                             const double *ndens, const double *xh_av, double *phi_ion,
-                             const int m1, const double *photo_thin_table,
-                             const double *photo_thick_table, const double minlogtau,
-                             const double dlogtau, const int NumTau, const int last_l,
-                             const int last_r) {
+__global__ void evolve0D_gpu(
+    const double Rmax_LLS,
+    const int q_max,  // Is now the size of max q
+    const int ns_start, const int NumSrc, const int num_src_par, int *src_pos,
+    double *src_flux, double *rad_dir, double *angles, double *coldensh_out,
+    const double sig, const double dr, const double *ndens, const double *xh_av,
+    double *phi_ion, const int m1, const double *photo_thin_table,
+    const double *photo_thick_table, const double minlogtau, const double dlogtau,
+    const int NumTau, const int last_l, const int last_r
+) {
     /* The raytracing kernel proceeds as follows:
         1. Select the source based on the block number (within the batch = the
        grid)
@@ -230,10 +240,10 @@ __global__ void evolve0D_gpu(const double Rmax_LLS,
                     }
                     k = sgn * q - sgn * (abs(i) + abs(j));
 
-                    // Only do cell if it is within the (shifted under periodicity) grid,
-                    // i.e. at most ~N cells away from the source
-                    if ((i >= last_l) && (i <= last_r) && (j >= last_l) && (j <= last_r) &&
-                        (k >= last_l) && (k <= last_r)) {
+                    // Only do cell if it is within the (shifted under periodicity)
+                    // grid, i.e. at most ~N cells away from the source
+                    if ((i >= last_l) && (i <= last_r) && (j >= last_l) &&
+                        (j <= last_r) && (k >= last_l) && (k <= last_r)) {
                         // Get source properties
                         int i0 = src_pos[3 * ns + 0];
                         int j0 = src_pos[3 * ns + 1];
@@ -248,7 +258,8 @@ __global__ void evolve0D_gpu(const double Rmax_LLS,
 
                         // Calculate dot product and cosine of the angle (here ijk are
                         // coord. in reference frame of the source, i0, j0 and k0)
-                        double cos_thet = (i * xp + j * yp + k * zp) / sqrtf(i * i + j * j + k * k);
+                        double cos_thet =
+                            (i * xp + j * yp + k * zp) / sqrtf(i * i + j * j + k * k);
 
                         // Center to source (the shift is done to have the ijk in the
                         // reference frame of the box)
@@ -259,8 +270,8 @@ __global__ void evolve0D_gpu(const double Rmax_LLS,
                         int pos[3];
                         double path;
                         double coldensh_in;  // Column density to the cell
-                        double nHI_p;        // Local density of neutral hydrogen in the cell
-                        double xh_av_p;      // Local ionization fraction of cell
+                        double nHI_p;  // Local density of neutral hydrogen in the cell
+                        double xh_av_p;  // Local ionization fraction of cell
 
                         double xs, ys, zs;
                         double dist2;
@@ -278,18 +289,18 @@ __global__ void evolve0D_gpu(const double Rmax_LLS,
 
                             // Get local ionization fraction & Hydrogen density
                             xh_av_p = xh_av[mem_offst_gpu(pos[0], pos[1], pos[2], m1)];
-                            nHI_p =
-                                ndens[mem_offst_gpu(pos[0], pos[1], pos[2], m1)] * (1.0 - xh_av_p);
+                            nHI_p = ndens[mem_offst_gpu(pos[0], pos[1], pos[2], m1)] *
+                                    (1.0 - xh_av_p);
 
-                            // PH (29.9.23): There used to be a check here if the coldensh_out
-                            // of the current cell was zero to "determine if it hasn't been
-                            // done before". I think this isn't necessary anymore in this
-                            // version and eliminates the need to set the array to zero
-                            // between source batches, which for large batches is a
-                            // SIGNIFICANT bottleneck.
+                            // PH (29.9.23): There used to be a check here if the
+                            // coldensh_out of the current cell was zero to "determine
+                            // if it hasn't been done before". I think this isn't
+                            // necessary anymore in this version and eliminates the need
+                            // to set the array to zero between source batches, which
+                            // for large batches is a SIGNIFICANT bottleneck.
 
-                            // If its the source cell, just find path (no incoming column
-                            // density)
+                            // If its the source cell, just find path (no incoming
+                            // column density)
                             if (i == i0 && j == j0 && k == k0) {
                                 coldensh_in = 0.0;
                                 path = 0.5 * dr;
@@ -297,11 +308,13 @@ __global__ void evolve0D_gpu(const double Rmax_LLS,
                                 dist2 = 0.0;
                             }
 
-                            // If its another cell, do interpolation to find incoming column
-                            // density
+                            // If its another cell, do interpolation to find incoming
+                            // column density
                             else {
-                                cinterp_gpu(i, j, k, i0, j0, k0, coldensh_in, path,
-                                            coldensh_out + cdh_offset, sig, m1);
+                                cinterp_gpu(
+                                    i, j, k, i0, j0, k0, coldensh_in, path,
+                                    coldensh_out + cdh_offset, sig, m1
+                                );
                                 path *= dr;
                                 // Find the distance to the source
                                 xs = dr * (i - i0);
@@ -312,36 +325,45 @@ __global__ void evolve0D_gpu(const double Rmax_LLS,
                                 vol_ph = dist2 * path * FOURPI;
                             }
 
-                            // Compute outgoing column density and add to array for subsequent
-                            // interpolations
+                            // Compute outgoing column density and add to array for
+                            // subsequent interpolations
                             double cdho = coldensh_in + nHI_p * path;
-                            coldensh_out[cdh_offset + mem_offst_gpu(pos[0], pos[1], pos[2], m1)] =
-                                cdho;
+                            coldensh_out
+                                [cdh_offset +
+                                 mem_offst_gpu(pos[0], pos[1], pos[2], m1)] = cdho;
 
-                            // Compute photoionization rates from column density. WARNING: for
-                            // now this is limited to the grey-opacity test case source
+                            // Compute photoionization rates from column density.
+                            // WARNING: for now this is limited to the grey-opacity test
+                            // case source
                             if ((coldensh_in <= MAX_COLDENSH) &&
                                 (dist2 / (dr * dr) <= Rmax_LLS * Rmax_LLS)) {
                                 // Apply condition of solid angle
                                 if ((i == i0 && j == j0 && k == k0) ||
                                     (abs(cos_thet) >= cos_thet_max)) {
                                     double phi = photoion_rates_gpu(
-                                        strength, coldensh_in, cdho, vol_ph, sig, photo_thin_table,
-                                        photo_thick_table, minlogtau, dlogtau, NumTau);
+                                        strength, coldensh_in, cdho, vol_ph, sig,
+                                        photo_thin_table, photo_thick_table, minlogtau,
+                                        dlogtau, NumTau
+                                    );
 
-                                    // Divide the photo-ionization rates by the appropriate
-                                    // neutral density (part of the photon-conserving rate
-                                    // prescription)
+                                    // Divide the photo-ionization rates by the
+                                    // appropriate neutral density (part of the
+                                    // photon-conserving rate prescription)
                                     phi /= nHI_p;
 
-                                    // Add the computed ionization rate and the column density to
-                                    // the array ATOMICALLY since multiple blocks could be writing
-                                    // to the same cell at the same time!
-                                    atomicAdd(phi_ion + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                              phi);
+                                    // Add the computed ionization rate and the column
+                                    // density to the array ATOMICALLY since multiple
+                                    // blocks could be writing to the same cell at the
+                                    // same time!
+                                    atomicAdd(
+                                        phi_ion +
+                                            mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                        phi
+                                    );
                                     // atomicAdd(coldensh_out +
-                                    // mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);    TODO: this
-                                    // seems to induce some double precision floating error
+                                    // mem_offst_gpu(pos[0],pos[1],pos[2],m1),cdho);
+                                    // TODO: this seems to induce some double precision
+                                    // floating error
                                 }
                             }
                         }
@@ -358,9 +380,11 @@ __global__ void evolve0D_gpu(const double Rmax_LLS,
 // ========================================================================
 // Short-characteristics interpolation function
 // ========================================================================
-__device__ void cinterp_gpu(const int i, const int j, const int k, const int i0, const int j0,
-                            const int k0, double &cdensi, double &path, double *coldensh_out,
-                            const double sigma_HI_at_ion_freq, const int &m1) {
+__device__ void cinterp_gpu(
+    const int i, const int j, const int k, const int i0, const int j0, const int k0,
+    double &cdensi, double &path, double *coldensh_out,
+    const double sigma_HI_at_ion_freq, const int &m1
+) {
     int idel, jdel, kdel;
     int idela, jdela, kdela;
     int im, jm, km;
