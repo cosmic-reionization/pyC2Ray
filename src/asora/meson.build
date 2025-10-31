@@ -3,9 +3,6 @@ if not has_cuda
     subdir_done()
 endif
 
-# CUDA sources for ASORA
-asora_sources = ['memory.cu', 'rates.cu', 'raytracing.cu', 'python_module.cu', 'utils.cu']
-
 # Get CUDA architecture to be used for compilation
 compute_cap = get_option('gpu-architecture')
 if compute_cap == ''
@@ -36,13 +33,28 @@ nvcc_flags = [
 ]
 nvlink_flags = ['-arch', compute_cap]
 
+# CUDA sources for ASORA
+asora_sources = ['memory.cu', 'rates.cu', 'raytracing.cu', 'utils.cu']
+asora_core = static_library('asora_core', asora_sources, cuda_args: nvcc_flags, link_args: nvlink_flags)
+
 # Build ASORA module with nvcc
 py.extension_module(
     'libasora',
-    asora_sources,
+    'python_module.cu',
+    dependencies: [py_dep, np_dep],
+    link_with: asora_core,
+    install: true,
+    subdir: 'pyc2ray/lib',
+)
+
+# Build ASORA test module with nvcc
+py.extension_module(
+    'libasoratest',
+    ['tests.cu', 'python_test_module.cu'],
     dependencies: [py_dep, np_dep],
     install: true,
     subdir: 'pyc2ray/lib',
+    link_with: asora_core,
     cuda_args: nvcc_flags,
     link_args: nvlink_flags,
 )

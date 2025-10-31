@@ -47,22 +47,28 @@ static PyObject *asora_do_all_sources(PyObject *self, PyObject *args) {
     double dlogtau;
     int NumTau;
 
-    if (!PyArg_ParseTuple(args, "dOOOOOOiiidOOOOOOOOOOiiddi", &R, &coldensh_out, &coldenshei_out,
-                          &coldensheii_out, &sig_hi, &sig_hei, &sig_heii, &nbin1, &nbin2, &nbin3,
-                          &dr, &ndens, &xHI_av, &xHeI_av, &xHeII_av, &phi_ion_HI, &phi_ion_HeI,
-                          &phi_ion_HeII, &phi_heat_HI, &phi_heat_HeI, &phi_heat_HeII, &NumSrc, &m1,
-                          &minlogtau, &dlogtau, &NumTau))
+    if (!PyArg_ParseTuple(
+            args, "dOOOOOOiiidOOOOOOOOOOiiddi", &R, &coldensh_out, &coldenshei_out,
+            &coldensheii_out, &sig_hi, &sig_hei, &sig_heii, &nbin1, &nbin2, &nbin3, &dr,
+            &ndens, &xHI_av, &xHeI_av, &xHeII_av, &phi_ion_HI, &phi_ion_HeI,
+            &phi_ion_HeII, &phi_heat_HI, &phi_heat_HeI, &phi_heat_HeII, &NumSrc, &m1,
+            &minlogtau, &dlogtau, &NumTau
+        ))
         return NULL;
 
     // Error checking
     if (!PyArray_Check(coldensh_out) || PyArray_TYPE(coldensh_out) != NPY_DOUBLE) {
         PyErr_SetString(PyExc_TypeError, "coldensh_out must be Array of type double");
         return NULL;
-    } else if (!PyArray_Check(coldenshei_out) || PyArray_TYPE(coldenshei_out) != NPY_DOUBLE) {
+    } else if (!PyArray_Check(coldenshei_out) ||
+               PyArray_TYPE(coldenshei_out) != NPY_DOUBLE) {
         PyErr_SetString(PyExc_TypeError, "coldenshei_out must be Array of type double");
         return NULL;
-    } else if (!PyArray_Check(coldensheii_out) || PyArray_TYPE(coldensheii_out) != NPY_DOUBLE) {
-        PyErr_SetString(PyExc_TypeError, "coldensheii_out must be Array of type double");
+    } else if (!PyArray_Check(coldensheii_out) ||
+               PyArray_TYPE(coldensheii_out) != NPY_DOUBLE) {
+        PyErr_SetString(
+            PyExc_TypeError, "coldensheii_out must be Array of type double"
+        );
         return NULL;
     }
 
@@ -84,11 +90,13 @@ static PyObject *asora_do_all_sources(PyObject *self, PyObject *args) {
     double *sig_hei_data = (double *)PyArray_DATA(sig_hei);
     double *sig_heii_data = (double *)PyArray_DATA(sig_heii);
 
-    do_all_sources_gpu(R, coldensh_out_hi, coldensh_out_hei, coldensh_out_heii, sig_hi_data,
-                       sig_hei_data, sig_heii_data, nbin1, nbin2, nbin3, dr, ndens_data,
-                       xh_av_HI_data, xh_av_HeI_data, xh_av_HeII_data, phi_ion_HI_data,
-                       phi_ion_HeI_data, phi_ion_HeII_data, phi_heat_HI_data, phi_heat_HeI_data,
-                       phi_heat_HeII_data, NumSrc, m1, minlogtau, dlogtau, NumTau);
+    do_all_sources_gpu(
+        R, coldensh_out_hi, coldensh_out_hei, coldensh_out_heii, sig_hi_data,
+        sig_hei_data, sig_heii_data, nbin1, nbin2, nbin3, dr, ndens_data, xh_av_HI_data,
+        xh_av_HeI_data, xh_av_HeII_data, phi_ion_HI_data, phi_ion_HeI_data,
+        phi_ion_HeII_data, phi_heat_HI_data, phi_heat_HeI_data, phi_heat_HeII_data,
+        NumSrc, m1, minlogtau, dlogtau, NumTau
+    );
 
     return Py_None;
 }
@@ -137,16 +145,20 @@ static PyObject *asora_tables_to_device(PyObject *self, PyObject *args) {
     PyArrayObject *photo_thick_table;
     PyArrayObject *heat_thin_table;
     PyArrayObject *heat_thick_table;
-    if (!PyArg_ParseTuple(args, "OOOOii", &photo_thin_table, &photo_thick_table, &heat_thin_table,
-                          &heat_thick_table, &NumTau, &NumFreq))
+    if (!PyArg_ParseTuple(
+            args, "OOOOii", &photo_thin_table, &photo_thick_table, &heat_thin_table,
+            &heat_thick_table, &NumTau, &NumFreq
+        ))
         return NULL;
 
     double *photo_thin_table_data = (double *)PyArray_DATA(photo_thin_table);
     double *photo_thick_table_data = (double *)PyArray_DATA(photo_thick_table);
     double *heat_thin_table_data = (double *)PyArray_DATA(heat_thin_table);
     double *heat_thick_table_data = (double *)PyArray_DATA(heat_thick_table);
-    tables_to_device(photo_thin_table_data, photo_thick_table_data, heat_thin_table_data,
-                     heat_thick_table_data, NumTau, NumFreq);
+    tables_to_device(
+        photo_thin_table_data, photo_thick_table_data, heat_thin_table_data,
+        heat_thick_table_data, NumTau, NumFreq
+    );
 
     return Py_None;
 }
@@ -175,8 +187,10 @@ static PyMethodDef asoraMethods[] = {
     {"do_all_sources", asora_do_all_sources, METH_VARARGS, "Do OCTA raytracing (GPU)"},
     {"device_init", asora_device_init, METH_VARARGS, "Free GPU memory"},
     {"device_close", asora_device_close, METH_VARARGS, "Free GPU memory"},
-    {"density_to_device", asora_density_to_device, METH_VARARGS, "Copy density field to GPU"},
-    {"tables_to_device", asora_tables_to_device, METH_VARARGS, "Copy radiation table to GPU"},
+    {"density_to_device", asora_density_to_device, METH_VARARGS,
+     "Copy density field to GPU"},
+    {"tables_to_device", asora_tables_to_device, METH_VARARGS,
+     "Copy radiation table to GPU"},
     {"source_data_to_device", asora_source_data_to_device, METH_VARARGS,
      "Copy radiation table to GPU"},
     {NULL, NULL, 0, NULL} /* Sentinel */
@@ -189,7 +203,8 @@ static struct PyModuleDef asoramodule = {
                                                                   may be NULL */
     -1, /* size of per-interpreter state of the module, or -1 if the module
            keeps state in global variables. */
-    asoraMethods};
+    asoraMethods
+};
 
 PyMODINIT_FUNC PyInit_libasora_He(void) {
     PyObject *module = PyModule_Create(&asoramodule);

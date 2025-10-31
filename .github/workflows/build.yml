@@ -56,5 +56,5 @@ jobs:
 
     - name: Run tests
       run: |
-        pip install pytest
-        pytest tests/
+        pip install pytest pytest-benchmark
+        pytest tests/ --benchmark-skip

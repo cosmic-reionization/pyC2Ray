@@ -61,12 +61,12 @@ void device_init(const int &N, const int &num_src_par, const int &num_freq) {
 
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess) {
-        std::cout << "cudaGetDeviceProperties returned error code " << error << ", line("
-                  << __LINE__ << ")" << std::endl;
+        std::cout << "cudaGetDeviceProperties returned error code " << error
+                  << ", line(" << __LINE__ << ")" << std::endl;
     } else {
         std::cout << "GPU Device " << dev_id << ": \"" << device_prop.name
-                  << "\" with compute capability " << device_prop.major << "." << device_prop.minor
-                  << std::endl;
+                  << "\" with compute capability " << device_prop.major << "."
+                  << device_prop.minor << std::endl;
     }
 
     // Byte-size of grid and frequency data
@@ -100,8 +100,12 @@ void device_init(const int &N, const int &num_src_par, const int &num_freq) {
     if (error != cudaSuccess) {
         throw std::runtime_error(
             "Couldn't allocate memory: " +
-            std::to_string((3 * bytsize_freq + (7 + 3 * NUM_SRC_PAR) * bytsize_grid) / 1e6) +
-            std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
+            std::to_string(
+                (3 * bytsize_freq + (7 + 3 * NUM_SRC_PAR) * bytsize_grid) / 1e6
+            ) +
+            std::string(cudaGetErrorName(error)) + " - " +
+            std::string(cudaGetErrorString(error))
+        );
     } else {
         // TODO: add message that tells also how many frequencies ...
         std::cout << "Succesfully allocated "
@@ -119,23 +123,33 @@ void density_to_device(double *ndens, const int &N) {
     cudaMemcpy(n_dev, ndens, N * N * N * sizeof(double), cudaMemcpyHostToDevice);
 }
 
-void tables_to_device(double *photo_thin_table, double *photo_thick_table, double *heat_thin_table,
-                      double *heat_thick_table, const int &NumTau, const int &NumFreq) {
+void tables_to_device(
+    double *photo_thin_table, double *photo_thick_table, double *heat_thin_table,
+    double *heat_thick_table, const int &NumTau, const int &NumFreq
+) {
     // Copy thin table
     cudaMalloc(&photo_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
     cudaMalloc(&heat_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
-    cudaMemcpy(photo_thin_table_dev, photo_thin_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
-    cudaMemcpy(heat_thin_table_dev, heat_thin_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
+    cudaMemcpy(
+        photo_thin_table_dev, photo_thin_table, int(NumTau * NumFreq) * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
+    cudaMemcpy(
+        heat_thin_table_dev, heat_thin_table, int(NumTau * NumFreq) * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
 
     // Copy thick table
     cudaMalloc(&photo_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
     cudaMalloc(&heat_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
-    cudaMemcpy(photo_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
-    cudaMemcpy(heat_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
-               cudaMemcpyHostToDevice);
+    cudaMemcpy(
+        photo_thick_table_dev, photo_thick_table,
+        int(NumTau * NumFreq) * sizeof(double), cudaMemcpyHostToDevice
+    );
+    cudaMemcpy(
+        heat_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
 }
 
 void source_data_to_device(int *pos, double *flux, const int &NumSrc) {

@@ -6,9 +6,10 @@
 
 #include <cuda_runtime.h>
 
+#include <cuda/std/array>
+#include <cuda/std/tuple>
+#include <cuda/std/utility>
 #include <exception>
-#include <iostream>
-#include <string>
 
 // ========================================================================
 // Define macros. Could be passed as parameters but are kept as
@@ -17,6 +18,7 @@
 #define FOURPI 12.566370614359172463991853874177  // 4π
 #define INV4PI 0.079577471545947672804111050482   // 1/4π
 #define SQRT3 1.73205080757                       // Square root of 3
+#define SQRT2 1.41421356237                       // Square root of 2
 #define MAX_COLDENSH 2e30    // Column density limit (rates are set to zero above this)
 #define CUDA_BLOCK_SIZE 256  // Size of blocks used to treat sources
 
@@ -27,20 +29,14 @@
 namespace {
 
     // Fortran-type modulo function (C modulo is signed)
-    int modulo(int a, int b) { return (a % b + b) % b; }
-    __device__ int modulo_gpu(int a, int b) { return (a % b + b) % b; }
+    __host__ __device__ int modulo(int a, int b) { return (a % b + b) % b; }
 
     // Sign function on the device
-    __device__ int sign_gpu(double x) { return x >= 0 ? 1 : -1; }
+    __host__ __device__ int sign(double x) { return x >= 0 ? 1 : -1; }
 
     // Flat-array index from 3D (i,j,k) indices
     __device__ int mem_offst_gpu(int i, int j, int k, int N) {
-        return N * N * i + N * j + k;
-    }
-
-    // Weight function for C2Ray interpolation function (see cinterp_gpu below)
-    __device__ double weightf_gpu(double cd, double sig) {
-        return 1.0 / max(0.6, cd * sig);
+        return N * N * modulo(i, N) + N * modulo(j, N) + modulo(k, N);
     }
 
     // Mapping from cartesian coordinates of a cell to reduced cache memory space
@@ -78,8 +74,10 @@ namespace {
         if (val == 0.0) return __longlong_as_double(old);
         do {
             assumed = old;
-            old = atomicCAS(address_as_ull, assumed,
-                            __double_as_longlong(val + __longlong_as_double(assumed)));
+            old = atomicCAS(
+                address_as_ull, assumed,
+                __double_as_longlong(val + __longlong_as_double(assumed))
+            );
         } while (assumed != old);
         return __longlong_as_double(old);
     }
@@ -90,13 +88,6 @@ namespace {
         return (i >= 0 && i < N) && (j >= 0 && j < N) && (k >= 0 && k < N);
     }
 
-    // ========================================================================
-    // Short-characteristics interpolation function
-    // ========================================================================
-    __device__ void cinterp_gpu(int i, int j, int k, int i0, int j0, int k0,
-                                double &cdensi, double &path, double *coldensh_out,
-                                double sigma_HI_at_ion_freq, int m1);
-
 }  // namespace
 
 namespace asora {
@@ -104,9 +95,11 @@ namespace asora {
     // ========================================================================
     // Raytrace all sources and add up ionization rates
     // ========================================================================
-    void do_all_sources_gpu(double R, double *coldensh_out, double sig, double dr,
-                            double *ndens, double *xh_av, double *phi_ion, int num_src,
-                            int m1, double minlogtau, double dlogtau, int num_tau) {
+    void do_all_sources_gpu(
+        double R, double *coldensh_out, double sig, double dr, double *ndens,
+        double *xh_av, double *phi_ion, int num_src, int m1, double minlogtau,
+        double dlogtau, int num_tau
+    ) {
         // Byte-size of grid data
         auto meshsize = m1 * m1 * m1 * sizeof(double);
 
@@ -153,7 +146,8 @@ namespace asora {
             evolve0D_gpu<<<gs, bs>>>(
                 R, max_q, ns, num_src, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev,
                 sig, dr, n_dev, x_dev, phi_dev, m1, photo_thin_table_dev,
-                photo_thick_table_dev, minlogtau, dlogtau, num_tau, last_l, last_r);
+                photo_thick_table_dev, minlogtau, dlogtau, num_tau, last_l, last_r
+            );
 
             try {
                 safe_cuda(cudaPeekAtLastError());
@@ -168,7 +162,8 @@ namespace asora {
             // Copy the accumulated ionization fraction back to the host
             safe_cuda(cudaMemcpy(phi_ion, phi_dev, meshsize, cudaMemcpyDeviceToHost));
             safe_cuda(
-                cudaMemcpy(coldensh_out, cdh_dev, meshsize, cudaMemcpyDeviceToHost));
+                cudaMemcpy(coldensh_out, cdh_dev, meshsize, cudaMemcpyDeviceToHost)
+            );
         } catch (const std::exception &) {
         }
     }
@@ -177,15 +172,15 @@ namespace asora {
     // Raytracing kernel, adapted from C2Ray. Calculates in/out column density
     // to the current cell and finds the photoionization rate
     // ========================================================================
-    __global__ void evolve0D_gpu(double Rmax_LLS,
-                                 int q_max,  // Is now the size of max q
-                                 int ns_start, int num_src, int num_src_par,
-                                 int *src_pos, double *src_flux, double *coldensh_out,
-                                 double sig, double dr, const double *ndens,
-                                 const double *xh_av, double *phi_ion, int m1,
-                                 const double *photo_thin_table,
-                                 const double *photo_thick_table, double minlogtau,
-                                 double dlogtau, int num_tau, int last_l, int last_r) {
+    __global__ void evolve0D_gpu(
+        double Rmax_LLS,
+        int q_max,  // Is now the size of max q
+        int ns_start, int num_src, int num_src_par, int *src_pos, double *src_flux,
+        double *coldensh_out, double sig, double dr, const double *ndens,
+        const double *xh_av, double *phi_ion, int m1, const double *photo_thin_table,
+        const double *photo_thick_table, double minlogtau, double dlogtau, int num_tau,
+        int last_l, int last_r
+    ) {
         /* The raytracing kernel proceeds as follows:
             1. Select the source based on the block number (within the batch = the
            grid)
@@ -273,9 +268,7 @@ namespace asora {
                 if (!in_box_gpu(i, j, k, m1)) continue;
 #endif
                 // Map to periodic grid
-                int pos[] = {modulo_gpu(i, m1), modulo_gpu(j, m1), modulo_gpu(k, m1)};
-
-                auto offset = mem_offst_gpu(pos[0], pos[1], pos[2], m1);
+                auto offset = mem_offst_gpu(i, j, k, m1);
 
                 // Get local ionization fraction & neutral Hydrogen density in the cell
                 double xh_av_p = xh_av[offset];
@@ -305,8 +298,8 @@ namespace asora {
                 // If its another cell, do interpolation to find
                 // incoming column density
                 else {
-                    cinterp_gpu(i, j, k, i0, j0, k0, coldensh_in, path, coldensh_out,
-                                sig, m1);
+                    cuda::std::tie(coldensh_in, path) =
+                        cinterp_gpu(i, j, k, i0, j0, k0, coldensh_out, sig, m1);
                     path *= dr;
                     auto xs = dr * (i - i0);
                     auto ys = dr * (j - j0);
@@ -327,12 +320,14 @@ namespace asora {
                 if (dist2 / (dr * dr) > Rmax_LLS * Rmax_LLS) continue;
 
 #if defined(GREY_NOTABLES)
-                double phi = photoion_rates_test_gpu(strength, coldensh_in,
-                                                     coldensh_out[offset], vol_ph, sig);
+                auto phi = photoion_rates_test_gpu(
+                    strength, coldensh_in, coldensh_out[offset], vol_ph, sig
+                );
 #else
-                double phi = photoion_rates_gpu(
+                auto phi = photoion_rates_gpu(
                     strength, coldensh_in, cdho, vol_ph, sig, photo_thin_table,
-                    photo_thick_table, minlogtau, dlogtau, num_tau);
+                    photo_thick_table, minlogtau, dlogtau, num_tau
+                );
 #endif
                 // Divide the photo-ionization rates by the
                 // appropriate neutral density (part of the
@@ -355,615 +350,92 @@ namespace asora {
         }
     }
 
-}  // namespace asora
+    // dk is the largest delta.
+    __device__ cuda::std::array<double, 5> geometric_factors(
+        double di, double dj, double dk
+    ) {
+        auto path = sqrt(1.0 + (di * di + dj * dj) / (dk * dk));
 
-namespace {
+        auto dx = abs(sign(di) - di / abs(dk));
+        auto dy = abs(sign(dj) - dj / abs(dk));
 
-    // ========================================================================
-    // Short-characteristics interpolation function
-    // ========================================================================
-    __device__ void cinterp_gpu(int i, int j, int k, int i0, int j0, int k0,
-                                double &cdensi, double &path, double *coldensh_out,
-                                double sigma_HI_at_ion_freq, int m1) {
-        int idel, jdel, kdel;
-        int idela, jdela, kdela;
-        int im, jm, km;
-        unsigned int ip, imp, jp, jmp, kp, kmp;
-        int sgni, sgnj, sgnk;
-        double alam, xc, yc, zc, dx, dy, dz, s1, s2, s3, s4;
+        auto s1 = (1. - dx) * (1. - dy);
+        auto s2 = (1. - dy) * dx;
+        auto s3 = (1. - dx) * dy;
+        auto s4 = dx * dy;
+
+        return {path, s1, s2, s3, s4};
+    }
+
+    __device__ cuda::std::pair<double, double> cinterp_gpu(
+        int i, int j, int k, int i0, int j0, int k0, const double *coldensh_out,
+        double sigma_HI_at_ion_freq, int m1
+    ) {
+        auto di = i - i0;
+        auto dj = j - j0;
+        auto dk = k - k0;
+
+        auto ai = abs(di);
+        auto aj = abs(dj);
+        auto ak = abs(dk);
+        auto si = sign(di);
+        auto sj = sign(dj);
+        auto sk = sign(dk);
+
+        auto get_column_density = [&coldensh_out, i, j, k,
+                                   m1](int i_off, int j_off, int k_off) {
+            return coldensh_out[mem_offst_gpu(i - i_off, j - j_off, k - k_off, m1)];
+        };
+
         double c1, c2, c3, c4;
-        double w1, w2, w3, w4;
-        double di, dj, dk;
-
-        // calculate the distance between the source point (i0,j0,k0) and
-        // the destination point (i,j,k)
-        idel = i - i0;
-        jdel = j - j0;
-        kdel = k - k0;
-        idela = abs(idel);
-        jdela = abs(jdel);
-        kdela = abs(kdel);
-
-        // Find coordinates of points closer to source
-        sgni = sign_gpu(idel);
-        sgnj = sign_gpu(jdel);
-        sgnk = sign_gpu(kdel);
-        im = i - sgni;
-        jm = j - sgnj;
-        km = k - sgnk;
-        di = double(idel);
-        dj = double(jdel);
-        dk = double(kdel);
-
-        // Z plane (bottom and top face) crossing
-        // we find the central (c) point (xc,xy) where the ray crosses
-        // the z-plane below or above the destination (d) point, find the
-        // column density there through interpolation, and add the contribution
-        // of the neutral material between the c-point and the destination
-        // point.
-        if (kdela >= jdela && kdela >= idela) {
-            // alam is the parameter which expresses distance along the line s to d
-            // add 0.5 to get to the interface of the d cell.
-            alam = (double(km - k0) + sgnk * 0.5) / dk;
-
-            xc = alam * di + double(i0);  // x of crossing point on z-plane
-            yc = alam * dj + double(j0);  // y of crossing point on z-plane
-
-            dx =
-                2.0 * abs(xc - (double(im) + 0.5 * sgni));  // distances from c-point to
-            dy = 2.0 * abs(yc - (double(jm) + 0.5 * sgnj));  // the corners.
-
-            s1 = (1. - dx) * (1. - dy);  // interpolation weights of
-            s2 = (1. - dy) * dx;         // corner points to c-point
-            s3 = (1. - dx) * dy;
-            s4 = dx * dy;
-
-            ip = modulo_gpu(i, m1);
-            imp = modulo_gpu(im, m1);
-            jp = modulo_gpu(j, m1);
-            jmp = modulo_gpu(jm, m1);
-            kmp = modulo_gpu(km, m1);
-
-            c1 = coldensh_out[mem_offst_gpu(imp, jmp, kmp, m1)];
-            c2 = coldensh_out[mem_offst_gpu(ip, jmp, kmp, m1)];
-            c3 = coldensh_out[mem_offst_gpu(imp, jp, kmp, m1)];
-            c4 = coldensh_out[mem_offst_gpu(ip, jp, kmp, m1)];
-
-            // extra weights for better fit to analytical solution
-            w1 = s1 * weightf_gpu(c1, sigma_HI_at_ion_freq);
-            w2 = s2 * weightf_gpu(c2, sigma_HI_at_ion_freq);
-            w3 = s3 * weightf_gpu(c3, sigma_HI_at_ion_freq);
-            w4 = s4 * weightf_gpu(c4, sigma_HI_at_ion_freq);
-
-            // column density at the crossing point
-            cdensi = (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4) / (w1 + w2 + w3 + w4);
-
-            // Take care of diagonals
-            if (kdela == 1 && (idela == 1 || jdela == 1)) {
-                if (idela == 1 && jdela == 1) {
-                    cdensi = 1.73205080757 * cdensi;
-                } else {
-                    cdensi = 1.41421356237 * cdensi;
-                }
-            }
-
-            // Path length from c through d to other side cell.
-            path = sqrt((di * di + dj * dj) / (dk * dk) + 1.0);
-        } else if (jdela >= idela && jdela >= kdela) {
-            alam = (double(jm - j0) + sgnj * 0.5) / dj;
-            zc = alam * dk + double(k0);
-            xc = alam * di + double(i0);
-            dz = 2.0 * abs(zc - (double(km) + 0.5 * sgnk));
-            dx = 2.0 * abs(xc - (double(im) + 0.5 * sgni));
-            s1 = (1. - dx) * (1. - dz);
-            s2 = (1. - dz) * dx;
-            s3 = (1. - dx) * dz;
-            s4 = dx * dz;
-
-            ip = modulo_gpu(i, m1);
-            imp = modulo_gpu(im, m1);
-            jmp = modulo_gpu(jm, m1);
-            kp = modulo_gpu(k, m1);
-            kmp = modulo_gpu(km, m1);
-
-            c1 = coldensh_out[mem_offst_gpu(imp, jmp, kmp, m1)];
-            c2 = coldensh_out[mem_offst_gpu(ip, jmp, kmp, m1)];
-            c3 = coldensh_out[mem_offst_gpu(imp, jmp, kp, m1)];
-            c4 = coldensh_out[mem_offst_gpu(ip, jmp, kp, m1)];
-
-            // extra weights for better fit to analytical solution
-            w1 = s1 * weightf_gpu(c1, sigma_HI_at_ion_freq);
-            w2 = s2 * weightf_gpu(c2, sigma_HI_at_ion_freq);
-            w3 = s3 * weightf_gpu(c3, sigma_HI_at_ion_freq);
-            w4 = s4 * weightf_gpu(c4, sigma_HI_at_ion_freq);
-
-            cdensi = (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4) / (w1 + w2 + w3 + w4);
-
-            // Take care of diagonals
-            if (jdela == 1 && (idela == 1 || kdela == 1)) {
-                if (idela == 1 && kdela == 1) {
-                    cdensi = 1.73205080757 * cdensi;
-                } else {
-                    cdensi = 1.41421356237 * cdensi;
-                }
-            }
-            path = sqrt((di * di + dk * dk) / (dj * dj) + 1.0);
-        } else {
-            alam = (double(im - i0) + sgni * 0.5) / di;
-            zc = alam * dk + double(k0);
-            yc = alam * dj + double(j0);
-            dz = 2.0 * abs(zc - (double(km) + 0.5 * sgnk));
-            dy = 2.0 * abs(yc - (double(jm) + 0.5 * sgnj));
-            s1 = (1. - dz) * (1. - dy);
-            s2 = (1. - dz) * dy;
-            s3 = (1. - dy) * dz;
-            s4 = dy * dz;
-
-            imp = modulo_gpu(im, m1);
-            jp = modulo_gpu(j, m1);
-            jmp = modulo_gpu(jm, m1);
-            kp = modulo_gpu(k, m1);
-            kmp = modulo_gpu(km, m1);
-
-            c1 = coldensh_out[mem_offst_gpu(imp, jmp, kmp, m1)];
-            c2 = coldensh_out[mem_offst_gpu(imp, jp, kmp, m1)];
-            c3 = coldensh_out[mem_offst_gpu(imp, jmp, kp, m1)];
-            c4 = coldensh_out[mem_offst_gpu(imp, jp, kp, m1)];
-
-            // extra weights for better fit to analytical solution
-            w1 = s1 * weightf_gpu(c1, sigma_HI_at_ion_freq);
-            w2 = s2 * weightf_gpu(c2, sigma_HI_at_ion_freq);
-            w3 = s3 * weightf_gpu(c3, sigma_HI_at_ion_freq);
-            w4 = s4 * weightf_gpu(c4, sigma_HI_at_ion_freq);
-
-            cdensi = (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4) / (w1 + w2 + w3 + w4);
-
-            if (idela == 1 && (jdela == 1 || kdela == 1)) {
-                if (jdela == 1 && kdela == 1) {
-                    cdensi = 1.73205080757 * cdensi;
-                } else {
-                    cdensi = 1.41421356237 * cdensi;
-                }
-            }
-            path = sqrt(1.0 + (dj * dj + dk * dk) / (di * di));
+        if (ak >= aj && ak >= ai) {
+            c1 = get_column_density(si, sj, sk);
+            c2 = get_column_density(0, sj, sk);
+            c3 = get_column_density(si, 0, sk);
+            c4 = get_column_density(0, 0, sk);
+        } else if (aj >= ai && aj >= ak) {
+            c1 = get_column_density(si, sj, sk);
+            c2 = get_column_density(0, sj, sk);
+            c3 = get_column_density(si, sj, 0);
+            c4 = get_column_density(0, sj, 0);
+            cuda::std::swap(dj, dk);
+            cuda::std::swap(aj, ak);
+        } else {  // (ai >= aj && ai >= ak)
+            c1 = get_column_density(si, sj, sk);
+            c2 = get_column_density(si, 0, sk);
+            c3 = get_column_density(si, sj, 0);
+            c4 = get_column_density(si, 0, 0);
+            cuda::std::swap(di, dk);
+            cuda::std::swap(ai, ak);
+            cuda::std::swap(di, dj);
+            cuda::std::swap(ai, aj);
         }
-    }
 
-}  // namespace
+        auto &&[path, s1, s2, s3, s4] = geometric_factors(
+            static_cast<double>(di), static_cast<double>(dj), static_cast<double>(dk)
+        );
 
-/*
+        // Weight function for C2Ray interpolation function
+        auto weightf_gpu = [](double cd, double sig) {
+            constexpr double tau_0 = 0.6;
+            return 1.0 / max(tau_0, cd * sig);
+        };
 
-//
-==========================================================================================================
-// OLD OR EXPERIMENTAL CODE. KEPT AS REFERENCE BUT UNUSED
-//
-==========================================================================================================
+        auto w1 = s1 * weightf_gpu(c1, sigma_HI_at_ion_freq);
+        auto w2 = s2 * weightf_gpu(c2, sigma_HI_at_ion_freq);
+        auto w3 = s3 * weightf_gpu(c3, sigma_HI_at_ion_freq);
+        auto w4 = s4 * weightf_gpu(c4, sigma_HI_at_ion_freq);
 
-// ========================================================================
-// Modified version of cinterp using a different coordinate system, for future
-development
-// ========================================================================
-__device__ void cinterp_gpu2(
-    const int i,
-    const int j,
-    const int k,
-    const int i0,
-    const int j0,
-    const int k0,
-    const int qmax,
-    double & cdensi,
-    double & path,
-    double* coldensh_out,
-    const double sigma_HI_at_ion_freq)
-{
-    int is,js,ks;
-    int it,jt,kt;
-    int idela,jdela,kdela;
-    int im,jm,km;
-    unsigned int ip,imp,jp,jmp,kp,kmp;
-    int sgni,sgnj,sgnk;
-    double alam,xc,yc,zc,dx,dy,dz,s1,s2,s3,s4;
-    double c1,c2,c3,c4;
-    double w1,w2,w3,w4;
-    double di,dj,dk;
-
-    // Transform coordinates: origin at source location (i0,j0,k0) "s"
-coordinate system
-    // range [-qmax,qmax] (in reality [-q,q])
-    is = i-i0;
-    js = j-j0;
-    ks = k-k0;
-
-    // Get absolute distance to source cell [0,q]
-    idela=abs(is);
-    jdela=abs(js);
-    kdela=abs(ks);
-
-    // Find on which side of source the point is
-    sgni=sign_gpu(is);
-    sgnj=sign_gpu(js);
-    sgnk=sign_gpu(ks);
-
-    // Transform coordinates: origin at lower left corner of cache array.
-"tilde" or "t" coordinate system
-    // range [0,2*qmax]
-    it = is + qmax;
-    jt = js + qmax;
-    kt = ks + qmax;
-
-    // Coordinates of "closer" cells used for the interpolation
-    im = it - sgni;
-    jm = jt - sgnj;
-    km = kt - sgnk;
-
-    // Distance to source (double)
-    di = double(is);
-    dj = double(js);
-    dk = double(ks);
-
-    // Z plane (bottom and top face) crossing
-    // we find the central (c) point (xc,xy) where the ray crosses
-    // the z-plane below or above the destination (d) point, find the
-    // column density there through interpolation, and add the contribution
-    // of the neutral material between the c-point and the destination
-    // point.
-    if (kdela >= jdela && kdela >= idela) {
-        // alam is the parameter which expresses distance along the line s to d
-        // add 0.5 to get to the interface of the d cell.
-        alam=(double(km-k0)+sgnk*0.5)/dk;
-
-        xc=alam*di+double(i0); // x of crossing point on z-plane
-        yc=alam*dj+double(j0); // y of crossing point on z-plane
-
-        dx=2.0*abs(xc-(double(im)+0.5*sgni)); // distances from c-point to
-        dy=2.0*abs(yc-(double(jm)+0.5*sgnj)); // the corners.
-
-        s1=(1.-dx)*(1.-dy);    // interpolation weights of
-        s2=(1.-dy)*dx;         // corner points to c-point
-        s3=(1.-dx)*dy;
-        s4=dx*dy;
-
-        ip  = i;
-        imp = im;
-        jp  = j;
-        jmp = jm;
-        kmp = km;
-
-        // New method
-        c1 = coldensh_out[cart2cache(imp,jmp,kmp,2*qmax+1)];
-        c2 = coldensh_out[cart2cache(ip, jmp,kmp,2*qmax+1)];
-        c3 = coldensh_out[cart2cache(imp,jp, kmp,2*qmax+1)];
-        c4 = coldensh_out[cart2cache(ip, jp, kmp,2*qmax+1)];
-
-        // Old method
-        // c1=     coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
-        // c2=     coldensh_out[mem_offst_gpu(ip,jmp,kmp,m1)];
-        // c3=     coldensh_out[mem_offst_gpu(imp,jp,kmp,m1)];
-        // c4=     coldensh_out[mem_offst_gpu(ip,jp,kmp,m1)];
-
-        // extra weights for better fit to analytical solution
-        w1 = s1*weightf_gpu(c1,sigma_HI_at_ion_freq);
-        w2 = s2*weightf_gpu(c2,sigma_HI_at_ion_freq);
-        w3 = s3*weightf_gpu(c3,sigma_HI_at_ion_freq);
-        w4 = s4*weightf_gpu(c4,sigma_HI_at_ion_freq);
-
-        // column density at the crossing point
-        cdensi = (c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4 )/(w1+w2+w3+w4);
+        // Column density at the crossing point
+        auto cdensi = (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4) / (w1 + w2 + w3 + w4);
 
         // Take care of diagonals
-        if (kdela == 1 && (idela == 1||jdela == 1))
-        {
-            if (idela == 1 && jdela == 1)
-            {
-                cdensi = 1.73205080757*cdensi;
-            }
-            else
-            {
-                cdensi = 1.41421356237*cdensi;
-            }
-        }
+        if (ak == 1 && ai == 1 && aj == 1)
+            cdensi *= SQRT3;
+        else if (ak == 1 && (ai == 1 || aj == 1))
+            cdensi *= SQRT2;
 
-        // Path length from c through d to other side cell.
-        path=sqrt((di*di+dj*dj)/(dk*dk)+1.0);
+        return cuda::std::make_pair(cdensi, path);
     }
-    else if (jdela >= idela && jdela >= kdela)
-    {
-        alam=(double(jm-j0)+sgnj*0.5)/dj;
-        zc=alam*dk+double(k0);
-        xc=alam*di+double(i0);
-        dz=2.0*abs(zc-(double(km)+0.5*sgnk));
-        dx=2.0*abs(xc-(double(im)+0.5*sgni));
-        s1=(1.-dx)*(1.-dz);
-        s2=(1.-dz)*dx;
-        s3=(1.-dx)*dz;
-        s4=dx*dz;
 
-        ip  = i;
-        imp = im;
-        jmp = jm;
-        kp  = k;
-        kmp = km;
-
-        // New method
-        c1 = coldensh_out[cart2cache(imp,jmp, kmp,2*qmax+1)];
-        c2 = coldensh_out[cart2cache(ip, jmp, kmp,2*qmax+1)];
-        c3 = coldensh_out[cart2cache(imp,jmp, kp ,2*qmax+1)];
-        c4 = coldensh_out[cart2cache(ip, jmp, kp ,2*qmax+1)];
-
-        // Old method
-        // c1=  coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
-        // c2=  coldensh_out[mem_offst_gpu(ip,jmp,kmp,m1)];
-        // c3=  coldensh_out[mem_offst_gpu(imp,jmp,kp,m1)];
-        // c4=  coldensh_out[mem_offst_gpu(ip,jmp,kp,m1)];
-
-        // extra weights for better fit to analytical solution
-        w1=s1*weightf_gpu(c1,sigma_HI_at_ion_freq);
-        w2=s2*weightf_gpu(c2,sigma_HI_at_ion_freq);
-        w3=s3*weightf_gpu(c3,sigma_HI_at_ion_freq);
-        w4=s4*weightf_gpu(c4,sigma_HI_at_ion_freq);
-
-        cdensi=   (c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4 )/(w1+w2+w3+w4);
-
-        // Take care of diagonals
-        if (jdela == 1 && (idela == 1||kdela == 1))
-        {
-            if (idela == 1 && kdela == 1)
-            {
-                cdensi = 1.73205080757*cdensi;
-            }
-            else
-            {
-                cdensi = 1.41421356237*cdensi;
-            }
-        }
-        path=sqrt((di*di+dk*dk)/(dj*dj)+1.0);
-    }
-    else
-    {
-        alam=(double(im-i0)+sgni*0.5)/di;
-        zc=alam*dk+double(k0);
-        yc=alam*dj+double(j0);
-        dz=2.0*abs(zc-(double(km)+0.5*sgnk));
-        dy=2.0*abs(yc-(double(jm)+0.5*sgnj));
-        s1=(1.-dz)*(1.-dy);
-        s2=(1.-dz)*dy;
-        s3=(1.-dy)*dz;
-        s4=dy*dz;
-
-        imp= im;
-        jp=  j;
-        jmp= jm;
-        kp=  k;
-        kmp= km;
-
-        // New method
-        c1 = coldensh_out[cart2cache(imp,jmp,kmp,2*qmax+1)];
-        c2 = coldensh_out[cart2cache(imp,jp, kmp,2*qmax+1)];
-        c3 = coldensh_out[cart2cache(imp,jmp,kp ,2*qmax+1)];
-        c4 = coldensh_out[cart2cache(imp,jp, kp ,2*qmax+1)];
-
-        // Old method
-        // c1=  coldensh_out[mem_offst_gpu(imp,jmp,kmp,m1)];
-        // c2=  coldensh_out[mem_offst_gpu(imp,jp,kmp,m1)];
-        // c3=  coldensh_out[mem_offst_gpu(imp,jmp,kp,m1)];
-        // c4=  coldensh_out[mem_offst_gpu(imp,jp,kp,m1)];
-
-        // extra weights for better fit to analytical solution
-        w1   =s1*weightf_gpu(c1,sigma_HI_at_ion_freq);
-        w2   =s2*weightf_gpu(c2,sigma_HI_at_ion_freq);
-        w3   =s3*weightf_gpu(c3,sigma_HI_at_ion_freq);
-        w4   =s4*weightf_gpu(c4,sigma_HI_at_ion_freq);
-
-        cdensi   =(c1   *w1   +c2   *w2   +c3   *w3   +c4   *w4 )/(w1+w2+w3+w4);
-
-        if ( idela == 1  &&  ( jdela == 1 || kdela == 1 ) )
-        {
-            if ( jdela == 1  &&  kdela == 1 )
-            {
-                cdensi = 1.73205080757*cdensi;
-            }
-            else
-            {
-                cdensi = 1.41421356237*cdensi;
-            }
-        }
-        path=sqrt(1.0+(dj*dj+dk*dk)/(di*di));
-    }
-}
-
-// WIP: compute rates in a separate step ? This would require having a path and
-coldensh_in grid (replace cdh_out by path)
-__global__ void do_rates(
-    const int rad,
-    const int i0,
-    const int j0,
-    const int k0,
-    const double strength,
-    double* coldensh_in,
-    double* path,
-    double* ndens,
-    double* phi_ion,
-    const double sig,
-    const double dr,
-    const int m1
-)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
-    int k = blockIdx.z * blockDim.z + threadIdx.z;
-
-    if (abs(i) + abs(j) + abs(k) <= rad)
-    {
-        double vol_ph;
-        int pos[3];
-        pos[0] = modulo_gpu(i,m1);
-        pos[1] = modulo_gpu(j,m1);
-        pos[2] = modulo_gpu(k,m1);
-        double cdh_in = coldensh_in[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-        double nHI = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-        double cdh_out;
-        double phi;
-        if (i == i0 && j == j0 && k == k0)
-        {
-            vol_ph = dr*dr*dr / (4*M_PI);
-        }
-        else
-        {
-            double xs = dr*(i-i0);
-            double ys = dr*(j-j0);
-            double zs = dr*(k-k0);
-            double dist2=xs*xs+ys*ys+zs*zs;
-            vol_ph = dist2 * path[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-        }
-
-        cdh_out = cdh_in + path[mem_offst_gpu(pos[0],pos[1],pos[2],m1)]*nHI;
-        phi = photoion_rates_test_gpu(strength,cdh_in,cdh_out,vol_ph,sig);
-        phi_ion[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] += phi / nHI;
-
-    }
-}
-
-
-// ========================================================================
-// Raytracing kernel, adapted from C2Ray. Calculates in/out column density
-// to the current cell and finds the photoionization rate
-// ========================================================================
-__global__ void evolve0D_gpu_old(
-    const int q,
-    const int ns,
-    int* src_pos,
-    double* src_flux,
-    double* coldensh_out,
-    const double sig,
-    const double dr,
-    const double* ndens,
-    const double* xh_av,
-    double* phi_ion,
-    const int m1,
-    const double* photo_table,
-    const double minlogtau,
-    const double dlogtau,
-    const int num_tau,
-    const int last_l,
-    const int last_r
-)
-{
-    // x and y coordinates are cartesian
-    int i = - q + blockIdx.x * blockDim.x + threadIdx.x;
-    int j = - q + blockIdx.y * blockDim.y + threadIdx.y;
-
-    int sgn, mq;
-
-    // Determine whether we are in the upper or lower pyramid of the octahedron
-    if (blockIdx.z == 0)
-        {sgn = 1; mq = q;}
-    else
-        {sgn = -1; mq = q-1;}
-
-    int k = sgn*q - sgn*(abs(i) + abs(j));
-
-    // We only treat the cell if it respects two conditions:
-    // 1. It must be part of the shell (see figure in appendix A of the paper)
-    // 2. It must be within the maximum box size arount the source (see last_l
-and last_r def above) <- This is also important to avoid race conditions at the
-border
-    // TODO: in the future, it may be an interesting optimization to limit the
-number of threads launched in the first place,
-    // rather than doing this "brute force" approach where about half of the
-threads don't pass this "if" check and immediately return if (abs(i) + abs(j) <=
-mq && (i >= last_l) && (i <= last_r) && (j >= last_l) && (j <= last_r) && (k >=
-last_l) && (k <= last_r))
-    {
-        // Get source properties
-        int i0 = src_pos[3*ns + 0];
-        int j0 = src_pos[3*ns + 1];
-        int k0 = src_pos[3*ns + 2];
-        double strength = src_flux[ns];
-
-        // Center to source
-        i += i0;
-        j += j0;
-        k += k0;
-
-        int pos[3];
-        double path;
-        double coldensh_in;                                // Column density to
-the cell double nHI_p;                                      // Local density of
-neutral hydrogen in the cell double xh_av_p; // Local ionization fraction of
-cell
-
-        double xs, ys, zs;
-        double dist2;
-        double vol_ph;
-
-        // When not in periodic mode, only treat cell if its in the grid
-        #if !defined(PERIODIC)
-        if (in_box_gpu(i,j,k,m1))
-        #endif
-        {
-            // Map to periodic grid
-            pos[0] = modulo_gpu(i,m1);
-            pos[1] = modulo_gpu(j,m1);
-            pos[2] = modulo_gpu(k,m1);
-
-            //printf("pos = %i %i %i \n",pos[0]-i0,pos[1]-j0,pos[2]-k0);
-
-            // Get local ionization fraction & Hydrogen density
-            xh_av_p = xh_av[mem_offst_gpu(pos[0],pos[1],pos[2],m1)];
-            nHI_p = ndens[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] * (1.0 -
-xh_av_p);
-
-            // Only treat cell if it hasn't been done before
-            if (coldensh_out[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] == 0.0)
-            {
-                // If its the source cell, just find path (no incoming column
-density) if (i == i0 && j == j0 && k == k0)
-                {
-                    coldensh_in = 0.0;
-                    path = 0.5*dr;
-                    // vol_ph = dr*dr*dr / (4*M_PI);
-                    vol_ph = dr*dr*dr;
-                }
-
-                // If its another cell, do interpolation to find incoming column
-density else
-                {
-                    cinterp_gpu(i,j,k,i0,j0,k0,coldensh_in,path,coldensh_out,sig,m1);
-                    path *= dr;
-                    // Find the distance to the source
-                    xs = dr*(i-i0);
-                    ys = dr*(j-j0);
-                    zs = dr*(k-k0);
-                    dist2=xs*xs+ys*ys+zs*zs;
-                    // vol_ph = dist2 * path;
-                    vol_ph = dist2 * path * FOURPI;
-                }
-
-                // Add to column density array. TODO: is this really necessary ?
-                coldensh_out[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] =
-coldensh_in + nHI_p * path;
-
-                // Compute photoionization rates from column density. WARNING:
-for now this is limited to the grey-opacity test case source if (coldensh_in <=
-MAX_COLDENSH)
-                {
-                    #if defined(GREY_NOTABLES)
-                    double phi =
-photoion_rates_test_gpu(strength,coldensh_in,coldensh_out[mem_offst_gpu(pos[0],pos[1],pos[2],m1)],vol_ph,sig);
-                    #else
-                    double phi =
-photoion_rates_gpu(strength,coldensh_in,coldensh_out[mem_offst_gpu(pos[0],pos[1],pos[2],m1)],vol_ph,sig,photo_table,photo_table,minlogtau,dlogtau,num_tau);
-                    #endif
-                    // Divide the photo-ionization rates by the appropriate
-neutral density
-                    // (part of the photon-conserving rate prescription)
-                    phi /= nHI_p;
-
-                    phi_ion[mem_offst_gpu(pos[0],pos[1],pos[2],m1)] += phi;
-                }
-            }
-        }
-    }
-}
-
-*/
+}  // namespace asora

@@ -34,7 +34,9 @@ inline __device__ int sign_gpu(const double &x) {
 }
 
 // Flat-array index from 3D (i,j,k) indices
-inline __device__ int mem_offst_gpu(const int &i, const int &j, const int &k, const int &N) {
+inline __device__ int mem_offst_gpu(
+    const int &i, const int &j, const int &k, const int &N
+) {
     return N * N * i + N * j + k;
 }
 
@@ -45,7 +47,9 @@ __device__ inline double weightf_gpu(const double &cd, const double &sig) {
 
 // Mapping from cartesian coordinates of a cell to reduced cache memory space
 // (here N = 2qmax + 1 in general)
-__device__ inline int cart2cache(const int &i, const int &j, const int &k, const int &N) {
+__device__ inline int cart2cache(
+    const int &i, const int &j, const int &k, const int &N
+) {
     return N * N * int(k < 0) + N * i + j;
 }
 
@@ -76,8 +80,10 @@ static __inline__ __device__ double atomicAdd(double *address, double val) {
     if (val == 0.0) return __longlong_as_double(old);
     do {
         assumed = old;
-        old = atomicCAS(address_as_ull, assumed,
-                        __double_as_longlong(val + __longlong_as_double(assumed)));
+        old = atomicCAS(
+            address_as_ull, assumed,
+            __double_as_longlong(val + __longlong_as_double(assumed))
+        );
     } while (assumed != old);
     return __longlong_as_double(old);
 }
@@ -86,19 +92,20 @@ static __inline__ __device__ double atomicAdd(double *address, double val) {
 // ========================================================================
 // Raytrace all sources and add up ionization rates
 // ========================================================================
-void do_all_sources_gpu(const double &R, double *coldensh_out_hi, double *coldensh_out_hei,
-                        double *coldensh_out_heii,
-                        double *sig_hi,  // These now are arrays of the cross section for the three
-                                         // elements
-                        double *sig_hei, double *sig_heii,
-                        const int &NumBin1,  // and these are the size of the frequency sub-bins (in
-                                             // the original paper this was 1, 26 and 20)
-                        const int &NumBin2, const int &NumBin3, const double &dr, double *ndens,
-                        double *xHII_av, double *xHeII_av, double *xHeIII_av, double *phi_ion_HI,
-                        double *phi_ion_HeI, double *phi_ion_HeII, double *phi_heat_HI,
-                        double *phi_heat_HeI, double *phi_heat_HeII, const int &NumSrc,
-                        const int &m1, const double &minlogtau, const double &dlogtau,
-                        const int &NumTau) {
+void do_all_sources_gpu(
+    const double &R, double *coldensh_out_hi, double *coldensh_out_hei,
+    double *coldensh_out_heii,
+    double *sig_hi,  // These now are arrays of the cross section for the three
+                     // elements
+    double *sig_hei, double *sig_heii,
+    const int &NumBin1,  // and these are the size of the frequency sub-bins (in
+                         // the original paper this was 1, 26 and 20)
+    const int &NumBin2, const int &NumBin3, const double &dr, double *ndens,
+    double *xHII_av, double *xHeII_av, double *xHeIII_av, double *phi_ion_HI,
+    double *phi_ion_HeI, double *phi_ion_HeII, double *phi_heat_HI,
+    double *phi_heat_HeI, double *phi_heat_HeII, const int &NumSrc, const int &m1,
+    const double &minlogtau, const double &dlogtau, const int &NumTau
+) {
     // Byte-size of grid data
     int meshsize = m1 * m1 * m1 * sizeof(double);
 
@@ -155,20 +162,22 @@ void do_all_sources_gpu(const double &R, double *coldensh_out_hi, double *colden
 
     // Loop over batches of sources
     for (int ns = 0; ns < NumSrc; ns += NUM_SRC_PAR) {
-        evolve0D_gpu<<<gs, bs>>>(R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev,
-                                 cdh_dev, cdhei_dev, cdheii_dev, sig_hi_dev, sig_hei_dev,
-                                 sig_heii_dev, dr, n_dev, xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev,
-                                 phi_HeI_dev, phi_HeII_dev, heat_HI_dev, heat_HeI_dev,
-                                 heat_HeII_dev, m1, photo_thin_table_dev, photo_thick_table_dev,
-                                 heat_thin_table_dev, heat_thick_table_dev, minlogtau, dlogtau,
-                                 NumTau, NumBin1, NumBin2, NumBin3, NUM_FREQ, last_l, last_r);
+        evolve0D_gpu<<<gs, bs>>>(
+            R, max_q, ns, NumSrc, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev,
+            cdhei_dev, cdheii_dev, sig_hi_dev, sig_hei_dev, sig_heii_dev, dr, n_dev,
+            xHI_dev, xHeI_dev, xHeII_dev, phi_HI_dev, phi_HeI_dev, phi_HeII_dev,
+            heat_HI_dev, heat_HeI_dev, heat_HeII_dev, m1, photo_thin_table_dev,
+            photo_thick_table_dev, heat_thin_table_dev, heat_thick_table_dev, minlogtau,
+            dlogtau, NumTau, NumBin1, NumBin2, NumBin3, NUM_FREQ, last_l, last_r
+        );
 
         // Check for errors
         auto error = cudaGetLastError();
         if (error != cudaSuccess) {
             throw std::runtime_error(
-                "Error Launching Kernel: " + std::string(cudaGetErrorName(error)) + " - " +
-                std::string(cudaGetErrorString(error)));
+                "Error Launching Kernel: " + std::string(cudaGetErrorName(error)) +
+                " - " + std::string(cudaGetErrorString(error))
+            );
         }
 
         // Sync device to be sure (is this required ??)
@@ -178,14 +187,22 @@ void do_all_sources_gpu(const double &R, double *coldensh_out_hi, double *colden
     // Copy the accumulated ionization fraction and column density back to the
     // host
     auto error1 = cudaMemcpy(phi_ion_HI, phi_HI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error2 = cudaMemcpy(phi_ion_HeI, phi_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error3 = cudaMemcpy(phi_ion_HeII, phi_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error4 = cudaMemcpy(phi_heat_HI, heat_HI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error5 = cudaMemcpy(phi_heat_HeI, heat_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error6 = cudaMemcpy(phi_heat_HeII, heat_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error7 = cudaMemcpy(coldensh_out_hi, cdh_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error8 = cudaMemcpy(coldensh_out_hei, cdhei_dev, meshsize, cudaMemcpyDeviceToHost);
-    auto error9 = cudaMemcpy(coldensh_out_heii, cdheii_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error2 =
+        cudaMemcpy(phi_ion_HeI, phi_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error3 =
+        cudaMemcpy(phi_ion_HeII, phi_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error4 =
+        cudaMemcpy(phi_heat_HI, heat_HI_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error5 =
+        cudaMemcpy(phi_heat_HeI, heat_HeI_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error6 =
+        cudaMemcpy(phi_heat_HeII, heat_HeII_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error7 =
+        cudaMemcpy(coldensh_out_hi, cdh_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error8 =
+        cudaMemcpy(coldensh_out_hei, cdhei_dev, meshsize, cudaMemcpyDeviceToHost);
+    auto error9 =
+        cudaMemcpy(coldensh_out_heii, cdheii_dev, meshsize, cudaMemcpyDeviceToHost);
 }
 
 // ========================================================================
@@ -195,17 +212,21 @@ void do_all_sources_gpu(const double &R, double *coldensh_out_hi, double *colden
 __global__ void evolve0D_gpu(
     const double Rmax_LLS,
     const int q_max,  // Is now the size of max q
-    const int ns_start, const int NumSrc, const int num_src_par, int *src_pos, double *src_flux,
-    double *coldensh_out_hi, double *coldensh_out_hei, double *coldensh_out_heii,
+    const int ns_start, const int NumSrc, const int num_src_par, int *src_pos,
+    double *src_flux, double *coldensh_out_hi, double *coldensh_out_hei,
+    double *coldensh_out_heii,
     double *sig_hi,  // This are the cross sections for the three elements at
                      // different frequency (frequency loop is outside)
-    double *sig_hei, double *sig_heii, const double dr, const double *ndens, const double *xHII_av,
-    const double *xHeII_av, const double *xHeIII_av, double *phi_ion_HI, double *phi_ion_HeI,
-    double *phi_ion_HeII, double *phi_heat_HI, double *phi_heat_HeI, double *phi_heat_HeII,
-    const int m1, const double *photo_thin_table, const double *photo_thick_table,
-    const double *heat_thin_table, const double *heat_thick_table, const double minlogtau,
-    const double dlogtau, const int NumTau, const int NumBin1, const int NumBin2, const int NumBin3,
-    const int NumFreq, const int last_l, const int last_r) {
+    double *sig_hei, double *sig_heii, const double dr, const double *ndens,
+    const double *xHII_av, const double *xHeII_av, const double *xHeIII_av,
+    double *phi_ion_HI, double *phi_ion_HeI, double *phi_ion_HeII, double *phi_heat_HI,
+    double *phi_heat_HeI, double *phi_heat_HeII, const int m1,
+    const double *photo_thin_table, const double *photo_thick_table,
+    const double *heat_thin_table, const double *heat_thick_table,
+    const double minlogtau, const double dlogtau, const int NumTau, const int NumBin1,
+    const int NumBin2, const int NumBin3, const int NumFreq, const int last_l,
+    const int last_r
+) {
     /* The raytracing kernel proceeds as follows:
     1. Select the source based on the block number (within the batch = the grid)
     2. Loop over the asora q-cells around the source, up to q_max (loop "A")
@@ -270,10 +291,10 @@ __global__ void evolve0D_gpu(
                     }
                     k = sgn * q - sgn * (abs(i) + abs(j));
 
-                    // Only do cell if it is within the (shifted under periodicity) grid,
-                    // i.e. at most ~N cells away from the source
-                    if ((i >= last_l) && (i <= last_r) && (j >= last_l) && (j <= last_r) &&
-                        (k >= last_l) && (k <= last_r)) {
+                    // Only do cell if it is within the (shifted under periodicity)
+                    // grid, i.e. at most ~N cells away from the source
+                    if ((i >= last_l) && (i <= last_r) && (j >= last_l) &&
+                        (j <= last_r) && (k >= last_l) && (k <= last_r)) {
                         // Get source properties
                         int i0 = src_pos[3 * ns + 0];
                         int j0 = src_pos[3 * ns + 1];
@@ -293,9 +314,11 @@ __global__ void evolve0D_gpu(
                         double nHI_p;            // Local density of HI in the cell
                         double nHeI_p;           // Local density of HeI in the cell
                         double nHeII_p;          // Local density of HeII in the cell
-                        double xh_av_p;          // Local hydrogen ionization fraction of cell
-                        double xhei_av_p;        // Local helium first ionization fraction of cell
-                        double xheii_av_p;       // Local helium second ionization fraction of cell
+                        double xh_av_p;    // Local hydrogen ionization fraction of cell
+                        double xhei_av_p;  // Local helium first ionization fraction of
+                                           // cell
+                        double xheii_av_p;  // Local helium second ionization fraction
+                                            // of cell
 
                         double xs, ys, zs;
                         double dist2;
@@ -312,9 +335,12 @@ __global__ void evolve0D_gpu(
                             pos[2] = modulo_gpu(k, m1);
 
                             // Get local ionization fraction of HII, HeII and HeIII
-                            xh_av_p = xHII_av[mem_offst_gpu(pos[0], pos[1], pos[2], m1)];
-                            xheii_av_p = xHeIII_av[mem_offst_gpu(pos[0], pos[1], pos[2], m1)];
-                            xhei_av_p = xHeII_av[mem_offst_gpu(pos[0], pos[1], pos[2], m1)];
+                            xh_av_p =
+                                xHII_av[mem_offst_gpu(pos[0], pos[1], pos[2], m1)];
+                            xheii_av_p =
+                                xHeIII_av[mem_offst_gpu(pos[0], pos[1], pos[2], m1)];
+                            xhei_av_p =
+                                xHeII_av[mem_offst_gpu(pos[0], pos[1], pos[2], m1)];
 
                             // Get local HI number density
                             nHI_p = ndens[mem_offst_gpu(pos[0], pos[1], pos[2], m1)] *
@@ -328,9 +354,9 @@ __global__ void evolve0D_gpu(
                             nHeII_p = ndens[mem_offst_gpu(pos[0], pos[1], pos[2], m1)] *
                                       abu_he_mass * xhei_av_p;
 
-                            // If its the source cell, just find path (no incoming column
-                            // density), otherwise if its another cell, do interpolation to
-                            // find incoming column density
+                            // If its the source cell, just find path (no incoming
+                            // column density), otherwise if its another cell, do
+                            // interpolation to find incoming column density
                             if (i == i0 && j == j0 && k == k0) {
                                 coldens_in_hi = 0.0;
                                 coldens_in_hei = 0.0;
@@ -340,12 +366,18 @@ __global__ void evolve0D_gpu(
                                 vol_ph = dr * dr * dr;
                                 dist2 = 0.0;
                             } else {
-                                cinterp_gpu(i, j, k, i0, j0, k0, coldens_in_hi, path,
-                                            coldensh_out_hi + cdh_offset, sig_hi[0], m1);
-                                cinterp_gpu(i, j, k, i0, j0, k0, coldens_in_hei, path,
-                                            coldensh_out_hei + cdh_offset, sig_hei[0], m1);
-                                cinterp_gpu(i, j, k, i0, j0, k0, coldens_in_heii, path,
-                                            coldensh_out_heii + cdh_offset, sig_heii[0], m1);
+                                cinterp_gpu(
+                                    i, j, k, i0, j0, k0, coldens_in_hi, path,
+                                    coldensh_out_hi + cdh_offset, sig_hi[0], m1
+                                );
+                                cinterp_gpu(
+                                    i, j, k, i0, j0, k0, coldens_in_hei, path,
+                                    coldensh_out_hei + cdh_offset, sig_hei[0], m1
+                                );
+                                cinterp_gpu(
+                                    i, j, k, i0, j0, k0, coldens_in_heii, path,
+                                    coldensh_out_heii + cdh_offset, sig_heii[0], m1
+                                );
 
                                 path *= dr;
                                 // Find the distance to the source
@@ -357,23 +389,33 @@ __global__ void evolve0D_gpu(
                                 vol_ph = dist2 * path * FOURPI;
                             }
 
-                            // Compute outgoing column density and add to array for subsequent
-                            // interpolations
+                            // Compute outgoing column density and add to array for
+                            // subsequent interpolations
                             double cdo_hi = coldens_in_hi + nHI_p * path;
                             double cdo_hei = coldens_in_hei + nHeI_p * path;
                             double cdo_heii = coldens_in_heii + nHeII_p * path;
 
-                            // Add the computed column density for the three species to the
-                            // array ATOMICALLY
-                            atomicAdd(coldensh_out_hi + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                      cdo_hi);
-                            atomicAdd(coldensh_out_hei + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                      cdo_hei);
-                            atomicAdd(coldensh_out_heii + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                      cdo_heii);
+                            // Add the computed column density for the three species to
+                            // the array ATOMICALLY
+                            atomicAdd(
+                                coldensh_out_hi +
+                                    mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                cdo_hi
+                            );
+                            atomicAdd(
+                                coldensh_out_hei +
+                                    mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                cdo_hei
+                            );
+                            atomicAdd(
+                                coldensh_out_heii +
+                                    mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                cdo_heii
+                            );
 
-                            // Compute photoionization rates from column density. WARNING: for
-                            // now this is limited to the grey-opacity test case source
+                            // Compute photoionization rates from column density.
+                            // WARNING: for now this is limited to the grey-opacity test
+                            // case source
                             if ((coldens_in_hi <= MAX_COLDENSH) &&
                                 (coldens_in_hei <= MAX_COLDENSH) &&
                                 (coldens_in_heii <= MAX_COLDENSH) &&
@@ -386,7 +428,8 @@ __global__ void evolve0D_gpu(
                                     double tau_out_hei;
                                     double tau_out_heii;
 
-                                    if (nf < NumBin1)  // first frequency bin ionizes just HI
+                                    if (nf <
+                                        NumBin1)  // first frequency bin ionizes just HI
                                     {
                                         // Compute optical depth
                                         tau_out_hi = cdo_hi * sig_hi[nf];
@@ -395,8 +438,10 @@ __global__ void evolve0D_gpu(
                                         tau_in_tot = coldens_in_hi * sig_hi[nf];
                                         tau_out_tot = tau_out_hi;
                                     } else if ((nf >= NumBin1) &&
-                                               (nf < NumBin1 + NumBin2))  // second frequency bin
-                                                                          // ionizes HI and HeI
+                                               (nf <
+                                                NumBin1 +
+                                                    NumBin2))  // second frequency bin
+                                                               // ionizes HI and HeI
                                     {
                                         // Compute optical depth
                                         tau_out_hi = cdo_hi * sig_hi[nf];
@@ -408,8 +453,9 @@ __global__ void evolve0D_gpu(
                                         tau_out_tot = tau_out_hi + tau_out_hei;
                                     } else if ((nf >= NumBin1 + NumBin2) &&
                                                (nf < NumBin1 + NumBin2 +
-                                                         NumBin3))  // third frequency bin ionizes
-                                                                    // HI, HeI and HeII
+                                                         NumBin3))  // third frequency
+                                                                    // bin ionizes HI,
+                                                                    // HeI and HeII
                                     {
                                         // Compute optical depth
                                         tau_out_hi = cdo_hi * sig_hi[nf];
@@ -420,53 +466,76 @@ __global__ void evolve0D_gpu(
                                         tau_in_tot = coldens_in_hi * sig_hi[nf] +
                                                      coldens_in_hei * sig_hei[nf] +
                                                      coldens_in_heii * sig_heii[nf];
-                                        tau_out_tot = tau_out_hi + tau_out_hei + tau_out_heii;
+                                        tau_out_tot =
+                                            tau_out_hi + tau_out_hei + tau_out_heii;
                                     }
 
-                                    // printf("%i\t%e\t%e\t%e\n", nf, sig_hi[nf], sig_hei[nf],
-                                    // sig_heii[nf]); printf("%i\t%.3e\t%.3e\t%e\n", nf,
-                                    // tau_in_tot, tau_out_tot, tau_out_tot-tau_in_tot);
+                                    // printf("%i\t%e\t%e\t%e\n", nf, sig_hi[nf],
+                                    // sig_hei[nf], sig_heii[nf]);
+                                    // printf("%i\t%.3e\t%.3e\t%e\n", nf, tau_in_tot,
+                                    // tau_out_tot, tau_out_tot-tau_in_tot);
 
                                     // printf("%lf\n", vol_ph);
                                     double phi = photoion_rates_gpu(
                                         strength, tau_in_tot, tau_out_tot, nf, vol_ph,
-                                        photo_thin_table, photo_thick_table, minlogtau, dlogtau,
-                                        NumTau, NumFreq);
+                                        photo_thin_table, photo_thick_table, minlogtau,
+                                        dlogtau, NumTau, NumFreq
+                                    );
                                     double heat = photoheat_rates_gpu(
                                         strength, tau_in_tot, tau_out_tot, nf, vol_ph,
-                                        heat_thin_table, heat_thick_table, minlogtau, dlogtau,
-                                        NumTau, NumFreq);
+                                        heat_thin_table, heat_thick_table, minlogtau,
+                                        dlogtau, NumTau, NumFreq
+                                    );
 
-                                    // Assign the photo-ionization and heating rates to each
-                                    // element (part of the photon-conserving rate prescription)
-                                    double phi_HI = phi * tau_out_hi / tau_out_tot / nHI_p;
-                                    double phi_HeI = phi * tau_out_hei / tau_out_tot / nHeI_p;
-                                    double phi_HeII = phi * tau_out_heii / tau_out_tot / nHeII_p;
-                                    double heat_HI = heat * tau_out_hi / tau_out_tot / nHI_p;
-                                    double heat_HeI = heat * tau_out_hei / tau_out_tot / nHeI_p;
-                                    double heat_HeII = heat * tau_out_heii / tau_out_tot / nHeII_p;
+                                    // Assign the photo-ionization and heating rates to
+                                    // each element (part of the photon-conserving rate
+                                    // prescription)
+                                    double phi_HI =
+                                        phi * tau_out_hi / tau_out_tot / nHI_p;
+                                    double phi_HeI =
+                                        phi * tau_out_hei / tau_out_tot / nHeI_p;
+                                    double phi_HeII =
+                                        phi * tau_out_heii / tau_out_tot / nHeII_p;
+                                    double heat_HI =
+                                        heat * tau_out_hi / tau_out_tot / nHI_p;
+                                    double heat_HeI =
+                                        heat * tau_out_hei / tau_out_tot / nHeI_p;
+                                    double heat_HeII =
+                                        heat * tau_out_heii / tau_out_tot / nHeII_p;
 
-                                    // Add the computed ionization and heating rate to the array
-                                    // ATOMICALLY since multiple blocks could be writing to the
-                                    // same cell at the same time!
+                                    // Add the computed ionization and heating rate to
+                                    // the array ATOMICALLY since multiple blocks could
+                                    // be writing to the same cell at the same time!
                                     atomicAdd(
-                                        phi_ion_HI + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                        phi_HI);
+                                        phi_ion_HI +
+                                            mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                        phi_HI
+                                    );
                                     atomicAdd(
-                                        phi_ion_HeI + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                        phi_HeI);
+                                        phi_ion_HeI +
+                                            mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                        phi_HeI
+                                    );
                                     atomicAdd(
-                                        phi_ion_HeII + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                        phi_HeII);
+                                        phi_ion_HeII +
+                                            mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                        phi_HeII
+                                    );
                                     atomicAdd(
-                                        phi_heat_HI + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                        heat_HI);
+                                        phi_heat_HI +
+                                            mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                        heat_HI
+                                    );
                                     atomicAdd(
-                                        phi_heat_HeI + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                        heat_HeI);
+                                        phi_heat_HeI +
+                                            mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                        heat_HeI
+                                    );
                                     atomicAdd(
-                                        phi_heat_HeII + mem_offst_gpu(pos[0], pos[1], pos[2], m1),
-                                        heat_HeII);
+                                        phi_heat_HeII +
+                                            mem_offst_gpu(pos[0], pos[1], pos[2], m1),
+                                        heat_HeII
+                                    );
 
                                 }  // end loop freq
                             }
@@ -484,11 +553,13 @@ __global__ void evolve0D_gpu(
 // ========================================================================
 // Short-characteristics interpolation function
 // ========================================================================
-__device__ void cinterp_gpu(const int i, const int j, const int k, const int i0, const int j0,
-                            const int k0, double &cdensi, double &path, double *coldensh_out,
-                            const double sigma_at_freq,  // This is now considered for any
-                                                         // elements at any frequency
-                            const int &m1) {
+__device__ void cinterp_gpu(
+    const int i, const int j, const int k, const int i0, const int j0, const int k0,
+    double &cdensi, double &path, double *coldensh_out,
+    const double sigma_at_freq,  // This is now considered for any
+                                 // elements at any frequency
+    const int &m1
+) {
     int idel, jdel, kdel;
     int idela, jdela, kdela;
     int im, jm, km;
