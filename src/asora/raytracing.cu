@@ -6,7 +6,6 @@
 
 #include <cuda_runtime.h>
 
-#include <cuda/std/array>
 #include <cuda/std/tuple>
 #include <cuda/std/utility>
 #include <exception>
@@ -31,44 +30,14 @@ namespace {
     // Fortran-type modulo function (C modulo is signed)
     __host__ __device__ int modulo(int a, int b) { return (a % b + b) % b; }
 
-    // Sign function on the device
-    __host__ __device__ int sign(double x) { return x >= 0 ? 1 : -1; }
-
     // Flat-array index from 3D (i,j,k) indices
     __device__ int mem_offst_gpu(int i, int j, int k, int N) {
         return N * N * modulo(i, N) + N * modulo(j, N) + modulo(k, N);
     }
 
-    // Mapping from cartesian coordinates of a cell to reduced cache memory space
-    // (here N = 2qmax + 1 in general)
-    [[maybe_unused]] __device__ int cart2cache(int i, int j, int k, int N) {
-        return N * N * int(k < 0) + N * i + j;
-    }
-
-    // Mapping from linear 1D indices to the cartesian coords of a q-shell in asora
-    __device__ void linthrd2cart(int s, int q, int &i, int &j) {
-        if (s == 0) {
-            i = q;
-            j = 0;
-            return;
-        }
-
-        int b = (s - 1) / (2 * q);
-        int a = (s - 1) % (2 * q);
-
-        if (a + 2 * b > 2 * q) {
-            a = a + 1;
-            b = b - 1 - q;
-        }
-
-        i = a + b - q;
-        j = b;
-    }
-
-// When using a GPU with compute capability < 6.0, we must manually define the
-// atomicAdd function for doubles
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 600
-    static __inline__ __device__ double atomicAdd(double *address, double val) {
+    // atomicAdd definition for GPUs with compute capability < 6.0
+    __inline__ __device__ double atomicAdd(double *address, double val) {
         unsigned long long int *address_as_ull = (unsigned long long int *)address;
         unsigned long long int old = *address_as_ull, assumed;
         if (val == 0.0) return __longlong_as_double(old);
@@ -83,14 +52,44 @@ namespace {
     }
 #endif
 
-    // Check if point is in domain (deprecated)
-    [[maybe_unused]] __device__ bool in_box_gpu(int i, int j, int k, int N) {
+#if !defined(PERIODIC)
+    // Check if point is in domain
+    __device__ bool in_box_gpu(int i, int j, int k, int N) {
         return (i >= 0 && i < N) && (j >= 0 && j < N) && (k >= 0 && k < N);
     }
+#endif
 
 }  // namespace
 
 namespace asora {
+
+    // Mapping from linear 1D indices to the cartesian coords of a q-shell in asora
+    // Determine if cell is in top or bottom part of the shell (the
+    // mapping is slightly different due to the part that is on the
+    // same z-plane as the source)
+    __host__ __device__ cuda::std::array<int, 3> linthrd2cart(int s, int q) {
+        if (s == 0) return {q, 0, 0};
+
+        auto s_top = 2 * q * (q + 1) + 1;
+        if (s == s_top) return {q - 1, 0, -1};
+
+        int sign = 1;
+        int q1 = q;
+        if (s > s_top) {
+            s -= s_top;
+            q1 -= 1;
+            sign = -1;
+        }
+
+        auto j = (s - 1) / (2 * q1);
+        auto i = (s - 1) % (2 * q1) + j - q1;
+        if (i + j > q1) {
+            i -= q1;
+            j -= q1 + 1;
+        }
+
+        return {i, j, sign * (q - abs(i) - abs(j))};
+    }
 
     // ========================================================================
     // Raytrace all sources and add up ionization rates
@@ -143,6 +142,7 @@ namespace asora {
         // Loop over batches of sources
         for (int ns = 0; ns < num_src; ns += NUM_SRC_PAR) {
             // Raytrace the current batch of sources in parallel
+            // Consecutive kernel launches are in the same stream and so are serialized
             evolve0D_gpu<<<gs, bs>>>(
                 R, max_q, ns, num_src, NUM_SRC_PAR, src_pos_dev, src_flux_dev, cdh_dev,
                 sig, dr, n_dev, x_dev, phi_dev, m1, photo_thin_table_dev,
@@ -151,8 +151,6 @@ namespace asora {
 
             try {
                 safe_cuda(cudaPeekAtLastError());
-                // Sync device to be sure (is this required ??)
-                safe_cuda(cudaDeviceSynchronize());
             } catch (const std::exception &) {
                 return;
             }
@@ -160,6 +158,7 @@ namespace asora {
 
         try {
             // Copy the accumulated ionization fraction back to the host
+            // Memcpy blocks until last kernel has finished
             safe_cuda(cudaMemcpy(phi_ion, phi_dev, meshsize, cudaMemcpyDeviceToHost));
             safe_cuda(
                 cudaMemcpy(coldensh_out, cdh_dev, meshsize, cudaMemcpyDeviceToHost)
@@ -214,39 +213,23 @@ namespace asora {
         for (int q = 0; q <= q_max; q++) {
             // We figure out the number of cells in the shell and determine how many
             // passes the block needs to take to treat all of them
-            int num_cells = 4 * q * q + 2;
-            int Npass = num_cells / blockDim.x + 1;
+            int num_cells = q > 0 ? 4 * q * q + 2 : 1;
+            int Npass = std::ceil(static_cast<float>(num_cells) / blockDim.x);
 
             // The threads have 1D indices 0,...,blocksize-1. We map these 1D
             // indices to the 3D positions of the cells inside the shell via the
             // mapping described in the paper. Since in general there are more cells
             // than threads, there is an additional loop here (B) so that all cells
             // are treated.
-            int s_end = q > 0 ? num_cells : 1;
-            int s_end_top = 2 * q * (q + 1) + 1;
-
-            // (B) Loop over cells in the shell
             for (int ipass = 0; ipass < Npass; ipass++) {
                 // "s" is the index in the 1D-range [0,...,4q^2 + 1] that gets
                 // mapped to the cells in the shell
                 int s = ipass * blockDim.x + threadIdx.x;
 
                 // Ensure the thread maps to a valid cell
-                if (s >= s_end) continue;
+                if (s >= num_cells) continue;
 
-                int i, j, k;
-                int sgn;
-                // Determine if cell is in top or bottom part of the shell (the
-                // mapping is slightly different due to the part that is on the
-                // same z-plane as the source)
-                if (s < s_end_top) {
-                    sgn = 1;
-                    linthrd2cart(s, q, i, j);
-                } else {
-                    sgn = -1;
-                    linthrd2cart(s - s_end_top, q - 1, i, j);
-                }
-                k = sgn * q - sgn * (abs(i) + abs(j));
+                auto &&[i, j, k] = linthrd2cart(s, q);
 
                 // Only do cell if it is within the (shifted under periodicity)
                 // grid, i.e. at most ~N cells away from the source
@@ -263,16 +246,15 @@ namespace asora {
                 j += j0;
                 k += k0;
 
-// When not in periodic mode, only treat cell if its in the grid
 #if !defined(PERIODIC)
+                // When not in periodic mode, only treat cell if its in the grid
                 if (!in_box_gpu(i, j, k, m1)) continue;
 #endif
                 // Map to periodic grid
                 auto offset = mem_offst_gpu(i, j, k, m1);
 
                 // Get local ionization fraction & neutral Hydrogen density in the cell
-                double xh_av_p = xh_av[offset];
-                double nHI_p = ndens[offset] * (1.0 - xh_av_p);
+                double nHI_p = ndens[offset] * (1.0 - xh_av[offset]);
 
                 // PH (29.9.23): There used to be a check here if the
                 // coldensh_out of the current cell was zero to
@@ -282,31 +264,16 @@ namespace asora {
                 // source batches, which for large batches is a
                 // SIGNIFICANT bottleneck.
 
-                double coldensh_in;  // Column density to the cell
-                double path;
-                double vol_ph;
-                double dist2;
+                auto [coldensh_in, path] =
+                    cinterp_gpu(i, j, k, i0, j0, k0, coldensh_out, sig, m1);
+                path *= dr;
 
-                // If its the source cell, just find path (no incoming
-                // column density)
-                if (i == i0 && j == j0 && k == k0) {
-                    coldensh_in = 0.0;
-                    path = 0.5 * dr;
-                    vol_ph = dr * dr * dr;
-                    dist2 = 0.0;
-                }
-                // If its another cell, do interpolation to find
-                // incoming column density
-                else {
-                    cuda::std::tie(coldensh_in, path) =
-                        cinterp_gpu(i, j, k, i0, j0, k0, coldensh_out, sig, m1);
-                    path *= dr;
-                    auto xs = dr * (i - i0);
-                    auto ys = dr * (j - j0);
-                    auto zs = dr * (k - k0);
-                    dist2 = xs * xs + ys * ys + zs * zs;
-                    vol_ph = dist2 * path * FOURPI;
-                }
+                auto xs = dr * (i - i0);
+                auto ys = dr * (j - j0);
+                auto zs = dr * (k - k0);
+                auto dist2 = xs * xs + ys * ys + zs * zs;
+                auto vol_ph = (i == i0 && j == j0 && k == k0) ? std::pow(dr, 3)
+                                                              : dist2 * path * FOURPI;
 
                 // Compute outgoing column density and add to array for
                 // subsequent interpolations
@@ -356,8 +323,8 @@ namespace asora {
     ) {
         auto path = sqrt(1.0 + (di * di + dj * dj) / (dk * dk));
 
-        auto dx = abs(sign(di) - di / abs(dk));
-        auto dy = abs(sign(dj) - dj / abs(dk));
+        auto dx = abs(std::copysign(1.0, di) - di / std::abs(dk));
+        auto dy = abs(std::copysign(1.0, dj) - dj / std::abs(dk));
 
         auto s1 = (1. - dx) * (1. - dy);
         auto s2 = (1. - dy) * dx;
@@ -375,12 +342,14 @@ namespace asora {
         auto dj = j - j0;
         auto dk = k - k0;
 
-        auto ai = abs(di);
-        auto aj = abs(dj);
-        auto ak = abs(dk);
-        auto si = sign(di);
-        auto sj = sign(dj);
-        auto sk = sign(dk);
+        if (di == 0 && dj == 0 && dk == 0) return {0.0, 0.5};
+
+        auto si = static_cast<int>(std::copysignf(1.f, di));
+        auto sj = static_cast<int>(std::copysignf(1.f, dj));
+        auto sk = static_cast<int>(std::copysignf(1.f, dk));
+        auto ai = std::abs(di);
+        auto aj = std::abs(dj);
+        auto ak = std::abs(dk);
 
         auto get_column_density = [&coldensh_out, i, j, k,
                                    m1](int i_off, int j_off, int k_off) {
