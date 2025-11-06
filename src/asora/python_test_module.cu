@@ -47,6 +47,14 @@ PyObject *asora_test_cinterp(PyObject *self, PyObject *args) {
     return PyArray_Return(reinterpret_cast<PyArrayObject *>(output));
 }
 
+PyObject *asora_test_linthrd2cart(PyObject *self, PyObject *args) {
+    int s, q;
+    if (!PyArg_ParseTuple(args, "ii", &s, &q)) return NULL;
+
+    auto [i, j, k] = asoratest::linthrd2cart(s, q);
+    return Py_BuildValue("iii", i, j, k);
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -56,12 +64,14 @@ extern "C" {
 // ========================================================================
 static PyMethodDef asoraMethods[] = {
     {"cinterp", asora_test_cinterp, METH_VARARGS, "Geometric OCTA raytracing (GPU)"},
+    {"linthrd2cart", asora_test_linthrd2cart, METH_VARARGS,
+     "Shell mapping to cartesian coordinates"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
 static struct PyModuleDef asoramodule = {
     PyModuleDef_HEAD_INIT, "libasoratest",
-    "CUDA C++ implementation of the short-characteristics RT", -1, asoraMethods
+    "Exposure of internal functions for testing purposes", -1, asoraMethods
 };
 
 PyMODINIT_FUNC PyInit_libasoratest(void) {
