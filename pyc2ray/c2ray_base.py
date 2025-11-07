@@ -742,7 +742,8 @@ class C2Ray:
                     f.write(title + "\nLog file for pyC2Ray.\n\n")
 
         # all processor wait for rank=0 to be done. This is to avoid that some ranks go ahead.
-        self.comm.Barrier()
+        if self.mpi:
+            self.comm.Barrier()
 
     def _sinks_init(self):
         """Initialize sinks physics class for the mean-free path and clumping factor"""
