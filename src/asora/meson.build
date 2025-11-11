@@ -32,6 +32,7 @@ nvcc_flags = [
     'true',
     '-DPERIODIC',
     '-DLOCALRATES',
+    '-use_fast_math',
 ]
 nvlink_flags = [compute_cap]
 
