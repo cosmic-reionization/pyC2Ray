@@ -26,6 +26,7 @@ endif
 compute_cap = 'sm_' + compute_cap
 nvcc_flags = [
     '--gpu-architecture=' + compute_cap,
+    '-use_fast_math',
     '-rdc',
     'true',
     '-DPERIODIC',

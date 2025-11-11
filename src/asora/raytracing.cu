@@ -237,9 +237,11 @@ namespace asora {
                     (k < last_l) || (k > last_r))
                     continue;
 
-                // TODO: early exit on distance can be done here:
-                // auto dist2 = i * i + j * j + k * k;
-                // if (dist2 > Rmax_LLS * Rmax_LLS) continue;
+                // Reducing the following calculation changes the numerical precision of
+                // the result, albeit the physical result doesn't.
+                auto dist2 =
+                    (dr * i) * (dr * i) + (dr * j) * (dr * j) + (dr * k) * (dr * k);
+                if (dist2 / (dr * dr) > Rmax_LLS * Rmax_LLS) continue;
 
                 // Center to source
                 i += i0;
@@ -266,25 +268,19 @@ namespace asora {
 
                 auto [coldensh_in, path] =
                     cinterp_gpu(i, j, k, i0, j0, k0, coldensh_out, sig, m1);
-                path *= dr;
+                if (coldensh_in > MAX_COLDENSH) continue;
 
-                auto xs = dr * (i - i0);
-                auto ys = dr * (j - j0);
-                auto zs = dr * (k - k0);
-                auto dist2 = xs * xs + ys * ys + zs * zs;
-                auto vol_ph = (i == i0 && j == j0 && k == k0) ? std::pow(dr, 3)
+                path *= dr;
+                auto vol_ph = (i == i0 && j == j0 && k == k0) ? dr * dr * dr
                                                               : dist2 * path * FOURPI;
 
                 // Compute outgoing column density and add to array for
                 // subsequent interpolations
-                double cdho = coldensh_in + nHI_p * path;
-                coldensh_out[offset] = cdho;
+                coldensh_out[offset] = coldensh_in + nHI_p * path;
 
                 // Compute photoionization rates from column density.
                 // WARNING: for now this is limited to the grey-opacity
                 // test case source
-                if (coldensh_in > MAX_COLDENSH) continue;
-                if (dist2 / (dr * dr) > Rmax_LLS * Rmax_LLS) continue;
 
 #if defined(GREY_NOTABLES)
                 auto phi = photoion_rates_test_gpu(
@@ -292,8 +288,8 @@ namespace asora {
                 );
 #else
                 auto phi = photoion_rates_gpu(
-                    strength, coldensh_in, cdho, vol_ph, sig, photo_thin_table,
-                    photo_thick_table, minlogtau, dlogtau, num_tau
+                    strength, coldensh_in, coldensh_out[offset], vol_ph, sig,
+                    photo_thin_table, photo_thick_table, minlogtau, dlogtau, num_tau
                 );
 #endif
                 // Divide the photo-ionization rates by the
