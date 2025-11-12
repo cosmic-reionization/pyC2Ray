@@ -23,15 +23,17 @@ if compute_cap == ''
     endif
 endif
 
-compute_cap = 'sm_' + compute_cap
+# Target only one GPU
+compute_cap = '-arch=sm_' + compute_cap
+
 nvcc_flags = [
-    '--gpu-architecture=' + compute_cap,
+    compute_cap,
     '-rdc',
     'true',
     '-DPERIODIC',
     '-DLOCALRATES',
 ]
-nvlink_flags = ['-arch', compute_cap]
+nvlink_flags = [compute_cap]
 
 # CUDA sources for ASORA
 asora_sources = ['memory.cu', 'rates.cu', 'raytracing.cu', 'utils.cu']
@@ -42,9 +44,11 @@ py.extension_module(
     'libasora',
     'python_module.cu',
     dependencies: [py_dep, np_dep],
-    link_with: asora_core,
     install: true,
     subdir: 'pyc2ray/lib',
+    link_with: asora_core,
+    cuda_args: nvcc_flags,
+    link_args: nvlink_flags,
 )
 
 # Build ASORA test module with nvcc
