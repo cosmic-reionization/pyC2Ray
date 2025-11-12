@@ -32,14 +32,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
+lint = [
   "pre-commit",
   "ruff",
   "clang-format",
   "meson",
+]
+test = [
   "pytest",
   "pytest-benchmark",
 ]
+dev = ["pyc2ray[lint,test]"]
 
 [tool.pytest.ini_options]
 testpaths = "tests"
