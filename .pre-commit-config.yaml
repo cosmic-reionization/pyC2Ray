@@ -1,0 +1,20 @@
+exclude: examples|docs
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff-check
+        name: ruff lint
+        types_or: [ python, pyi ]
+        args: [ --output-format=concise ]
+      - id: ruff-check
+        name: ruff isort
+        types_or: [ python, pyi ]
+        args: [ --select, I, --fix ]
+      - id: ruff-format
+        name: ruff format
+        types_or: [ python, pyi ]
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v21.1.2
+    hooks:
+      - id: clang-format

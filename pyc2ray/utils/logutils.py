@@ -1,4 +1,4 @@
-def printlog(s,filename,quiet=False,end='\n'):
+def printlog(s, filename, quiet=False, end="\n"):
     """Write log and print to screen
 
     Parameters
@@ -11,6 +11,7 @@ def printlog(s,filename,quiet=False,end='\n'):
         Don't write to stdout. Default is False
     """
 
-    with open(filename,"a") as f:
+    with open(filename, "a") as f:
         f.write(s + end)
-    if not quiet: print(s,end=end)
+    if not quiet:
+        print(s, end=end)

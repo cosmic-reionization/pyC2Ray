@@ -1,129 +1,152 @@
 #include "memory.cuh"
+
+#include "utils.cuh"
+
+#include <cuda_runtime.h>
+
+#include <format>
 #include <iostream>
 
-// ========================================================================
-// Global variables. Pointers to GPU memory to store grid data
-//
-// To avoid uneccessary memory movement between host and device, we
-// allocate dedicated memory on the device via a call to device_init at the
-// beginning of the program. Data is copied to and from the host memory
-// (typically numpy arrays) only when it changes and is required. For example:
-//
-// * The density field is copied to the device only when it
-// actually changes, i.e. at the beginning of a timestep.
-// * The photoionization rates for each source are computed and summed
-// directly on the device and are copied to the host only when all sources
-// have been passed.
-// * The column density is NEVER copied back to the host, since it is only
-// accessed on the device when computing ionization rates.
-// ========================================================================
-double* cdh_dev;                 // Outgoing column density of the cells
-double* n_dev;                   // Density
-double* x_dev;                   // Time-averaged ionized fraction
-double* phi_dev;                 // Photoionization rates
-double* photo_thin_table_dev;    // Thin Radiation table
-double* photo_thick_table_dev;   // Thick Radiation table
-int * src_pos_dev;
-double * src_flux_dev;
+namespace asora {
 
-int NUM_SRC_PAR;
+    // ========================================================================
+    // Global variables. Pointers to GPU memory to store grid data
+    //
+    // To avoid uneccessary memory movement between host and device, we
+    // allocate dedicated memory on the device via a call to device_init at the
+    // beginning of the program. Data is copied to and from the host memory
+    // (typically numpy arrays) only when it changes and is required. For example:
+    //
+    // * The density field is copied to the device only when it
+    // actually changes, i.e. at the beginning of a timestep.
+    // * The photoionization rates for each source are computed and summed
+    // directly on the device and are copied to the host only when all sources
+    // have been passed.
+    // * The column density is NEVER copied back to the host, since it is only
+    // accessed on the device when computing ionization rates.
+    // ========================================================================
+    double *cdh_dev;                // Outgoing column density of the cells
+    double *n_dev;                  // Density
+    double *x_dev;                  // Time-averaged ionized fraction
+    double *phi_dev;                // Photoionization rates
+    double *photo_thin_table_dev;   // Thin Radiation table
+    double *photo_thick_table_dev;  // Thick Radiation table
+    int *src_pos_dev;
+    double *src_flux_dev;
 
-// ========================================================================
-// Initialization function to allocate device memory (pointers above)
-// ========================================================================
-void device_init(const int & N, const int & num_src_par, const int & mpi_rank, const int & num_gpus)
-{
-    //int dev_id = 0;  
+    int NUM_SRC_PAR;
 
-    // Here num_gpus is the number of gpus per node
-    std::cout << "Number of GPUS " << num_gpus << std::endl;
-    int dev_id = mpi_rank % num_gpus;
-    
-    // Explicitly set the device before querying
-    cudaSetDevice(dev_id);
-    
-    cudaDeviceProp device_prop;
-    cudaGetDeviceProperties(&device_prop, dev_id);
-    if (device_prop.computeMode == cudaComputeModeProhibited) {
-        std::cerr << "Error: device is running in <Compute Mode Prohibited>, no threads can use ::cudaSetDevice()" << std::endl;
+    // ========================================================================
+    // Initialization function to allocate device memory (pointers above)
+    // ========================================================================
+    void device_init(int N, int num_src_par, int mpi_rank, int num_gpus) {
+        // int dev_id = 0;
+
+        // Here num_gpus is the number of gpus per node
+        auto dev_id = mpi_rank % num_gpus;
+        std::cout << "Number of GPUS " << num_gpus << "; selected ID " << dev_id
+                  << "\n";
+
+        // Explicitly set the device before querying
+        cudaDeviceProp device_prop;
+        try {
+            safe_cuda(cudaSetDevice(dev_id));
+            safe_cuda(cudaGetDeviceProperties(&device_prop, dev_id));
+        } catch (const std::exception &) {
+            return;
+        }
+
+        auto device_info = std::format(
+            "GPU Device ID {}: {} with compute  capability {}.{}", dev_id,
+            device_prop.name, device_prop.major, device_prop.minor
+        );
+        if (num_gpus > 1) std::cout << "MPI Rank " << mpi_rank << " has ";
+        std::cout << device_info << "\n";
+
+        // Byte-size of grid data
+        auto bytesize = N * N * N * sizeof(double);
+
+        // Set the source batch size, i.e. the number of sources done in parallel
+        // (on the same GPU)
+        NUM_SRC_PAR = num_src_par;
+
+        // Allocate memory
+        try {
+            safe_cuda(cudaMalloc(&cdh_dev, NUM_SRC_PAR * bytesize));
+            safe_cuda(cudaMalloc(&n_dev, bytesize));
+            safe_cuda(cudaMalloc(&x_dev, bytesize));
+            safe_cuda(cudaMalloc(&phi_dev, bytesize));
+        } catch (const std::exception &) {
+            return;
+        }
+
+        std::cout << "Successfully allocated " << (3 + NUM_SRC_PAR) * bytesize / 1e6
+                  << " Mb of device memory for grid of size N = " << N
+                  << ", with source batch size " << NUM_SRC_PAR << "\n";
     }
 
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        std::cout << "cudaGetDeviceProperties returned error code " << error << ", line(" << __LINE__ << ")" << std::endl;
-    } else {
-        if (num_gpus > 1){
-            std::cout << "MPI Rank " << mpi_rank << " has GPU Device ID " << dev_id << ": \"" << device_prop.name << "\" with compute capability " << device_prop.major << "." << device_prop.minor << std::endl;
-        } else {
-            std::cout << "GPU Device ID " << dev_id << ": \"" << device_prop.name << "\" with compute capability " << device_prop.major << "." << device_prop.minor << std::endl;
+    // ========================================================================
+    // Utility functions to copy data to device
+    // ========================================================================
+    void density_to_device(double *ndens, int N) {
+        try {
+            safe_cuda(cudaMemcpy(
+                n_dev, ndens, N * N * N * sizeof(double), cudaMemcpyHostToDevice
+            ));
+        } catch (const std::exception &) {
         }
     }
 
-    // Byte-size of grid data
-    long unsigned int bytesize = N*N*N*sizeof(double);
-
-    // Set the source batch size, i.e. the number of sources done in parallel (on the same GPU)
-    NUM_SRC_PAR = num_src_par;
-
-    // Allocate memory
-    cudaMalloc(&cdh_dev, NUM_SRC_PAR * bytesize);
-    cudaMalloc(&n_dev, bytesize);
-    cudaMalloc(&x_dev, bytesize);
-    cudaMalloc(&phi_dev, bytesize);
-
-    error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        throw std::runtime_error("Couldn't allocate memory: " + std::to_string((3 + NUM_SRC_PAR)*bytesize/1e6) + std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
-        }    
-    else {
-        std::cout << "Successfully allocated " << (3 + NUM_SRC_PAR)*bytesize/1e6 << " Mb of device memory for grid of size N = " << N;
-        std::cout << ", with source batch size " << NUM_SRC_PAR << std::endl;
+    void photo_table_to_device(double *thin_table, double *thick_table, int num_tau) {
+        auto bytesize = num_tau * sizeof(double);
+        try {
+            // Copy thin table
+            safe_cuda(cudaMalloc(&photo_thin_table_dev, bytesize));
+            safe_cuda(cudaMemcpy(
+                photo_thin_table_dev, thin_table, bytesize, cudaMemcpyHostToDevice
+            ));
+            // Copy thick table
+            safe_cuda(cudaMalloc(&photo_thick_table_dev, bytesize));
+            safe_cuda(cudaMemcpy(
+                photo_thick_table_dev, thick_table, bytesize, cudaMemcpyHostToDevice
+            ));
+        } catch (const std::exception &) {
+        }
     }
-}
 
-// ========================================================================
-// Utility functions to copy data to device
-// ========================================================================
-void density_to_device(double* ndens,const int & N)
-{
-    cudaMemcpy(n_dev,ndens,N*N*N*sizeof(double),cudaMemcpyHostToDevice);
-}
+    void source_data_to_device(int *pos, double *flux, int num_src) {
+        // Free arrays from previous evolve call
+        try {
+            // Copy positions
+            safe_cuda(cudaMalloc(&src_pos_dev, 3 * num_src * sizeof(int)));
+            safe_cuda(cudaMemcpy(
+                src_pos_dev, pos, 3 * num_src * sizeof(int), cudaMemcpyHostToDevice
+            ));
 
-void photo_table_to_device(double* thin_table,double* thick_table,const int & NumTau)
-{
-    // Copy thin table
-    cudaMalloc(&photo_thin_table_dev,NumTau*sizeof(double));
-    cudaMemcpy(photo_thin_table_dev,thin_table,NumTau*sizeof(double),cudaMemcpyHostToDevice);
-    // Copy thick table
-    cudaMalloc(&photo_thick_table_dev,NumTau*sizeof(double));
-    cudaMemcpy(photo_thick_table_dev,thick_table,NumTau*sizeof(double),cudaMemcpyHostToDevice);
-}
-void source_data_to_device(int* pos, double* flux, const int & NumSrc)
-{   
-    // Free arrays from previous evolve call
-    cudaFree(src_pos_dev);
-    cudaFree(src_flux_dev);
+            // Copy strengths
+            safe_cuda(cudaMalloc(&src_flux_dev, num_src * sizeof(double)));
+            safe_cuda(cudaMemcpy(
+                src_flux_dev, flux, num_src * sizeof(double), cudaMemcpyHostToDevice
+            ));
+        } catch (const std::exception &) {
+        }
+    }
 
-    // Allocate memory for sources of current evolve call
-    cudaMalloc(&src_pos_dev,3*NumSrc*sizeof(int));
-    cudaMalloc(&src_flux_dev,NumSrc*sizeof(double));
+    // ========================================================================
+    // Deallocate device memory at the end of a run
+    // ========================================================================
+    void device_close() {
+        std::cout << "Deallocating device memory...\n";
+        try {
+            safe_cuda(cudaFree(cdh_dev));
+            safe_cuda(cudaFree(n_dev));
+            safe_cuda(cudaFree(x_dev));
+            safe_cuda(cudaFree(phi_dev));
+            safe_cuda(cudaFree(photo_thin_table_dev));
+            safe_cuda(cudaFree(src_pos_dev));
+            safe_cuda(cudaFree(src_flux_dev));
+        } catch (const std::exception &) {
+        }
+    }
 
-    // Copy source data (positions & strengths) to device
-    cudaMemcpy(src_pos_dev,pos,3*NumSrc*sizeof(int),cudaMemcpyHostToDevice);
-    cudaMemcpy(src_flux_dev,flux,NumSrc*sizeof(double),cudaMemcpyHostToDevice);
-}
-
-// ========================================================================
-// Deallocate device memory at the end of a run
-// ========================================================================
-void device_close()
-{   
-    printf("Deallocating device memory...\n");
-    cudaFree(cdh_dev);
-    cudaFree(n_dev);
-    cudaFree(x_dev);
-    cudaFree(phi_dev);
-    cudaFree(photo_thin_table_dev);
-    cudaFree(src_pos_dev);
-    cudaFree(src_flux_dev);
-}
+}  // namespace asora

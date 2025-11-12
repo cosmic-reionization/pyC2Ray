@@ -1,0 +1,4 @@
+Tables from the Thesan simulation for the UV mean escaping fraction: The tables have shape (81,31), the first dimension is the redshift bins and the second is the mass bins.
+
+The NaN values in the fesc (at high mass values) have been replaced by a linear intepolation of the last 4 mass bins.
+

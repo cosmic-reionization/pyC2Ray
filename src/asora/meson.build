@@ -1,0 +1,60 @@
+# CUDA compiler is optional, required to build ASORA
+if not has_cuda
+    subdir_done()
+endif
+
+# Get CUDA architecture to be used for compilation
+compute_cap = get_option('gpu-architecture')
+if compute_cap == ''
+    message('CUDA compute capability was not specified by the user')
+    r_compute_cap = run_command(
+        'nvidia-smi',
+        '--query-gpu=compute_cap',
+        '--format=csv,noheader',
+        check: false,
+    )
+    if r_compute_cap.returncode() != 0
+        warning('nvidia-smi not detected; defaulting to compute capability 6.0')
+        compute_cap = '60'
+    else
+        cc = r_compute_cap.stdout().strip()
+        message(f'Local compute capability is determined to be @cc@')
+        compute_cap = cc[0] + '0'
+    endif
+endif
+
+compute_cap = 'sm_' + compute_cap
+nvcc_flags = [
+    '--gpu-architecture=' + compute_cap,
+    '-rdc',
+    'true',
+    '-DPERIODIC',
+    '-DLOCALRATES',
+]
+nvlink_flags = ['-arch', compute_cap]
+
+# CUDA sources for ASORA
+asora_sources = ['memory.cu', 'rates.cu', 'raytracing.cu', 'utils.cu']
+asora_core = static_library('asora_core', asora_sources, cuda_args: nvcc_flags, link_args: nvlink_flags)
+
+# Build ASORA module with nvcc
+py.extension_module(
+    'libasora',
+    'python_module.cu',
+    dependencies: [py_dep, np_dep],
+    link_with: asora_core,
+    install: true,
+    subdir: 'pyc2ray/lib',
+)
+
+# Build ASORA test module with nvcc
+py.extension_module(
+    'libasoratest',
+    ['tests.cu', 'python_test_module.cu'],
+    dependencies: [py_dep, np_dep],
+    install: true,
+    subdir: 'pyc2ray/lib',
+    link_with: asora_core,
+    cuda_args: nvcc_flags,
+    link_args: nvlink_flags,
+)
