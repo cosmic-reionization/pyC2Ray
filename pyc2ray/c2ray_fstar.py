@@ -92,7 +92,7 @@ class C2Ray_fstar(C2Ray):
             fesc = self.fesc_model.get(Mhalo=srcmass_msun)
         elif self.fesc_kind == "power_obs":
             # here the escaping fraction is fitted to data that uses stellar mass
-            fesc = self.fesc_model.get(Mhalo=fstar * srcmass_msun)
+            fesc = self.fesc_model.get(Mhalo=fstar * srcmass_msun, z=z)
         elif self.fesc_kind == "Gelli2024":
             # mean quantities
             mean_fstar = self.fstar_model.stellar_to_halo_fraction(Mhalo=srcmass_msun)
@@ -434,6 +434,7 @@ class C2Ray_fstar(C2Ray):
             "f0_esc": self._ld["Sources"]["f0_esc"],
             "Mp_esc": self._ld["Sources"]["Mp_esc"],
             "al_esc": self._ld["Sources"]["al_esc"],
+            "al_esc_z": self._ld["Sources"]["al_esc_z"],
         }
         if self.fesc_kind == "constant":
             self.printlog(
@@ -443,6 +444,10 @@ class C2Ray_fstar(C2Ray):
         elif self.fesc_kind == "power":
             self.printlog(
                 f"Using mass-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}"
+            )
+        elif self.fesc_kind == "power_obs":
+            self.printlog(
+                f"Using mass- and redshift-dependent power law model for the escaping fraction derived from observation () with parameters: {self.fesc_pars}"
             )
         elif self.fesc_kind == "Gelli2024":
             self.printlog(

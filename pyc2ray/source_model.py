@@ -181,12 +181,19 @@ class EscapeFraction:
         self.model = model
         self.f0_esc = pars["f0_esc"]
         self.Mp_esc = pars["Mp_esc"]
+
+        # mass dependent power-index
         self.al_esc = pars["al_esc"]
+
+        # redshift dependent power-index
+        self.al_esc_z = pars["al_esc_z"]
 
         if self.model == "constant":
             self.get = lambda Mhalo: self.f0_esc
-        elif self.model == "power" or self.model == "power_obs":
+        elif self.model == "power":
             self.get = self.deterministic
+        elif self.model == "power_obs":
+            self.get = self.deterministic_massredshift
         elif self.model == "Gelli2024":
             self.get = self.fesc_Muv
         elif self.model == "thesan":
@@ -213,6 +220,14 @@ class EscapeFraction:
 
     def deterministic(self, Mhalo):
         fesc_mean = self.f0_esc * (Mhalo / self.Mp_esc) ** self.al_esc
+        return np.clip(fesc_mean, 0, 1)
+
+    def deterministic_massredshift(self, Mhalo, z):
+        fesc_mean = (
+            self.f0_esc
+            * ((1 + z) / 6.0) ** self.al_esc_z
+            * (Mhalo / self.Mp_esc) ** self.al_esc
+        )
         return np.clip(fesc_mean, 0, 1)
 
     def deterministic_redshift(self, z):
