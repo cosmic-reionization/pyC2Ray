@@ -135,10 +135,11 @@ Sources:
   a_s: -0.20046
   b_s: 3.34619
   # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Gelli2024' for a UV dependent model (Gelli+ 2024)
-  fesc_model: 'power_obs' #'thesan'
-  f0_esc: 0.010338
+  fesc_model: 'power_obs' #'thesan' 
+  f0_esc: 0.010745947505099407 #0.010338
   Mp_esc: 1e10
-  al_esc: -0.30133
+  al_esc: -0.26564411 #-0.30133
+  al_esc_z: 1.35607308
   # define the accreation model (can be 'constant' or 'EXP')
   accretion_model: 'EXP'
   # accreation rate parameter (see Schneider+ 2021)
