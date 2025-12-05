@@ -4,8 +4,8 @@
 
 #include <cuda_runtime.h>
 
-#include <format>
 #include <iostream>
+#include <sstream>
 
 namespace asora {
 
@@ -56,12 +56,12 @@ namespace asora {
             return;
         }
 
-        auto device_info = std::format(
-            "GPU Device ID {}: {} with compute  capability {}.{}", dev_id,
-            device_prop.name, device_prop.major, device_prop.minor
-        );
+        std::stringstream device_info;
+        device_info << "GPU Device ID " << dev_id << ": " << device_prop.name
+                    << " with compute capability " << device_prop.major << "."
+                    << device_prop.minor;
         if (num_gpus > 1) std::cout << "MPI Rank " << mpi_rank << " has ";
-        std::cout << device_info << "\n";
+        std::cout << device_info.str() << "\n";
 
         // Byte-size of grid data
         auto bytesize = N * N * N * sizeof(double);
