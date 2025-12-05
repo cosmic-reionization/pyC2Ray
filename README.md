@@ -12,14 +12,20 @@ Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the com
 ## Installation
 
 **Requirements**:
-- C Compiler
-- `gfortran` Fortran Compiler
-- `nvcc` CUDA compiler
+- C++ compiler that supports the c++20 standard, e.g. gcc >= 12.0
+- Fortran compiler, e.g. gfortran >= 12.0
+- CUDA toolkit with `nvcc` compiler, at least version 12.0
 
 In your environment simply run
 
 ```bash
 pip install .
+```
+
+To specify a different host compiler for `nvcc` than the default one, you can run
+
+```bash
+pip install . -Csetup-args="-Dcuda_ccbindir=my-other-compiler"
 ```
 
 If the setuptools method doesn't work, you can alway compile the libraries manually.

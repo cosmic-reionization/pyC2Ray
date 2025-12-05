@@ -1,20 +1,19 @@
 #include "utils.cuh"
 
 #include <exception>
-#include <format>
 #include <iostream>
+#include <sstream>
 
 namespace asora {
 
     void safe_cuda(cudaError_t err, const std::source_location &loc) {
         if (err != cudaSuccess) {
-            auto msg = std::format(
-                "CUDA Error {}: {}. At {} in {}:{}", cudaGetErrorName(err),
-                cudaGetErrorString(err), loc.function_name(), loc.file_name(),
-                loc.line()
-            );
-            std::cerr << msg << "\n";
-            throw std::runtime_error(msg);
+            std::stringstream msg;
+            msg << "CUDA Error " << cudaGetErrorName(err) << ": "
+                << cudaGetErrorString(err) << ". At " << loc.function_name() << " in "
+                << loc.file_name() << ":" << loc.line();
+            std::cerr << msg.str() << "\n";
+            throw std::runtime_error(msg.str());
         }
     }
 
