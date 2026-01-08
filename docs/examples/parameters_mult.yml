@@ -1,0 +1,163 @@
+# ===========================================================
+# Parameter File for pyc2ray.
+#
+# Only the currently required parameters are included, as
+# more features of C2Ray are ported to pyc2ray, the relevant
+# parameters will be included here.
+# ===========================================================
+
+# ------------------------------------------
+# Parameters to set up the simulation volume
+# ------------------------------------------
+Grid:
+  # Box size in Mpc
+  boxsize: 0.014
+  # size per side of the mesh grid
+  meshsize: 128
+  # boolean varible to switch on ASORA raytracing
+  gpu: 0
+  # boolean varible to switch on MPI parallelization on the sources list
+  mpi: 0
+  # boolean variable to indicate if resuming a simulation (no need to change zred_0)
+  resume: 0
+# --------------------------------------------------------------------
+# (Initial) properties of physical quantities in the simulation volume
+# --------------------------------------------------------------------
+Material:
+  # Initial Temperature of the grid
+  temp0: 1e4
+  # Initial Ionized fraction of the grid
+  xh0: 1.2e-3
+  # Constant average density, comoving value. Used only by the test case
+  # this value is scaled to zred_0 (even in non-cosmological mode)
+  avg_dens: 1.0e-6
+
+# --------------------------------
+# Miscellaneous physical constants
+# --------------------------------
+CGS:
+  # Hydrogen recombination parameter (power law index)
+  albpow: -0.7  #in the old code -0.79
+  # Hydrogen recombination parameter (value at 10^4 K)
+  bh00: 2.59e-13 # OTS value, alpha_B
+  # Helium0 recombination parameter (power law index)
+  alcpow: -0.672
+  # Hydrogen ionization energy (in eV)
+  eth0: 13.598
+  # Helium I ionization energy (in eV)
+  ethe0: 24.587
+  # Helium II ionization energy (in eV)
+  ethe1: 54.416
+  # Hydrogen collisional ionization parameter 1
+  xih0: 1.0
+  # Hydrogen collisional ionization parameter 2
+  fh0: 0.83
+  # ...
+  colh0_fact: 1.3e-8
+
+# ------------------
+# Element abundances
+# ------------------
+Abundances:
+  # Hydrogen Abundance
+  abu_h: 0.926
+  # Helium Abundance
+  abu_he: 0.074    # 1 abu_he: 0.08 #  for EoR KP sims
+  # Carbon Abundance
+  abu_c: 7.1e-7
+
+# ------------------------------------
+# Parameters governing photoionization
+# ------------------------------------
+Photo:
+  # HI cross section at its ionzing frequency
+  sigma_HI_at_ion_freq: 6.30e-18
+  # Minimum optical depth for tables
+  minlogtau: -20
+  # Maximum optical depth for tables
+  maxlogtau: 4
+  # Number of table points
+  NumTau: 10000 #200000
+  # Whether or not to use grey opacity (i.e. cross-section is frequency-independent)
+  grey: 0
+  # Type of source to use
+  SourceType: blackbody
+  # Whether to compute heating rates arrays (NOT USED BY CHEMISTRY SO FAR)
+  compute_heating_rates: 0
+  # Value of maximum comoving distance for photons from source (Type 3 LLS in original C2Ray)
+  # (to not use this, set to a value >> boxsize)
+  R_max_cMpc: 15.0
+
+# ------------------------------------
+# Parameters of the radiation sinks
+# ------------------------------------
+Sinks:
+  # define the clumping model to use (can be 'constant', 'redshift', 'density' or 'stochastic')
+  clumping_model: 'constant'
+  # define clumping factor for the constant model
+  clumping: 1.0
+  # define the mean-free-path model to use (can be 'constant', 'Choudhury09')
+  mfp_model: 'constant'
+  # Value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
+  R_max_cMpc: 15.0
+  # free parameter for the Choudhury09 mean-free-path model in cMpc units
+  A_mfp: 175.0
+  # spectral index of the Choudhury09 mean-free-path model redshift evolution
+  eta_mfp: -4.4
+
+# -------------------------------------
+# Parameters for Black Body source type
+# -------------------------------------
+BlackBodySource:
+  # Effective temperature of Black Body source
+  Teff: 5e4
+  # Power-law index for the frequency dependence of the photoionization cross section
+  cross_section_pl_index: 2.8
+
+# -----------------------
+# Cosmological Parameters
+# -----------------------
+Cosmology:
+  # Global flag to use cosmology
+  cosmological: 0
+  # Reduced Hubble constant
+  h: 1.0 #0.7
+  # Omega matter t=0
+  Omega0: 0.27
+  # Omega baryon t=0
+  Omega_B: 0.044
+  # Temperature of CMB in Kelvins
+  cmbtemp: 2.726
+  # Initial redshift of the simulation
+  zred_0: 9.0
+
+  # N.B. : Planck 18
+  #  h: 0.6766
+  #  Omega0: 0.30966
+  #  Omega_B: 0.04897
+  #  cmbtemp: 2.7255
+
+# ------------
+# Output setup
+# ------------
+Output:
+  # Directory where results and log files are stored
+  results_basename: ./test_results/
+  # Name of the log file to write
+  logfile: pyC2Ray.log
+
+# -------------------------
+# Parameters for raytracing
+# -------------------------
+Raytracing:
+  # Photon loss fraction for the subbox algorithm
+  loss_fraction: 1e-2
+  # Size increase of subboxes around sources (not used if using ASORA)
+  subboxsize: 64
+  # Maximum subbox size for the subbox algorithm (not used if using ASORA)
+  max_subbox: 1000
+  # Source batch size, i.e. number of sources handled in parallel on the GPU.
+  # Speeds up computation but increases memory usage
+  source_batch_size: 1
+  # Which fraction of the cells can be left unconverged
+  convergence_fraction: 1e-4

@@ -1,0 +1,44 @@
+name: Python application
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "pyproject.toml"
+      - "pyc2ray/**.py"
+      - "tests/**.py"
+      - "src/**.f90"
+      - "src/**.cu"
+      - "src/**.cuh"
+      - "**/meson.build"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.12"
+
+    - name: Install openMPI
+      run: sudo apt install libopenmpi-dev
+
+    - name: Install linters
+      run: |
+        pip install .[lint]
+
+    - name: Check code format
+      run: ruff format --check pyc2ray/ tests/
+
+    - name: Check code style
+      run: ruff check --extend-select I --output-format=concise pyc2ray/ tests/
+
+    - name: Check code style
+      run: find src/ -regex '.*\.\(cu\|cuh\|cpp\|h\)' -exec clang-format -n -Werror {} \;

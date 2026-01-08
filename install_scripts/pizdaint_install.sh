@@ -10,7 +10,7 @@ module load nvhpc/21.3		# required for mpi4py
 
 # activate python environment
 source /store/ska/sk015/pyc2ray-env/bin/activate
-python3 -m pip install requirements.txt
+python3 -m pip install ../requirements.txt
 
 # required for mpi4py
 MPICC=cc

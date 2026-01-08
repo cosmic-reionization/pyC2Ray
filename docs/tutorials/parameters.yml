@@ -10,10 +10,10 @@
 # Parameters to set up the simulation volume
 # ------------------------------------------
 Grid:
-  # Box size in Mpc
-  boxsize: 0.014
+  # Box size in Mpc/h
+  boxsize: 128
   # size per side of the mesh grid
-  meshsize: 128
+  meshsize: 256
   # boolean varible to switch on ASORA raytracing
   gpu: 1
   # boolean varible to switch on MPI parallelization on the sources list
@@ -63,7 +63,7 @@ Abundances:
   # Hydrogen Abundance
   abu_h: 0.926
   # Helium Abundance
-  abu_he: 0.074    # 1 abu_he: 0.08 #  for EoR KP sims
+  abu_he: 0.074
   # Carbon Abundance
   abu_c: 7.1e-7
 
@@ -87,6 +87,49 @@ Photo:
   compute_heating_rates: 0
 
 # ------------------------------------
+# Parameters for the sources of radiation
+# ------------------------------------
+Sources:
+  # stellar-to-halo mass relation: 'fgamma' for classical mass independent model, 'dpl' for double power law (Schneider, Giri, Mirocha 2021) or 'lognorm' for a stochastic with lognorm distribution and std ~Mhalo^(-1/3).
+  fstar_kind: 'dpl'
+  # efficiency High-Mass Atomically Cooling Halo (HMACH) - used only for fstar_kind: 'fgamma'
+  fgamma_hm: 30
+  # efficiency Low-Mass Atomically Cooling Halo (LMACH)
+  fgamma_lm: 0.
+  # Double power law parameter - these are used only when fstar_kind: 'dpl'
+  Nion: 2000.0
+  f0: 0.1 
+  Mt: 1e8 
+  Mp: 1e10
+  g1: -0.3
+  g2: -0.3
+  g3: 0
+  g4: -0.0
+  # Photons escaping fraction: 'constant' for mass independent model, 'power' for a power law mass dependent factor or 'Gelli2024' for a UV dependent model (Gelli+ 2024)
+  fesc_model: 'power'
+  f0_esc: 0.02
+  Mp_esc: 1e10
+  al_esc: -0.25
+  # define the accreation model (can be 'constant' or 'EXP')
+  accretion_model: 'EXP'
+  # accreation rate parameter (see Schneider+ 2021)
+  alpha_h: 0.79
+  # select the bursty star-formation model (can be 'no', 'instant' or 'integrate', it require accretion_model: 'EXP' or None to switch off) 
+  bursty_sfr: 'no'
+  # index power-low of the bursty star-formation model mass relation
+  beta1: 0.1
+  # index power-low of the bursty star-formation model time relation
+  beta2: 1.5
+  # bursty star-formation time-scale at z=0
+  tB0: 200.
+  # fraction of the quiescent time-scale
+  tQ_frac: 1.6
+  # reference redshif for the bursty star-formation model
+  z0: 30.0
+  # randominze the time-scale of the bursty star-formation model (ca be 0 or a value indicating the std for N~(t_start, t_rnd))
+  t_rnd: 0
+
+# ------------------------------------
 # Parameters of the radiation sinks
 # ------------------------------------
 Sinks:
@@ -96,7 +139,7 @@ Sinks:
   clumping: 1.0
   # define the mean-free-path model to use (can be 'constant' or 'Worseck2014')
   mfp_model: 'constant'
-  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not use this, set to a value >> boxsize)
+  # Constant value of maximum comoving distance for photons from source, Type 3 LLS in original C2Ray (to not usge this, set to a value >> boxsize)
   R_max_cMpc: 15.0
   # free parameter for the Worseck2014 mean-free-path model in cMpc units
   A_mfp: 210.0
@@ -120,23 +163,17 @@ BlackBodySource:
 # -----------------------
 Cosmology:
   # Global flag to use cosmology
-  cosmological: 0
+  cosmological: 1
   # Reduced Hubble constant
-  h: 1.0 #0.7
+  h: 0.6766
   # Omega matter t=0
-  Omega0: 0.27
+  Omega0: 0.30966
   # Omega baryon t=0
-  Omega_B: 0.044
+  Omega_B: 0.04897
   # Temperature of CMB in Kelvins
-  cmbtemp: 2.726
+  cmbtemp: 2.7255
   # Initial redshift of the simulation
-  zred_0: 9.0
-
-  # N.B. : Planck 18
-  #  h: 0.6766
-  #  Omega0: 0.30966
-  #  Omega_B: 0.04897
-  #  cmbtemp: 2.7255
+  zred_0: 12.0
 
 # ------------
 # Output setup
@@ -144,6 +181,12 @@ Cosmology:
 Output:
   # Directory where results and log files are stored
   results_basename: ./test_results/
+  # Directory where inputs files are stored (set to None for test case)
+  inputs_basename: ./
+  # Directory where inputs files are stored (set to None for test case)
+  sources_basename: ./
+  # Directory where inputs files are stored (set to None for test case)
+  density_basename: ./
   # Name of the log file to write
   logfile: pyC2Ray.log
 

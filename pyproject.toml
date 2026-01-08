@@ -1,20 +1,52 @@
 [build-system]
-requires = [
-    "meson-python",
-    "numpy",             # To get paths
-    "charset_normalizer" # This is to prevent bugs with F2PY when it reads Fortran sources
-]
 build-backend = "mesonpy"
+requires = [
+  "charset-normalizer",
+  "meson-python",
+  "meson",
+  "numpy>=2",
+]
 
 [project]
 name = "pyc2ray"
-description = "Python-wrapped and Accelerated version of C2Ray"
 version = "0.1.0"
-dependencies = [
-    "numpy",
-    "scipy",
-    "tools21cm"]
+description = "Python-wrapped and Accelerated version of C2Ray"
 maintainers = [
-    {name = "Patrick Hirling & Michele Bianco"},
+  { name = "Patrick Hirling & Michele Bianco" },
 ]
-requires-python = ">=3.9.0"
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+  "h5py",
+  "mpi4py==4.0.3",
+  "numpy",
+  "scipy",
+  "tools21cm",
+]
+
+[project.optional-dependencies]
+lint = [
+  "pre-commit",
+  "ruff",
+  "clang-format",
+  "meson",
+]
+test = [
+  "pytest",
+  "pytest-benchmark",
+]
+dev = ["pyc2ray[lint,test]"]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+
+[tool.meson-python.args]
+setup = ["-Dbuildtype=release"]

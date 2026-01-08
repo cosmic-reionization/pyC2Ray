@@ -1,0 +1,4 @@
+Tables from the SPICE simulation for the scatter of the SFR from: https://arxiv.org/abs/2501.18559.
+The tables have shape (10,10), the first dimension is the redshift bins and the second is the mass bins. 
+
+The value of the \sigma_{SFR} for the mass and redshift value is in increaseing order. NaN have been replaced by zeros.
