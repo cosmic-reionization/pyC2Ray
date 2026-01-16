@@ -10,14 +10,25 @@ The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as 
 Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the complete documentation, tutorials, installation instructions, and more.
 
 ## Installation
-Since the automatic build system is not fully working, the extension modules must be manually compiled and placed in the correct directories.
 
 **Requirements**:
-- C Compiler
-- `gfortran` Fortran Compiler
-- `nvcc` CUDA compiler
-- `f2py` $\geq$ 1.24.4, provided by `numpy`
-- `astropy` and `tools21cm` python packages. 
+- C++ compiler that supports the c++20 standard, e.g. gcc >= 12.0
+- Fortran compiler, e.g. gfortran >= 12.0
+- CUDA toolkit with `nvcc` compiler, at least version 12.0
+
+In your environment simply run
+
+```bash
+pip install .
+```
+
+To specify a different host compiler for `nvcc` than the default one, you can run
+
+```bash
+pip install . -Csetup-args="-Dcuda_ccbindir=my-other-compiler"
+```
+
+If the setuptools method doesn't work, you can alway compile the libraries manually.
 
 Please see our [documentation](https://pyc2ray.readthedocs.io/en/latest/installation.html) for step-by-step instructions on how to install `pyc2ray`.
 
@@ -86,7 +97,7 @@ A `pyc2ray` simulation is set up by creating an instance of a subclass of `C2Ray
 -->
 
 ## TODO list
-Here we list a series of numerical and astrophysical implementations we would like to include in futre version of `pyc2ray`.
+Here we list a series of numerical and astrophysical implementations we would like to include in future version of `pyc2ray`.
 - Helium ionization, HeII and HeIII
 - Sources radiative feedback
 - Sources X-ray heating
@@ -95,7 +106,21 @@ Here we list a series of numerical and astrophysical implementations we would li
 
 ## CONTRIBUTING
 
-If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues). The issue page is also good if you seek help or have suggestions for us.
+If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues).
+The issue page is also good if you seek help or have suggestions for us.
+
+### Submitting changes to the code
+
+Please follow these instructions to ensure a smooth integration, at least until a CI system is put into place:
+
+0. **Only the first time**, install `pre-commit` in your enviornment and the pre-commit hooks with `pre-commit install`.
+1. Create a new branch off the main trunk and make your modifications there.
+2. Commit your changes and fix any issue highlighted by the pre-commit hooks; code format is automatically fixed.
+3. Push your branch to the remote repository.
+4. Open a Pull Request on GitHub to the main branch.
+5. It is strongly suggested to squash all the commits into one.
+6. In the PR's description on GitHub, specify blocking dependencies with the message "Depends on #..." and close issues with "Closes #...".
+7. Ask the code to be reviewed before merging.
 
 ## AKNOWLEDGMENT
 

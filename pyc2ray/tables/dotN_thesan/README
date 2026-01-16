@@ -1,0 +1,1 @@
+Tables of the dotN_gamma from the Thesan simulation: The tables have shape (81,mass_bins,dotN_bins), the first dimension is the redshift bins, the second is the mass bins and the third is the dotN_gamma.

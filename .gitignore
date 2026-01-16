@@ -1,32 +1,34 @@
+# Ignore python setup files
 src/*.egg-info
 *.egg-info
 build
 work
 run
 
+# Ignore log directory and files
+test/logs/
+test/pasc_arts4ska/logs/
+
 # Ignore compiled object
-pyc2ray/lib/*.so
-src/*/*.so
-src/*/*.o
+**.so
+**.o
 
 # Ignore images and data created by debug and tests
 *.pkl
 pyc2ray/tables/multifreq/*png
 test/debug/*png
 
-# Ignore VS code folder
+# Ignore editor files
 .vscode/
+*.swp
+*.swo
 
 # Ignore jupyter notebook checkpoints and python cache
 .ipynb_checkpoints/
-pyc2ray/__pycache__/
-pyc2ray/*/__pycache__/
+**/__pycache__/
 
 # Ignore SPICE tables (TODO: ask autorization)
 pyc2ray/tables/SPICE_scatter_SFR/*txt
 
 # Ignore docs test results folder
-docs/tutorials/test_results/
-docs/tutorials/test_results/*
-docs/examples/test_results/
-docs/examples/test_results/*
+**/test_results/

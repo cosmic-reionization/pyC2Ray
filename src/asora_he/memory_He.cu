@@ -1,4 +1,5 @@
 #include "memory_He.cuh"
+
 #include <iostream>
 
 // ========================================================================
@@ -17,28 +18,28 @@
 // * The column density is NEVER copied back to the host, since it is only
 // accessed on the device when computing ionization rates.
 // ========================================================================
-double* cdh_dev;                 // Outgoing column density of the cells
-double* cdhei_dev;                 // Outgoing column density of the cells
-double* cdheii_dev;                 // Outgoing column density of the cells
-double* n_dev;                   // Density
-double* xHI_dev;                   // Time-averaged ionized fraction
-double* xHeI_dev;                   // Time-averaged ionized fraction
-double* xHeII_dev;                   // Time-averaged ionized fraction
-double* phi_HI_dev;                 // Photoionization rates
-double* phi_HeI_dev;                 // Photoionization rates
-double* phi_HeII_dev;                 // Photoionization rates
-double* heat_HI_dev;                 // Photoheating rates
-double* heat_HeI_dev;                 // Photoheating rates
-double* heat_HeII_dev;                 // Photoheating rates
-double* photo_thin_table_dev;    // Thin Radiation table for photo-ionization
-double* photo_thick_table_dev;   // Thick Radiation table for photo-ionization
-double* heat_thin_table_dev;    // Thin Radiation table for photo-heating
-double* heat_thick_table_dev;   // Thick Radiation table for photo-heating
-int * src_pos_dev;
-double * src_flux_dev;
-double* sig_hi_dev;                   // cross section at different frequencies
-double* sig_hei_dev;                   // cross section at different frequencies
-double* sig_heii_dev;                   // cross section at different frequencies
+double *cdh_dev;                // Outgoing column density of the cells
+double *cdhei_dev;              // Outgoing column density of the cells
+double *cdheii_dev;             // Outgoing column density of the cells
+double *n_dev;                  // Density
+double *xHI_dev;                // Time-averaged ionized fraction
+double *xHeI_dev;               // Time-averaged ionized fraction
+double *xHeII_dev;              // Time-averaged ionized fraction
+double *phi_HI_dev;             // Photoionization rates
+double *phi_HeI_dev;            // Photoionization rates
+double *phi_HeII_dev;           // Photoionization rates
+double *heat_HI_dev;            // Photoheating rates
+double *heat_HeI_dev;           // Photoheating rates
+double *heat_HeII_dev;          // Photoheating rates
+double *photo_thin_table_dev;   // Thin Radiation table for photo-ionization
+double *photo_thick_table_dev;  // Thick Radiation table for photo-ionization
+double *heat_thin_table_dev;    // Thin Radiation table for photo-heating
+double *heat_thick_table_dev;   // Thick Radiation table for photo-heating
+int *src_pos_dev;
+double *src_flux_dev;
+double *sig_hi_dev;    // cross section at different frequencies
+double *sig_hei_dev;   // cross section at different frequencies
+double *sig_heii_dev;  // cross section at different frequencies
 
 int NUM_SRC_PAR;
 int NUM_FREQ;
@@ -46,29 +47,34 @@ int NUM_FREQ;
 // ========================================================================
 // Initialization function to allocate device memory (pointers above)
 // ========================================================================
-void device_init(const int & N, const int & num_src_par, const int & num_freq)
-{
+void device_init(const int &N, const int &num_src_par, const int &num_freq) {
     int dev_id = 0;
 
     cudaDeviceProp device_prop;
     cudaGetDevice(&dev_id);
     cudaGetDeviceProperties(&device_prop, dev_id);
     if (device_prop.computeMode == cudaComputeModeProhibited) {
-        std::cerr << "Error: device is running in <Compute Mode Prohibited>, no threads can use ::cudaSetDevice()" << std::endl;
+        std::cerr << "Error: device is running in <Compute Mode Prohibited>, no "
+                     "threads can use ::cudaSetDevice()"
+                  << std::endl;
     }
 
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess) {
-        std::cout << "cudaGetDeviceProperties returned error code " << error << ", line(" << __LINE__ << ")" << std::endl;
+        std::cout << "cudaGetDeviceProperties returned error code " << error
+                  << ", line(" << __LINE__ << ")" << std::endl;
     } else {
-        std::cout << "GPU Device " << dev_id << ": \"" << device_prop.name << "\" with compute capability " << device_prop.major << "." << device_prop.minor << std::endl;
+        std::cout << "GPU Device " << dev_id << ": \"" << device_prop.name
+                  << "\" with compute capability " << device_prop.major << "."
+                  << device_prop.minor << std::endl;
     }
 
     // Byte-size of grid and frequency data
-    long unsigned int bytsize_grid = N*N*N*sizeof(double);
-    long unsigned int bytsize_freq = num_freq*sizeof(double);
+    long unsigned int bytsize_grid = N * N * N * sizeof(double);
+    long unsigned int bytsize_freq = num_freq * sizeof(double);
 
-    // Set the source batch size, i.e. the number of sources done in parallel (on the same GPU)
+    // Set the source batch size, i.e. the number of sources done in parallel (on
+    // the same GPU)
     NUM_SRC_PAR = num_src_par;
     NUM_FREQ = num_freq;
 
@@ -92,58 +98,78 @@ void device_init(const int & N, const int & num_src_par, const int & num_freq)
 
     error = cudaGetLastError();
     if (error != cudaSuccess) {
-        throw std::runtime_error("Couldn't allocate memory: " + std::to_string((3*bytsize_freq+ (7 + 3*NUM_SRC_PAR)*bytsize_grid)/1e6) + std::string(cudaGetErrorName(error)) + " - " + std::string(cudaGetErrorString(error)));
-    }    
-    else {
-        //TODO: add message that tells also how many frequencies ...
-        std::cout << "Succesfully allocated " << (3*bytsize_freq+ (7 + 3*NUM_SRC_PAR)*bytsize_grid)/1e6 << " Mb of device memory for grid of size N = " << N;
-        std::cout << ", with source batch size " << NUM_SRC_PAR << " and " << NUM_FREQ << " frequency bins." << std::endl;
+        throw std::runtime_error(
+            "Couldn't allocate memory: " +
+            std::to_string(
+                (3 * bytsize_freq + (7 + 3 * NUM_SRC_PAR) * bytsize_grid) / 1e6
+            ) +
+            std::string(cudaGetErrorName(error)) + " - " +
+            std::string(cudaGetErrorString(error))
+        );
+    } else {
+        // TODO: add message that tells also how many frequencies ...
+        std::cout << "Succesfully allocated "
+                  << (3 * bytsize_freq + (7 + 3 * NUM_SRC_PAR) * bytsize_grid) / 1e6
+                  << " Mb of device memory for grid of size N = " << N;
+        std::cout << ", with source batch size " << NUM_SRC_PAR << " and " << NUM_FREQ
+                  << " frequency bins." << std::endl;
     }
 }
 
 // ========================================================================
 // Utility functions to copy data to device
 // ========================================================================
-void density_to_device(double* ndens,const int & N)
-{
-    cudaMemcpy(n_dev,ndens,N*N*N*sizeof(double),cudaMemcpyHostToDevice);
+void density_to_device(double *ndens, const int &N) {
+    cudaMemcpy(n_dev, ndens, N * N * N * sizeof(double), cudaMemcpyHostToDevice);
 }
 
-void tables_to_device(double* photo_thin_table, double* photo_thick_table, double* heat_thin_table, double* heat_thick_table, const int & NumTau, const int & NumFreq)
-{
+void tables_to_device(
+    double *photo_thin_table, double *photo_thick_table, double *heat_thin_table,
+    double *heat_thick_table, const int &NumTau, const int &NumFreq
+) {
     // Copy thin table
-    cudaMalloc(&photo_thin_table_dev, int(NumTau*NumFreq)*sizeof(double));
-    cudaMalloc(&heat_thin_table_dev, int(NumTau*NumFreq)*sizeof(double));
-    cudaMemcpy(photo_thin_table_dev, photo_thin_table, int(NumTau*NumFreq)*sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(heat_thin_table_dev, heat_thin_table, int(NumTau*NumFreq)*sizeof(double), cudaMemcpyHostToDevice);
+    cudaMalloc(&photo_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    cudaMalloc(&heat_thin_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    cudaMemcpy(
+        photo_thin_table_dev, photo_thin_table, int(NumTau * NumFreq) * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
+    cudaMemcpy(
+        heat_thin_table_dev, heat_thin_table, int(NumTau * NumFreq) * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
 
     // Copy thick table
-    cudaMalloc(&photo_thick_table_dev, int(NumTau*NumFreq)*sizeof(double));
-    cudaMalloc(&heat_thick_table_dev, int(NumTau*NumFreq)*sizeof(double));
-    cudaMemcpy(photo_thick_table_dev, photo_thick_table, int(NumTau*NumFreq)*sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(heat_thick_table_dev, photo_thick_table, int(NumTau*NumFreq)*sizeof(double), cudaMemcpyHostToDevice);
+    cudaMalloc(&photo_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    cudaMalloc(&heat_thick_table_dev, int(NumTau * NumFreq) * sizeof(double));
+    cudaMemcpy(
+        photo_thick_table_dev, photo_thick_table,
+        int(NumTau * NumFreq) * sizeof(double), cudaMemcpyHostToDevice
+    );
+    cudaMemcpy(
+        heat_thick_table_dev, photo_thick_table, int(NumTau * NumFreq) * sizeof(double),
+        cudaMemcpyHostToDevice
+    );
 }
 
-void source_data_to_device(int* pos, double* flux, const int & NumSrc)
-{   
+void source_data_to_device(int *pos, double *flux, const int &NumSrc) {
     // Free arrays from previous evolve call
     cudaFree(src_pos_dev);
     cudaFree(src_flux_dev);
 
     // Allocate memory for sources of current evolve call
-    cudaMalloc(&src_pos_dev,3*NumSrc*sizeof(int));
-    cudaMalloc(&src_flux_dev,NumSrc*sizeof(double));
+    cudaMalloc(&src_pos_dev, 3 * NumSrc * sizeof(int));
+    cudaMalloc(&src_flux_dev, NumSrc * sizeof(double));
 
     // Copy source data (positions & strengths) to device
-    cudaMemcpy(src_pos_dev,pos,3*NumSrc*sizeof(int),cudaMemcpyHostToDevice);
-    cudaMemcpy(src_flux_dev,flux,NumSrc*sizeof(double),cudaMemcpyHostToDevice);
+    cudaMemcpy(src_pos_dev, pos, 3 * NumSrc * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(src_flux_dev, flux, NumSrc * sizeof(double), cudaMemcpyHostToDevice);
 }
 
 // ========================================================================
 // Deallocate device memory at the end of a run
 // ========================================================================
-void device_close()
-{   
+void device_close() {
     printf("Deallocating device memory...\n");
     cudaFree(cdh_dev);
     cudaFree(cdhei_dev);
