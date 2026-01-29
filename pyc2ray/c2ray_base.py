@@ -562,16 +562,24 @@ class C2Ray:
 
     def _cosmology_init(self):
         """Set up cosmology from parameters (H0, Omega,..)"""
-        h = self._ld["Cosmology"]["h"]
+        self.h = self._ld["Cosmology"]["h"]
         Om0 = self._ld["Cosmology"]["Omega0"]
         Ob0 = self._ld["Cosmology"]["Omega_B"]
         Tcmb0 = self._ld["Cosmology"]["cmbtemp"]
-        H0 = 100 * h
+        H0 = 100 * self.h
+
         self.cosmology = FlatLambdaCDM(H0, Om0, Tcmb0, Ob0=Ob0)
 
         self.cosmological = self._ld["Cosmology"]["cosmological"]
         self.zred_0 = self._ld["Cosmology"]["zred_0"]
         self.age_0 = self.zred2time(self.zred_0)
+
+        self.pc=3.086e18 
+        self.kpc=1e3*self.pc 
+        self.Mpc=1e6*self.pc
+        self.H0 = self.h*100.0*1e5/self.Mpc
+        self.G_grav = 6.6732e-8
+        self.rho_crit_0=3.0*self.H0*self.H0/(8.0*np.pi*self.G_grav)
 
         # Scale quantities to the initial redshift
         if self.cosmological:
@@ -579,7 +587,7 @@ class C2Ray:
                 f"Cosmology is on, scaling comoving quantities to the initial redshift, which is z0 = {self.zred_0:.3f}..."
             )
             self.printlog("Cosmological parameters used:")
-            self.printlog(f"h   = {h:.4f}, Tcmb0 = {Tcmb0:.3e}")
+            self.printlog(f"h   = {self.h:.4f}, Tcmb0 = {Tcmb0:.3e}")
             self.printlog(f"Om0 = {Om0:.4f}, Ob0   = {Ob0:.4f}")
             self.dr = self.cosmology.scale_factor(self.zred_0) * self.dr_c
         else:
@@ -695,6 +703,7 @@ class C2Ray:
         # Comoving quantities
         self.boxsize = self._ld["Grid"]["boxsize"]
         self.boxsize_c = self.boxsize * Mpc
+
         self.dr_c = self.boxsize_c / self.N
 
         self.printlog(f"Welcome! Mesh size is N = {self.N:n}.")
