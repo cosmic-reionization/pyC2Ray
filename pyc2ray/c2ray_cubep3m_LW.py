@@ -48,7 +48,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.densNDcrit = 1.0
         self.densNDcrit_prev = 1.0
 
-        self.StillNeutral = 1e-4  # Threshold for considering a cell neutral
+        self.StillNeutral = 0.1  # Threshold for considering a cell neutral
         self.M_grid = None  # Will be calculated in _grid_init
         self.phot_per_atom = np.array([0, 0, 1e4])  # Photons per atom for different populations
         self.fstar = np.array([0, 0, 0.1])  # Star formation efficiency
@@ -656,7 +656,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # 4. Filter for Active Grids (Neutral cells with fresh mass)
         jLWc_now = self.get_jLWcrit(zred_now)
         jLWc_min = 0.1 * jLWc_now
-        
+
         # Mask: StillNeutral check and LW suppression check
         active_mask = (self.xh < self.StillNeutral) & \
                       (jLWgrid < jLWc_now) & \
@@ -668,13 +668,23 @@ class C2Ray_CubeP3M_LW(C2Ray):
             return None, None, 0
 
         # 5. Apply Lyman-Werner Suppression
-        # Interpolate suppression factor between jLWc_min and jLWc_now
-        ssM_msun = diff_subsrcMsun[active_mask]
-        lw_vals = jLWgrid[active_mask]
+
+        ssM_msun = np.zeros_like(len(active_mask[active_mask==True]))
+
+        # No suppression branch (jLW < jLW_crit)
+        low_LW = active_mask & (jLWgrid <= jLWc_min)
+        ssM_msun[low_LW] = diff_subsrcMsun[low_LW]
+
+        # Partial Suppression for jLW > jLW_crit
+        mid_LW = active_mask & (jLWgrid > jLWc_min)
+        ssM_msun[mid_LW] = diff_subsrcMsun[mid_LW] * (
+            (jLWc_now - jLWgrid[mid_LW]) /
+            (jLWc_now - jLWc_min)
+            )
         
-        suppression = (jLWc_now - lw_vals) / (jLWc_now - jLWc_min)
-        suppression = np.clip(suppression, 0, 1)
-        ssM_msun *= suppression
+        tot_subsrcM_msun = np.sum(ssM_msun)
+        print("tot_subsrcM_msun = ",tot_subsrcM_msun)
+        print("Total mini halos generated = ", tot_subsrcM_msun/self.M_PIIIstar_msun)
 
         # 6. Convert to Grid Units and Normalized Flux
         # Constants from Fortran module: Omega_B, Omega0, m_p, M_SOLAR, S_star_nominal
