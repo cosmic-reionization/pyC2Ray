@@ -283,7 +283,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
                 np.save(
                     file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion
                 )
-                # np.save(file=self.results_basename + "coldens" + suffix, arr=self.coldens)
+                np.save(file=self.results_basename + "jLW3d_" + suffix, arr=self.jLW)
 
             # print min, max and average quantities
             self.printlog("\n--- Reionization History ----")
@@ -662,25 +662,28 @@ class C2Ray_CubeP3M_LW(C2Ray):
                       (jLWgrid < jLWc_now) & \
                       (diff_subsrcMsun > 0)
         print("****************************************************************************************")
-        print("Number of active grids: ", len(active_mask[active_mask==True]))
+        print("Number of active grids: ", np.sum(active_mask))
   
         if not np.any(active_mask):
             return None, None, 0
 
         # 5. Apply Lyman-Werner Suppression
+        # Get active grid indices and count
+        active_indices = np.argwhere(active_mask)
+        NumAGrid = len(active_indices)
 
-        ssM_msun = np.zeros_like(len(active_mask[active_mask==True]))
+        ssM_msun = np.zeros(NumAGrid)
 
-        # No suppression branch (jLW < jLW_crit)
-        low_LW = active_mask & (jLWgrid <= jLWc_min)
-        ssM_msun[low_LW] = diff_subsrcMsun[low_LW]
-
-        # Partial Suppression for jLW > jLW_crit
-        mid_LW = active_mask & (jLWgrid > jLWc_min)
-        ssM_msun[mid_LW] = diff_subsrcMsun[mid_LW] * (
-            (jLWc_now - jLWgrid[mid_LW]) /
-            (jLWc_now - jLWc_min)
-            )
+        for idx, (i, j, k) in enumerate(active_indices):
+            if jLWgrid[i, j, k] <= jLWc_min:
+                # No suppression branch (jLW < jLWc_min)
+                ssM_msun[idx] = diff_subsrcMsun[i, j, k]
+            else:
+                # Partial suppression for jLW > jLWc_min
+                ssM_msun[idx] = diff_subsrcMsun[i, j, k] * (
+                    (jLWc_now - jLWgrid[i, j, k]) /
+                    (jLWc_now - jLWc_min)
+                )
         
         tot_subsrcM_msun = np.sum(ssM_msun)
         print("tot_subsrcM_msun = ",tot_subsrcM_msun)
@@ -704,11 +707,31 @@ class C2Ray_CubeP3M_LW(C2Ray):
             subsrcMass = ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2] / self.fstar[2]
             subNormFlux = (subsrcMass * self.M_grid / m_p_cgs) / (self.S_star_nominal * AGlifetime)
 
-        # 7. Randomize for raytracing order (Equivalent to call permi)
-        active_indices = np.argwhere(active_mask)
-        p = np.random.permutation(len(active_indices))
+        print('Subgrid Source lifetime=', AGlifetime/3.1536e13)
+        self.printlog('Subgrid Total flux= ',sum(subNormFlux))
         
-        return active_indices[p], subNormFlux[p], len(active_indices)
+        # 7. Save subgrid source list to file (matching Fortran format)
+        z_str = f"{zred_now:6.3f}"
+        sourcelistfile_sub = f"{self.results_dir}/{z_str}-{self.id_str}_SUBsources.dat"
+        
+        with open(sourcelistfile_sub, 'w') as f:
+            # Write number of active grids
+            f.write(f"{NumAGrid}\n")
+            # Write MHflag to distinguish physical meaning
+            # When MHflag=2, ssM_msun is STELLAR BARYON MASS, not BARYON+DM HALO MASS
+            f.write(f"{self.MHflag}\n")
+            # Write source data: i, j, k, subsrcMass, ssM_msun
+            # Format matches Fortran: 3I5,2e13.4
+            for idx in range(NumAGrid):
+                i, j, k = active_indices[idx]
+                f.write(f"{i:5d}{j:5d}{k:5d}{subsrcMass[idx]:13.4e}{ssM_msun[idx]:13.4e}\n")
+        
+        print(f"Saved subgrid sources to: {sourcelistfile_sub}")
+
+        # 8. Randomize for raytracing order (Equivalent to Fortran's call permi)
+        p = np.random.permutation(NumAGrid)
+        
+        return active_indices[p], subNormFlux[p], NumAGrid
     
     def _init_jLW_constants(self):
         """Port of get_HcOm: Simple constant calculation in unit of Mpc^-1."""
