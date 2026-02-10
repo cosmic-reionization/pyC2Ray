@@ -563,6 +563,7 @@ class C2Ray:
     def _cosmology_init(self):
         """Set up cosmology from parameters (H0, Omega,..)"""
         self.h = self._ld["Cosmology"]["h"]
+        print("self.h", self.h)
         Om0 = self._ld["Cosmology"]["Omega0"]
         Ob0 = self._ld["Cosmology"]["Omega_B"]
         Tcmb0 = self._ld["Cosmology"]["cmbtemp"]

@@ -50,8 +50,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         self.StillNeutral = 0.1  # Threshold for considering a cell neutral
         self.M_grid = None  # Will be calculated in _grid_init
-        self.phot_per_atom = np.array([0, 0, 1e4])  # Photons per atom for different populations
-        self.fstar = np.array([0, 0, 0.1])  # Star formation efficiency
+        self.phot_per_atom = np.array([10/6, 150/6, 833])  # Photons per atom for different populations
+        self.fstar = np.array([0.008, 0.015, 0.015])  # Star formation efficiency
+        self.n_box = 8000
 
         # --- LW Green Function State ---
         self.greenK = None
@@ -599,8 +600,29 @@ class C2Ray_CubeP3M_LW(C2Ray):
             return mass_grid
         
         # Find redshift index
-        idx_zred = np.searchsorted(self.zred_array_interp, zred) - 1
-        idx_zred = np.clip(idx_zred, 0, self.Nzdata - 1)
+        
+        # NEW idx_zred
+        idx_zred = 0
+        zred_round = round(zred * 1000) / 1000.0
+
+        if self.Nzdata > 1:
+            for itable in range(1, self.Nzdata):
+                z_prev = self.zred_array_interp[itable - 1]
+                z_curr = self.zred_array_interp[itable]
+                
+                if z_prev >= zred_round and z_curr < zred_round:
+                    idx_zred = itable - 1
+                    break
+
+        else:
+            idx_zred = 0
+
+        if (idx_zred < 0):
+            idx_zred = 0
+        if (idx_zred >= self.Nzdata):
+            idx_zred = self.Nzdata-1
+        # end new inx_zred
+
         
         # Calculate log density for masked cells
         lg_delta = np.log10(np.maximum(dens_nd_grid[mask], 1e-5))
@@ -613,11 +635,10 @@ class C2Ray_CubeP3M_LW(C2Ray):
         n_mh = 10**self.LGnMH_Mpc3[idx_zred, idx_delta]
         
         # Convert to mass per cell
-        cell_vol_comoving = (self.boxsize / self.N)**3  # (cMpc/h)^3
+        vol_cMpc3 = (self.boxsize/self.h/self.N)**3 
         h_scaling = (self.h / 0.7)**3
-        
-        mass_grid[mask] = n_mh * cell_vol_comoving * h_scaling * self.M_PIIIstar_msun
-        
+        mass_grid[mask] = n_mh * vol_cMpc3 * h_scaling * self.M_PIIIstar_msun
+
         return mass_grid
 
     def update_agrid_properties(self, nz, AGlifetime, jLWgrid):
@@ -627,7 +648,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         zred_now = self.zred_array[nz]
         
         self.M_box = self.rho_crit_0* self.cosmology.Om0 *(self.boxsize*self.Mpc / self.h)**3 
-        self.M_grid = self.M_box/(self.N**3) 
+        self.M_grid = self.M_box/(self.n_box**3) 
         self.M_particle = 8.0*self.M_grid 
 
         # 1. Calculate Critical Density Threshold (only needed for MHflag 2)
@@ -692,7 +713,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # 6. Convert to Grid Units and Normalized Flux
         # Constants from Fortran module: Omega_B, Omega0, m_p, M_SOLAR, S_star_nominal
         m_p_cgs = c.m_p.cgs.value
-        m_solar_cgs = 1.989e33 # astroconstants.M_SOLAR
+        m_solar_cgs = 1.98892e33 # astroconstants.M_SOLAR
         
         if self.MHflag == 1:
             # Case 1: Proportional to Baryon fraction
@@ -712,8 +733,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         # 7. Save subgrid source list to file (matching Fortran format)
         z_str = f"{zred_now:6.3f}"
-        sourcelistfile_sub = f"{self.results_dir}/{z_str}-{self.id_str}_SUBsources.dat"
-        
+        sourcelistfile_sub = f"{self.results_basename}/{z_str}-coarsened_SUBsources.dat"
         with open(sourcelistfile_sub, 'w') as f:
             # Write number of active grids
             f.write(f"{NumAGrid}\n")
@@ -725,9 +745,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
             for idx in range(NumAGrid):
                 i, j, k = active_indices[idx]
                 f.write(f"{i:5d}{j:5d}{k:5d}{subsrcMass[idx]:13.4e}{ssM_msun[idx]:13.4e}\n")
-        
         print(f"Saved subgrid sources to: {sourcelistfile_sub}")
-
         # 8. Randomize for raytracing order (Equivalent to Fortran's call permi)
         p = np.random.permutation(NumAGrid)
         
