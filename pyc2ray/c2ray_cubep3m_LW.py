@@ -58,7 +58,20 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.greenK = None
         self.HcOm = 0.0
         self.rLW_zobs = 0.0
+
+        # LW emissivities (erg s^-1 Hz^-1 Msun^-1)
+        self.emis00 = 1.67e21   
+        self.emis01 = 3e21      
+        self.emissub = 3e21     
         
+        # Real ionizing photon rates
+        self.QH_M_real00 = 6.309573445e46 
+        self.QH_M_real01 = 1.2e48
+        self.QH_M_real_sub = 1.2e48
+        
+        self.Ni  = np.array([ 6000/6, 50000/6, 55000])
+        self.fstar = np.array([0.008, 0.015, 0.015])
+        self.M_solar = 1.98892e33 
         # Read the fit data immediately
         if self.MHflag == 2:
             self.read_LGnMH_Mpc3()
@@ -109,6 +122,10 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # For the low mass
         mass2phot_lm = msun2g * self.fgamma_lm * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value * self.ts * self.cosmology.Om0)    
 
+        self.M_box = self.rho_crit_0* self.cosmology.Om0 *(self.boxsize*self.Mpc / self.h)**3 
+        self.M_grid = self.M_box/(self.n_box**3) 
+        grid2msun = self.M_grid / msun2g
+
         if file.endswith('.hdf5'):
             f = h5py.File(file, 'r')
             srcpos = f['sources_positions'][:].T
@@ -118,9 +135,26 @@ class C2Ray_CubeP3M_LW(C2Ray):
         else:
             # use density fields generated from yt
             src = np.loadtxt(file, skiprows=1)
+            
+            # --- Define the sM00_msun (High Mass) and sM01_msun (Low Mass) arrays ---
+            # In your text file: src[:, 3] is HMACH mass, src[:, 4] is LMACH mass
+            if len(src.shape) == 1:
+                self.sM00_msun = np.array([src[3] * grid2msun])
+                self.sM01_msun = np.array([src[4] * grid2msun])
+            else:
+                self.sM00_msun = src[:, 3] * grid2msun
+                self.sM01_msun = src[:, 4] * grid2msun
+
+            # --- Now handle suppression for sM01_msun specifically ---
+            if self.source_model == 1: # Full Suppression
+                if len(src.shape) > 1:
+                    for i in range(len(src)):
+                        # If the cell is ionized, the LMACH mass contributes 0 to radiation
+                        if self.xh[int(src[i][0]-1), int(src[i][1]-1), int(src[i][2]-1)] > 0.9:
+                            self.sM01_msun[i] = 0.0
 
             if self.source_model is None or self.source_model == 0:#---------- No Supression Model -----------------
-                if len(src.shape) == 1:
+                if len(src.shape) == 1: 
                     srcpos = src[:3].T
                     srcpos = srcpos.reshape((3, 1))
                     normflux = np.array([(src[3] * mass2phot_hm / S_star_ref) + (src[4] * mass2phot_lm / S_star_ref)])
@@ -693,21 +727,22 @@ class C2Ray_CubeP3M_LW(C2Ray):
         active_indices = np.argwhere(active_mask)
         NumAGrid = len(active_indices)
 
-        ssM_msun = np.zeros(NumAGrid)
+        self.ssM_msun = np.zeros(NumAGrid)
 
         for idx, (i, j, k) in enumerate(active_indices):
             if jLWgrid[i, j, k] <= jLWc_min:
                 # No suppression branch (jLW < jLWc_min)
-                ssM_msun[idx] = diff_subsrcMsun[i, j, k]
+                self.ssM_msun[idx] = diff_subsrcMsun[i, j, k]
             else:
                 # Partial suppression for jLW > jLWc_min
-                ssM_msun[idx] = diff_subsrcMsun[i, j, k] * (
+                self.ssM_msun[idx] = diff_subsrcMsun[i, j, k] * (
                     (jLWc_now - jLWgrid[i, j, k]) /
                     (jLWc_now - jLWc_min)
                 )
         
-        tot_subsrcM_msun = np.sum(ssM_msun)
+        tot_subsrcM_msun = np.sum(self.ssM_msun)
         print("tot_subsrcM_msun = ",tot_subsrcM_msun)
+        self.printlog(f"Total active stellar mass in subgrids, in solar mass: {np.sum(tot_subsrcM_msun)}", self.logfile)
         print("Total mini halos generated = ", tot_subsrcM_msun/self.M_PIIIstar_msun)
 
         # 6. Convert to Grid Units and Normalized Flux
@@ -717,15 +752,15 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         if self.MHflag == 1:
             # Case 1: Proportional to Baryon fraction
-            # subsrcMass = ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2]
-            subsrcMass = ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2]
+            # subsrcMass = self.ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2]
+            subsrcMass = self.ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2]
             subNormFlux = (subsrcMass * self.M_grid * self.cosmology.Ob0 / 
                           (self.cosmology.Om0 * m_p_cgs)) / (self.S_star_nominal * AGlifetime)
             
         elif self.MHflag == 2:
             # Case 2: Discrete Pop III stars
-            # subsrcMass = ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2] / fstar[2]
-            subsrcMass = ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2] / self.fstar[2]
+            # subsrcMass = self.ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2] / fstar[2]
+            subsrcMass = self.ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2] / self.fstar[2]
             subNormFlux = (subsrcMass * self.M_grid / m_p_cgs) / (self.S_star_nominal * AGlifetime)
 
         print('Subgrid Source lifetime=', AGlifetime/3.1536e13)
@@ -738,13 +773,13 @@ class C2Ray_CubeP3M_LW(C2Ray):
             # Write number of active grids
             f.write(f"{NumAGrid}\n")
             # Write MHflag to distinguish physical meaning
-            # When MHflag=2, ssM_msun is STELLAR BARYON MASS, not BARYON+DM HALO MASS
+            # When MHflag=2, self.ssM_msun is STELLAR BARYON MASS, not BARYON+DM HALO MASS
             f.write(f"{self.MHflag}\n")
-            # Write source data: i, j, k, subsrcMass, ssM_msun
+            # Write source data: i, j, k, subsrcMass, self.ssM_msun
             # Format matches Fortran: 3I5,2e13.4
             for idx in range(NumAGrid):
                 i, j, k = active_indices[idx]
-                f.write(f"{i:5d}{j:5d}{k:5d}{subsrcMass[idx]:13.4e}{ssM_msun[idx]:13.4e}\n")
+                f.write(f"{i:5d}{j:5d}{k:5d}{subsrcMass[idx]:13.4e}{self.ssM_msun[idx]:13.4e}\n")
         print(f"Saved subgrid sources to: {sourcelistfile_sub}")
         # 8. Randomize for raytracing order (Equivalent to Fortran's call permi)
         p = np.random.permutation(NumAGrid)
@@ -789,41 +824,30 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         return greenK
 
+
     def get_srclumK(self, nz, srcpos_massive, normflux_massive, srcpos_mh, normflux_mh):
         """
         Port of get_srclumK: Create and FFT the source luminosity distribution.
-        Returns the Fourier transform of the source distribution for LW calculations.
+        Returns the Fourier transform matching Fortran's layout: (N//2+1, N, N)
         """
         # Calculate C2Ray lifetime for this redshift interval
         C2ray_lifetime = abs(self.zred2time(self.zred_array[nz]) - 
                             self.zred2time(self.zred_array[nz+1]))
         
-        # LW emissivities (erg s^-1 Hz^-1 Msun^-1)
-        emis_hm = 1.67e21   # high-mass (massive halos)
-        emis_lm = 3e21      # low-mass (suppressed sources)
-        emis_sub = 3e21     # subgrid minihalos
+
         
-        # Real ionizing photon rates
-        QH_M_real_hm = 6.309573445e46  # 10^46.8
-        QH_M_real_lm = 1.2e48
-        QH_M_real_sub = 1.2e48
-        
-        # C2Ray ionizing photon rates
-        m_solar_cgs = 1.989e33
-        m_p_cgs = c.m_p.cgs.value
-        
-        QH_M_C2ray_hm = self.phot_per_atom[0] * (m_solar_cgs / m_p_cgs) / C2ray_lifetime
-        QH_M_C2ray_lm = self.phot_per_atom[1] * (m_solar_cgs / m_p_cgs) / C2ray_lifetime
+        QH_M_C2ray00  = self.Ni[0] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
+        QH_M_C2ray01  = self.Ni[1] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
         
         # Correction coefficients
-        CC_hm = QH_M_C2ray_hm / QH_M_real_hm
-        CC_lm = QH_M_C2ray_lm / QH_M_real_lm
+        CC00 = QH_M_C2ray00 / self.QH_M_real00
+        CC01 = QH_M_C2ray01 / self.QH_M_real01
         
         # Coefficients for source luminosity
-        coeff_hm = emis_hm * CC_hm * self.fstar[0] * self.cosmology.Ob0 / self.cosmology.Om0
-        coeff_lm = emis_lm * CC_lm * self.fstar[1] * self.cosmology.Ob0 / self.cosmology.Om0
-        
-        # Initialize source luminosity grid
+        coeff00 = self.emis00 * CC00 * self.fstar[0] * self.cosmology.Ob0 / self.cosmology.Om0
+        coeff01 = self.emis01 * CC01 * self.fstar[1] * self.cosmology.Ob0 / self.cosmology.Om0
+
+        # Initialize source luminosity grid (Fortran order is important!)
         srclum = np.zeros(self.shape, order='F')
         
         # Add massive halo sources
@@ -831,28 +855,45 @@ class C2Ray_CubeP3M_LW(C2Ray):
             for i in range(normflux_massive.size):
                 ix, iy, iz = srcpos_massive[:, i].astype(int)
                 if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
-                    # Convert normalized flux back to mass, then apply LW coefficient
-                    # Note: This is a simplification - you may need to track actual masses
-                    srclum[ix, iy, iz] += normflux_massive[i] * self.S_star_nominal * coeff_hm
-        
+                    srclum[ix, iy, iz] += self.sM00_msun * coeff00
+
+        # TODO We need to check if we need to calculate srclum for the LMACHS
+        # The below is the FORTRAN version
+        # do n01 = 1, NumSupprbleSrc-NumSupprsdSrc
+        # srclum(srcpos01(1, n01), srcpos01(2, n01), srcpos01(3, n01)) = &
+        #     srclum(srcpos01(1, n01), srcpos01(2, n01), srcpos01(3, n01)) + &
+        #     sM01_msun(n01) * coeff01
+
         # Add minihalo/subgrid sources
         if srcpos_mh is not None and normflux_mh is not None:
             if self.MHflag == 1:
-                QH_M_C2ray_sub = self.phot_per_atom[2] * (m_solar_cgs / m_p_cgs) / C2ray_lifetime
-                CC_sub = QH_M_C2ray_sub / QH_M_real_sub
-                coeff_sub = emis_sub * CC_sub * self.fstar[2] * self.cosmology.Ob0 / self.cosmology.Om0
+                QH_M_C2ray_sub = self.Ni[2] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime
+                CC_sub = QH_M_C2ray_sub / self.QH_M_real_sub
+                coeff_sub = self.emissub * CC_sub * self.fstar[2] * self.cosmology.Ob0 / self.cosmology.Om0
+                print('Sanity check: fesc_sub = ', self.phot_per_atom[2] /(self.Ni[2] *self.fstar[2]) )
             elif self.MHflag == 2:
-                QH_M_C2ray_sub = self.phot_per_atom[2] * (m_solar_cgs / m_p_cgs) / C2ray_lifetime
-                CC_sub = QH_M_C2ray_sub / QH_M_real_sub
-                coeff_sub = emis_sub * CC_sub  # Note: no fstar multiplication for MHflag=2
+                QH_M_C2ray_sub = self.Ni[2] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime
+                CC_sub = QH_M_C2ray_sub / self.QH_M_real_sub
+                coeff_sub = self.emissub * CC_sub
+                print('Sanity check: fesc_sub = ', self.phot_per_atom[2] /(self.Ni[2] *self.fstar[2]) )
             
             for i in range(normflux_mh.size):
                 ix, iy, iz = srcpos_mh[:, i].astype(int)
                 if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
-                    srclum[ix, iy, iz] += normflux_mh[i] * self.S_star_nominal * coeff_sub
+                    srclum[ix, iy, iz] = srclum[ix, iy, iz] + self.ssM_msun[i] * coeff_sub
+
+        # CRITICAL FIX: Match Fortran FFT convention
+        # Fortran reduces first dimension, Python rfftn reduces last dimension
+        # Solution: transpose before and after FFT
         
-        # FFT to k-space
-        srclumK = np.fft.rfftn(srclum)
+        # Transpose: (N, N, N) -> (N, N, N) but with axes swapped
+        srclum_T = np.transpose(srclum, (2, 1, 0))  # Now (Nz, Ny, Nx)
+        
+        # FFT: reduces last axis, giving (Nz, Ny, Nx//2+1)
+        srclumK_T = np.fft.rfftn(srclum_T)
+        
+        # Transpose back to Fortran convention: (Nx//2+1, Ny, Nz)
+        srclumK = np.transpose(srclumK_T, (2, 1, 0))
         
         # Normalize (matching Fortran normalization)
         srclumK = srclumK / float(self.N**3)
@@ -871,34 +912,18 @@ class C2Ray_CubeP3M_LW(C2Ray):
         fname = os.path.join(self.results_basename, f"{zstr}-srcK.npy")
         return np.load(fname)
 
-    def compute_jLW_from_history(self, nz, zi, zf):
+    def compute_jLW_from_history(self, nz0, nz):
         """
         Complete port of get_jLW: Accumulate LW contributions from all past redshift slices.
-        
-        Parameters:
-        -----------
-        nz : int
-            Current index in zred_fine array
-        zi : float
-            Starting redshift of current slice
-        zf : float
-            Ending redshift of current slice
-        
-        Returns:
-        --------
-        jLW : ndarray
-            3D grid of LW background intensity
         """
         # Observer redshift is the END of the current slice
-        zobs = zf
+        zobs = self.zred_array[nz+1]
         
         # Calculate LW horizon
         self.get_rLW(zobs)
         
         # Find starting redshift for LW calculation
-        # This is the lookback redshift beyond which LW photons can't reach us
         zstart = ((1.0 + zobs)**(-0.5) - self.rLW_zobs * 0.5 * self.HcOm)**(-2.0) - 1.0
-        
         # Find which redshift index to start from
         nz_LWbegin = 0
         if zstart > self.zred_array[0]:
@@ -912,8 +937,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         n_pastslice = nz + 1 - nz_LWbegin
         self.printlog(f"LW calculation: {n_pastslice} past slices from z={self.zred_array[nz_LWbegin]:.3f}", 
-                     self.logfile)
-        
+                    self.logfile)
+
         # Initialize jLW accumulator
         jLW_total = np.zeros(self.shape, order='F')
         
@@ -923,32 +948,30 @@ class C2Ray_CubeP3M_LW(C2Ray):
             zsend = self.zred_array[nzz + 1]
             
             self.printlog(f"  Adding LW contribution from z={zsbegin:.3f} to z={zsend:.3f}", 
-                         self.logfile)
+                        self.logfile)
             
             # Read Green's function for this slice observed at zobs
-            self.greenK = self.read_greenK(zsbegin, zsend, zobs)
-            
-            # Load the source distribution for this slice
-            try:
-                srclumK = self.load_srclumK(zsbegin)
-            except FileNotFoundError:
-                self.printlog(f"  Warning: No srclumK found for z={zsbegin:.3f}, skipping", 
-                             self.logfile)
-                continue
-            
-            # Convolution in Fourier space: multiply Green's function by source distribution
-            # Note: NumPy rfftn gives (Nx, Ny, Nz//2+1) while Fortran is (Nz//2+1, Nx, Ny)
-            # Need to transpose appropriately
-            gK_sK = self.greenK.T * srclumK
+            # greenK is already in correct shape (N//2+1, N, N) from read_greenK
+            greenK = self.read_greenK(zsbegin, zsend, zobs)
+            srclumK = self.load_srclumK(zsbegin)
+
+            # CRITICAL FIX: Both arrays now have shape (N//2+1, N, N)
+            # Direct multiplication (convolution theorem)
+            gK_sK = greenK * srclumK
             
             # Inverse FFT back to real space
-            jLW_contrib = np.fft.irfftn(gK_sK, s=self.shape)
+            # Need to match Fortran's C2R FFT which expects first dimension reduced
+            # Transpose to Python convention, IFFT, transpose back
+            gK_sK_T = np.transpose(gK_sK, (2, 1, 0))  # (N, N, N//2+1)
+            jLW_contrib_T = np.fft.irfftn(gK_sK_T, s=(self.N, self.N, self.N))  # (N, N, N)
+            jLW_contrib = np.transpose(jLW_contrib_T, (2, 1, 0))  # Back to F-order
             
             # Accumulate
             jLW_total += jLW_contrib
         
-        # Ensure non-negative
+        # Ensure non-negative and Fortran-ordered
         jLW_total = np.maximum(jLW_total, 0.0)
+        jLW_total = np.asfortranarray(jLW_total)
         
         jLW_mean = np.mean(jLW_total)
         self.printlog(f"Total LW background: mean={jLW_mean:.3e} erg/s/cm^2/Hz/sr", self.logfile)
