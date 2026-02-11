@@ -894,7 +894,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         # Transpose back to Fortran convention: (Nx//2+1, Ny, Nz)
         srclumK = np.transpose(srclumK_T, (2, 1, 0))
-        
         # Normalize (matching Fortran normalization)
         srclumK = srclumK / float(self.N**3)
         
