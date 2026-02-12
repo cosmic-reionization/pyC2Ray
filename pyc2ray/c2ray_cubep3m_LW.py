@@ -382,8 +382,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         #Edited by DA
         self.density_basename = self._ld["Output"]["density_basename"]
-        self.zred_density = np.loadtxt(self.inputs_basename + "redshifts_checkpoints.txt")
-        self.zred_sources = np.loadtxt(self.inputs_basename + "redshifts_checkpoints.txt")
+        self.zred_density = np.loadtxt(self.inputs_basename + "redshifts_fine.dat", skiprows=1)
+        self.zred_sources = np.loadtxt(self.inputs_basename + "redshifts_checkpoints.txt", skiprows=1)
 
         if self.resume:
             # get the resuming redshift
@@ -855,7 +855,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
             for i in range(normflux_massive.size):
                 ix, iy, iz = srcpos_massive[:, i].astype(int)
                 if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
-                    srclum[ix, iy, iz] += self.sM00_msun * coeff00
+                    srclum[ix, iy, iz] += self.sM00_msun[i] * coeff00
 
         # TODO We need to check if we need to calculate srclum for the LMACHS
         # The below is the FORTRAN version
@@ -957,13 +957,18 @@ class C2Ray_CubeP3M_LW(C2Ray):
             # CRITICAL FIX: Both arrays now have shape (N//2+1, N, N)
             # Direct multiplication (convolution theorem)
             gK_sK = greenK * srclumK
-            
+
             # Inverse FFT back to real space
             # Need to match Fortran's C2R FFT which expects first dimension reduced
             # Transpose to Python convention, IFFT, transpose back
-            gK_sK_T = np.transpose(gK_sK, (2, 1, 0))  # (N, N, N//2+1)
-            jLW_contrib_T = np.fft.irfftn(gK_sK_T, s=(self.N, self.N, self.N))  # (N, N, N)
-            jLW_contrib = np.transpose(jLW_contrib_T, (2, 1, 0))  # Back to F-order
+            gK_sK_T = np.transpose(gK_sK, (2, 1, 0))
+        
+            # Inverse FFT WITHOUT normalization (norm='forward' means no normalization on inverse)
+            # FFTW does NOT normalize, so we need to match that
+            jLW_contrib_T = np.fft.irfftn(gK_sK_T, s=(self.N, self.N, self.N), norm='forward')
+            
+            # Transpose back to Fortran order
+            jLW_contrib = np.transpose(jLW_contrib_T, (2, 1, 0))
             
             # Accumulate
             jLW_total += jLW_contrib
