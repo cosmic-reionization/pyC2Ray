@@ -80,7 +80,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         super().__init__(paramfile)
 
-    def read_sources(self, file, mass='hm'): # >:( trgeoip
+    def read_sources(self, file, source_lifetime, mass='hm'): # >:( trgeoip
         """Read sources from a Ramses-formatted file
 
         The way sources are dealt with is still open and will change significantly
@@ -116,15 +116,16 @@ class C2Ray_CubeP3M_LW(C2Ray):
             Number of sources read from the file
         """
         S_star_ref = 1e48
-        
-        # TODO: automatic selection of low mass or high mass. For the moment only high mass
-        mass2phot_hm = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value * self.ts * self.cosmology.Om0)    
-        # For the low mass
-        mass2phot_lm = msun2g * self.fgamma_lm * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value * self.ts * self.cosmology.Om0)    
+        m_p_cgs = c.m_p.cgs.value
 
-        self.M_box = self.rho_crit_0* self.cosmology.Om0 *(self.boxsize*self.Mpc / self.h)**3 
-        self.M_grid = self.M_box/(self.n_box**3) 
+        self.M_box = self.rho_crit_0 * self.cosmology.Om0 * (self.boxsize * self.Mpc / self.h)**3
+        self.M_grid = self.M_box / (self.n_box**3)
         grid2msun = self.M_grid / msun2g
+
+        num_total_sources = 0
+        self.NumHMACHSrc = 0
+        self.NumSupprbleSrc = 0
+        self.NumSupprsdSrc = 0
 
         if file.endswith('.hdf5'):
             f = h5py.File(file, 'r')
@@ -132,102 +133,121 @@ class C2Ray_CubeP3M_LW(C2Ray):
             assert srcpos.shape[0] == 3
             normflux = f['sources_mass'][:] * mass2phot / S_star_ref
             f.close()
+            num_total_sources = normflux.size
+            self.NumSupprsdSrc = num_total_sources
+
         else:
-            # use density fields generated from yt
             src = np.loadtxt(file, skiprows=1)
-            
-            # --- Define the sM00_msun (High Mass) and sM01_msun (Low Mass) arrays ---
-            # In your text file: src[:, 3] is HMACH mass, src[:, 4] is LMACH mass
+
             if len(src.shape) == 1:
-                self.sM00_msun = np.array([src[3] * grid2msun])
-                self.sM01_msun = np.array([src[4] * grid2msun])
-            else:
-                self.sM00_msun = src[:, 3] * grid2msun
-                self.sM01_msun = src[:, 4] * grid2msun
+                src = src.reshape(1, -1)
 
-            # --- Now handle suppression for sM01_msun specifically ---
-            if self.source_model == 1: # Full Suppression
-                if len(src.shape) > 1:
-                    for i in range(len(src)):
-                        # If the cell is ionized, the LMACH mass contributes 0 to radiation
-                        if self.xh[int(src[i][0]-1), int(src[i][1]-1), int(src[i][2]-1)] > 0.9:
+            src[:, :3] -= 1  # Fortran to Python indexing
+            num_total_sources = src.shape[0]
+
+            # Raw grid-unit masses (matching Fortran's SrcMass00, SrcMass01)
+            srcMass00_grid = src[:, 3]  # HMACH mass in grid units
+            srcMass01_grid = src[:, 4]  # LMACH mass in grid units
+
+            # Solar mass versions (for LW calculations downstream)
+            self.sM00_msun = srcMass00_grid * grid2msun
+            self.sM01_msun = srcMass01_grid * grid2msun
+
+            # Count source types
+            self.NumHMACHSrc   = np.sum(srcMass00_grid > 0)
+            self.NumSupprbleSrc = np.sum(srcMass01_grid > 0)
+
+            if self.source_model == 4:
+                # Iliev et al. model in c2ray
+                # -------------------------------------------------------------------
+                # Matches Fortran exactly:
+                #   SrcMass(:,0) = SrcMass(:,1)*phot_per_atom(1) 
+                #                + SrcMass(:,2)*phot_per_atom(2)
+                #   NormFlux = SrcMass(ns,0) * M_grid * Omega_B 
+                #              / (Omega0 * m_p) / S_star_nominal / lifetime2
+                #
+                # Suppression: LMACHs in ionized cells (xh > StillNeutral) 
+                #              have SrcMass01 set to 0.
+                #              HMACHs are never suppressed.
+                # -------------------------------------------------------------------
+                srcpos = src[:, :3].T
+                # Apply suppression to LMACH masses
+                srcMass01_suppressed = srcMass01_grid.copy()
+                for i in range(num_total_sources):
+                    if srcMass01_grid[i] > 0:
+                        ix = int(src[i, 0])
+                        iy = int(src[i, 1])
+                        iz = int(src[i, 2])
+                        if self.xh[ix, iy, iz] > self.StillNeutral:
+                            srcMass01_suppressed[i] = 0.0
+                            self.NumSupprsdSrc += 1
+                            self.sM01_msun[i] = 0.0  # Keep consistent for LW use
+
+                # Combined mass weighted by photons per atom (still in grid units)
+                srcMass_combined = (srcMass00_grid * self.phot_per_atom[0] +
+                                    srcMass01_suppressed * self.phot_per_atom[1])
+                # NormFlux matching Fortran: M_grid * Ob0 / (Om0 * m_p) / S_star / lifetime 
+                normflux = (srcMass_combined * self.M_grid * self.cosmology.Ob0 / (self.cosmology.Om0 * m_p_cgs) / S_star_ref / source_lifetime)
+                # normflux = (srcMass_combined * self.M_grid * self.cosmology.Ob0 / (self.cosmology.Om0 * m_p_cgs) / S_star_ref / 60537950633080.320)
+                print(normflux* S_star_ref)
+                print(srcMass_combined, self.M_grid, self.cosmology.Ob0, m_p_cgs, S_star_ref, source_lifetime)
+
+            elif self.source_model is None or self.source_model == 0:
+                srcpos = src[:, :3].T
+                mass2phot_hm = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
+                mass2phot_lm = msun2g * self.fgamma_lm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
+                normflux = (self.sM00_msun * mass2phot_hm / S_star_ref) + (self.sM01_msun * mass2phot_lm / S_star_ref)
+                self.NumSupprsdSrc = 0
+
+            elif self.source_model == 1:  # Full suppression
+                srcpos = src[:, :3].T
+                mass2phot_hm = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
+                mass2phot_lm = msun2g * self.fgamma_lm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
+                for i in range(len(src)):
+                    if self.sM01_msun[i] > 0 and self.xh[int(src[i][0]), int(src[i][1]), int(src[i][2])] > self.StillNeutral:
+                        self.sM01_msun[i] = 0.0
+                        self.NumSupprsdSrc += 1
+                normflux = (self.sM00_msun * mass2phot_hm / S_star_ref) + (self.sM01_msun * mass2phot_lm / S_star_ref)
+
+            elif self.source_model == 2:  # Partial suppression
+                srcpos = src[:, :3].T
+                mass2phot_hm = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
+                mass2phot_lm = msun2g * self.fgamma_lm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
+                src_modified = src.copy()
+                for i in range(len(src)):
+                    if self.sM01_msun[i] > 0:
+                        if self.xh[int(src[i][0]), int(src[i][1]), int(src[i][2])] > self.StillNeutral:
+                            src_modified[i, 4] = self.sM01_msun[i] * mass2phot_hm
                             self.sM01_msun[i] = 0.0
-
-            if self.source_model is None or self.source_model == 0:#---------- No Supression Model -----------------
-                if len(src.shape) == 1: 
-                    srcpos = src[:3].T
-                    srcpos = srcpos.reshape((3, 1))
-                    normflux = np.array([(src[3] * mass2phot_hm / S_star_ref) + (src[4] * mass2phot_lm / S_star_ref)])
-                else:    
-                    srcpos = src[:, :3].T
-                    normflux = (src[:, 3] * mass2phot_hm / S_star_ref) + (src[:, 4] * mass2phot_hm / S_star_ref)
-            
-            if self.source_model == 1:#---------- Full Supression Model -----------------
-                if len(src.shape) == 1:
-                    srcpos = src[:3].T
-                    srcpos = srcpos.reshape((3, 1))
-                    # Fully suppress any LMACH source in a region with ion_frac > 0.9
-                    # The -1 is added to the src positions as they are saved in fortran indexing
-                    if self.xh[int(src[0]-1),int(src[1]-1),int(src[2]-1)] >0.9:
-                        src[4]=0
-                    normflux = np.array([(src[3] * mass2phot_hm / S_star_ref) + (src[4] * mass2phot_lm / S_star_ref)])
-                else:    
-                    srcpos = src[:, :3].T
-                    # Looping through all the sources
-                    for i in range(len(src)):
-                        if self.xh[int(src[i][0]-1), int(src[i][1]-1), int(src[i][2]-1)] > 0.9:
-                            # Fully supressing sources in ionized regions (>0.9)
-                            src[i][4] = 0
-                    normflux = (src[:, 3] * mass2phot_hm / S_star_ref) + (src[:, 4] * mass2phot_hm / S_star_ref)
-
-            if self.source_model == 2:#---------- Partially Supression Model -----------------
-                if len(src.shape) == 1:
-                    srcpos = src[:3].T
-                    srcpos = srcpos.reshape((3, 1))
-                    # If LMACH is in ionized region then efficiency is the same as HMACH
-                    # The -1 is added to the src positions as they are saved in fortran indexing
-                    if self.xh[int(src[0]-1),int(src[1]-1),int(src[2]-1)] >0.9:
-                        src[4] = src[4] * mass2phot_hm
-                    # If LMACH is not in ionized region then we just multiply by LMACH efficiency
-                    else:
-                        src[4] = src[4] * mass2phot_lm
-                    normflux = np.array([(src[3] * mass2phot_hm / S_star_ref) + (src[4] / S_star_ref)])
-                else:    
-                    srcpos = src[:, :3].T
-                    # Looping through all the sources
-                    for i in range(len(src)):
-                        if self.xh[int(src[i][0]-1), int(src[i][1]-1), int(src[i][2]-1)] > 0.9:
-                            # Fully supressing sources in ionized regions (>0.9)
-                            src[i][4] = src[i][4] * mass2phot_hm
+                            self.NumSupprsdSrc += 1
                         else:
-                            src[i][4] = src[i][4] * mass2phot_lm
-                    normflux = (src[:, 3] * mass2phot_hm / S_star_ref) + (src[:, 4] / S_star_ref)
-            
-            if self.source_model == 3: # ---------- Mass-dependent suppression of LMACHs ----------
-                if len(src.shape) == 1:
-                    srcpos = src[:3].T
-                    srcpos = srcpos.reshape((3, 1))
-                    # If LMACH is in ionized region then efficiency gradually supressed depending on mass
-                    # The -1 is added to the src positions as they are saved in fortran indexing
-                    if self.xh[int(src[0]-1),int(src[1]-1),int(src[2]-1)] >0.9:
-                        src[5] = src[5] * mass2phot_hm
-                    # If LMACH is not in ionized region then we just multiply original mass by HMACH efficiency
-                    else:
-                        src[5] = src[4] * mass2phot_hm
-                    normflux = np.array([(src[3] * mass2phot_hm / S_star_ref) + (src[5] / S_star_ref)])
-                else:    
-                    srcpos = src[:, :3].T
-                    # Looping through all the sources
-                    for i in range(len(src)):
-                        if self.xh[int(src[i][0]-1), int(src[i][1]-1), int(src[i][2]-1)] > 0.9:
-                            # Fully supressing sources in ionized regions (>0.9)
-                            src[i][5] = src[i][5] * mass2phot_hm
-                        else:
-                            src[i][5] = src[i][4] * mass2phot_hm
-                    normflux = (src[:, 3] * mass2phot_hm / S_star_ref) + (src[:, 5] / S_star_ref)
+                            src_modified[i, 4] = self.sM01_msun[i] * mass2phot_lm
+                normflux = (self.sM00_msun * mass2phot_hm / S_star_ref) + (src_modified[:, 4] / S_star_ref)
 
-        self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' %(normflux.size, file))
-        self.printlog(' min, max source mass : %.3e  %.3e [Msun] and min, mean, max number of ionising sources : %.3e  %.3e  %.3e [1/s]' %(normflux.min()/mass2phot_hm*S_star_ref, normflux.max()/mass2phot_hm*S_star_ref, normflux.min()*S_star_ref, normflux.mean()*S_star_ref, normflux.max()*S_star_ref))
+            elif self.source_model == 3:  # Mass-dependent suppression
+                srcpos = src[:, :3].T
+                mass2phot_hm = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
+                src_modified = src.copy()
+                for i in range(len(src)):
+                    if self.sM01_msun[i] > 0:
+                        if self.xh[int(src[i][0]), int(src[i][1]), int(src[i][2])] > self.StillNeutral:
+                            src_modified[i, 5] = src[i, 5] * mass2phot_hm
+                            self.NumSupprsdSrc += 1
+                        else:
+                            src_modified[i, 5] = src[i, 4] * mass2phot_hm
+                normflux = (self.sM00_msun * mass2phot_hm / S_star_ref) + (src_modified[:, 5] / S_star_ref)
+
+        # Print statistics
+        self.printlog(' Src model: ',self.source_model)
+        self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' % (normflux.size, file))
+        self.printlog(' Src model: ',self.source_model)
+        self.printlog(' Total number of source locations, no suppression: %d' % num_total_sources)
+        self.printlog(' Number of suppressable sources: %d' % self.NumSupprbleSrc)
+        self.printlog(' Number of suppressed sources: %d' % self.NumSupprsdSrc)
+        self.printlog(' Number of massive sources: %d' % self.NumHMACHSrc)
+        self.printlog(' Number of sources, after suppression: %d' % (self.NumHMACHSrc + self.NumSupprbleSrc - self.NumSupprsdSrc))
+        self.printlog(' Total flux: %.3e [s^-1]' % (np.sum(normflux) * S_star_ref))
+        self.printlog(' min, max normflux: %.3e  %.3e' % (normflux.min(), normflux.max()))
         return srcpos, normflux
 
     def read_density(self, z):
@@ -260,16 +280,18 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
             file = "%scoarser_densities/%.3fn_all.dat" % (self.inputs_basename, high_z)
             self.printlog("\n---- Reading density file:\n " + file)
-            
-            # 2. Update the current density
+
+            self.dens_ND = t2c.DensityFile(filename=file).cgs_density
+            self.dens_ND = self.dens_ND/np.mean(self.dens_ND)
+
+            file = "%scoarser_densities/%.3fntotcoarsened_all.dat" % (self.inputs_basename, high_z)
+            self.printlog("\n---- Reading density file (without halos):\n " + file)   
+
             self.ndens = (
                 t2c.DensityFile(filename=file).cgs_density
                 / (self.mean_molecular * c.m_p.cgs.value)
                 * (1 + redshift) ** 3
-            )
-
-            self.dens_ND = t2c.DensityFile(filename=file).cgs_density
-            self.dens_ND = self.dens_ND/np.mean(self.dens_ND)             
+            )          
 
             # self.dens_ND  = self.ndens / np.mean(self.ndens)
 
@@ -513,7 +535,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         print(f"Minihalo table loaded. Z: {self.zred_array_interp[0]:.2f} to {self.zred_array_interp[-1]:.2f}")
         print(f"LGnMH_Mpc3 shape: {self.LGnMH_Mpc3.shape}")
     
-    def get_denscrit(self, zred, filename=None):
+    def get_denscrit(self, zred, dens_ND, filename=None):
         """Port of subroutine get_denscrit. Finds critical density threshold via bisection."""
         # 1. Load small box data (z_numMH_6.3Mpc_full)
         # Assuming this file exists in your inputs directory
@@ -556,7 +578,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         # Density preparation
         # Ensure dens_ND is the same as the Fortran 3D array
-        log_flat_dens = np.log10(self.dens_ND).flatten()
+        log_flat_dens = np.log10(dens_ND).flatten()
 
         lg_mid = 0.0
         for i in range(1, n_max_iter + 1):
@@ -657,7 +679,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
             idx_zred = self.Nzdata-1
         # end new inx_zred
 
-        
         # Calculate log density for masked cells
         lg_delta = np.log10(np.maximum(dens_nd_grid[mask], 1e-5))
         
@@ -667,12 +688,10 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         # Calculate number density of minihalos per Mpc^3
         n_mh = 10**self.LGnMH_Mpc3[idx_zred, idx_delta]
-        
         # Convert to mass per cell
         vol_cMpc3 = (self.boxsize/self.h/self.N)**3 
         h_scaling = (self.h / 0.7)**3
         mass_grid[mask] = n_mh * vol_cMpc3 * h_scaling * self.M_PIIIstar_msun
-
         return mass_grid
 
     def update_agrid_properties(self, nz, AGlifetime, jLWgrid):
@@ -687,13 +706,12 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         # 1. Calculate Critical Density Threshold (only needed for MHflag 2)
         if self.MHflag == 2:
-            self.densNDcrit = self.get_denscrit(zred_now)
+            self.densNDcrit = self.get_denscrit(zred_now, self.dens_ND)
             if nz > 0:
-                self.densNDcrit_prev = self.get_denscrit(self.zred_array[nz-1])
+                self.densNDcrit_prev = self.get_denscrit(self.zred_array[nz-1], self.dens_ND_prev)
         
         # 2. Calculate Total Potential Mass per cell
         mass_now = self.get_subsrcM_msun_all(zred_now, self.dens_ND, self.densNDcrit)
-        print("self.densNDcrit", self.densNDcrit)
 
         # 3. Calculate Differential Mass (The "Fresh" Minihalos/Sources)
         # This prevents re-igniting sources from the previous step
@@ -704,9 +722,10 @@ class C2Ray_CubeP3M_LW(C2Ray):
             diff_subsrcMsun = mass_now - mass_prev
         else:
             diff_subsrcMsun = mass_now
+       
 
-        # Ensure no negative growth due to numerical fluctuations
-        diff_subsrcMsun = np.maximum(diff_subsrcMsun, 0.0)
+        # # Ensure no negative growth due to numerical fluctuations
+        # diff_subsrcMsun = np.maximum(diff_subsrcMsun, 0.0)
 
         # 4. Filter for Active Grids (Neutral cells with fresh mass)
         jLWc_now = self.get_jLWcrit(zred_now)
@@ -716,9 +735,15 @@ class C2Ray_CubeP3M_LW(C2Ray):
         active_mask = (self.xh < self.StillNeutral) & \
                       (jLWgrid < jLWc_now) & \
                       (diff_subsrcMsun > 0)
+        print("self.StillNeutral = ", self.StillNeutral)
+        print("self.xh > self.StillNeutral ", np.sum(self.xh > self.StillNeutral))
+        print("jLWgrid > jLWc_now ", np.sum(jLWgrid > jLWc_now))
+        print("diff_subsrcMsun < 0 ", np.sum(diff_subsrcMsun <= 0))
+        print("diff_subsrcMsun > 0 ", np.sum(diff_subsrcMsun > 0))
         print("****************************************************************************************")
         print("Number of active grids: ", np.sum(active_mask))
-  
+        print("np.sum(diff_subsrcMsun) = ", np.sum(diff_subsrcMsun))
+
         if not np.any(active_mask):
             return None, None, 0
 
@@ -762,10 +787,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
             # subsrcMass = self.ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2] / fstar[2]
             subsrcMass = self.ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2] / self.fstar[2]
             subNormFlux = (subsrcMass * self.M_grid / m_p_cgs) / (self.S_star_nominal * AGlifetime)
+            print('Subgrid Total flux= ',sum(subNormFlux))
 
-        print('Subgrid Source lifetime=', AGlifetime/3.1536e13)
         self.printlog('Subgrid Total flux= ',sum(subNormFlux))
-        
         # 7. Save subgrid source list to file (matching Fortran format)
         z_str = f"{zred_now:6.3f}"
         sourcelistfile_sub = f"{self.results_basename}/{z_str}-coarsened_SUBsources.dat"
@@ -825,7 +849,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         return greenK
 
 
-    def get_srclumK(self, nz, srcpos_massive, normflux_massive, srcpos_mh, normflux_mh):
+    def get_srclumK(self, nz, srcpos, normflux, srcpos_mh, normflux_mh):
         """
         Port of get_srclumK: Create and FFT the source luminosity distribution.
         Returns the Fourier transform matching Fortran's layout: (N//2+1, N, N)
@@ -833,8 +857,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # Calculate C2Ray lifetime for this redshift interval
         C2ray_lifetime = abs(self.zred2time(self.zred_array[nz]) - 
                             self.zred2time(self.zred_array[nz+1]))
-        
-
         
         QH_M_C2ray00  = self.Ni[0] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
         QH_M_C2ray01  = self.Ni[1] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
@@ -850,19 +872,25 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # Initialize source luminosity grid (Fortran order is important!)
         srclum = np.zeros(self.shape, order='F')
         
-        # Add massive halo sources
-        if srcpos_massive is not None and normflux_massive is not None:
-            for i in range(normflux_massive.size):
-                ix, iy, iz = srcpos_massive[:, i].astype(int)
+        # Add HMACHs
+        if srcpos is not None and normflux is not None:
+            for i in range(normflux.size):
+                ix, iy, iz = srcpos[:, i].astype(int)
                 if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
                     srclum[ix, iy, iz] += self.sM00_msun[i] * coeff00
 
-        # TODO We need to check if we need to calculate srclum for the LMACHS
-        # The below is the FORTRAN version
-        # do n01 = 1, NumSupprbleSrc-NumSupprsdSrc
-        # srclum(srcpos01(1, n01), srcpos01(2, n01), srcpos01(3, n01)) = &
-        #     srclum(srcpos01(1, n01), srcpos01(2, n01), srcpos01(3, n01)) + &
-        #     sM01_msun(n01) * coeff01
+        # Add HMACHs
+        if srcpos is not None and normflux is not None:
+            for i in range(normflux.size):
+                ix, iy, iz = srcpos[:, i].astype(int)
+                if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
+                    srclum[ix, iy, iz] += self.sM00_msun[i] * coeff00
+
+        if srcpos is not None and normflux is not None:
+            for i in range(normflux.size):
+                ix, iy, iz = srcpos[:, i].astype(int)
+                if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
+                    srclum[ix, iy, iz] += self.sM01_msun[i] * coeff01 # For suppressed sources self.sM01_msun = 0
 
         # Add minihalo/subgrid sources
         if srcpos_mh is not None and normflux_mh is not None:

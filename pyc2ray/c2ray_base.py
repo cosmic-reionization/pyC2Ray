@@ -630,11 +630,7 @@ class C2Ray:
             radsource = BlackBodySource(
                 self.bb_Teff, self.grey, ion_freq_HI, self.cs_pl_idx_h
             )
-
-            # Print info
-            self.printlog(
-                f"Using Black-Body sources with effective temperature T = {radsource.temp:.1e} K and Radius {(radsource.R_star / cst.R_sun.to('cm')).value: .3e} rsun"
-            )
+            
             self.printlog(
                 f"Spectrum Frequency Range: {freq_min:.3e} to {freq_max:.3e} Hz"
             )
@@ -678,7 +674,9 @@ class C2Ray:
         self.photo_thin_table, self.photo_thick_table = radsource.make_photo_table(
             self.tau, freq_min, freq_max, 1e48
         )
-
+        if self.SourceType == "blackbody":
+            self.printlog(
+                    f"Using Black-Body sources with effective temperature T = {radsource.temp:.1e} K and Radius {(radsource.R_star / cst.R_sun.to('cm')).value: .3e} rsun")
         # WIP: Heating rates
         # 30.11.23 P.Hirling: The heating tables can be calculated, and used with the standalone CPU raytracing method to calculate photo-heating rates for the whole grid. However, at this time, the chemistry solver doesn't use these rates.
         # TODO:
@@ -702,9 +700,9 @@ class C2Ray:
     def _grid_init(self):
         """Set up grid properties"""
         # Comoving quantities
+        self.h = self._ld["Cosmology"]["h"]
         self.boxsize = self._ld["Grid"]["boxsize"]
-        self.boxsize_c = self.boxsize * Mpc
-
+        self.boxsize_c = self.boxsize * Mpc / self.h
         self.dr_c = self.boxsize_c / self.N
 
         self.printlog(f"Welcome! Mesh size is N = {self.N:n}.")

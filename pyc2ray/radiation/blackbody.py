@@ -30,7 +30,7 @@ class BlackBodySource:
         self.grey = grey
         self.freq0 = freq0
         self.pl_index = pl_index
-        self.R_star = 1.0
+        self.R_star = 1
 
     def SED(self, freq):
         if freq * h_over_k / self.temp < 700.0:
