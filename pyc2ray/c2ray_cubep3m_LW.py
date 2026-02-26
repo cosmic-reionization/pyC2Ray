@@ -238,7 +238,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
                 normflux = (self.sM00_msun * mass2phot_hm / S_star_ref) + (src_modified[:, 5] / S_star_ref)
 
         # Print statistics
-        self.printlog(' Src model: ',self.source_model)
         self.printlog('\n---- Reading source file with total of %d ionizing source:\n%s' % (normflux.size, file))
         self.printlog(' Src model: ',self.source_model)
         self.printlog(' Total number of source locations, no suppression: %d' % num_total_sources)
@@ -534,91 +533,79 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.dLGdelta1 = (self.LGdelta1max - self.LGdelta1min) / (self.Ndelta1data - 1)
         print(f"Minihalo table loaded. Z: {self.zred_array_interp[0]:.2f} to {self.zred_array_interp[-1]:.2f}")
         print(f"LGnMH_Mpc3 shape: {self.LGnMH_Mpc3.shape}")
-    
+
     def get_denscrit(self, zred, dens_ND, filename=None):
-        """Port of subroutine get_denscrit. Finds critical density threshold via bisection."""
-        # 1. Load small box data (z_numMH_6.3Mpc_full)
-        # Assuming this file exists in your inputs directory
         if filename is None:
             filename = os.path.join(self.inputs_basename, "z_numMH_6.3Mpc_full")
 
-        
         with open(filename, 'r') as f:
-            size_smallbox = float(f.readline().strip())
+            size_smallbox = float(f.readline().strip())  # in h^-1 cMpc
             Ntable = int(f.readline().strip())
-            data = np.loadtxt(f)  # Now read the table
-        self.ztable = data[:, 0]
+            data = np.loadtxt(f)
+        ztable = data[:, 0]
         numMHtable = data[:, 1]
 
-        # Calculate volume ratio
-        # vol_cMpc3 is volume of ONE cell. Total Vol = vol_cMpc3 * mesh**3
-        vol_cMpc3 = (self.boxsize/self.h/self.N)**3 
-        vol_ratio = (size_smallbox / self.h )**3 / (vol_cMpc3 * self.N**3)
+        # Volume in (Mpc/h)^3 — matching Fortran's vol_cMpc3
+        vol_cMpc3 = (self.boxsize / self.N)**3  # boxsize is in Mpc/h
 
-        dz_table     = (self.ztable[Ntable-1]-self.ztable[0])/float(Ntable-1)
-        NMH_smallbox = numMHtable[int((zred-self.ztable[0])/dz_table)]
-        
+        # vol_ratio: small box volume / total simulation volume
+        vol_ratio = (size_smallbox / self.h)**3 / (vol_cMpc3 * self.N**3)
 
-        idx_zred = 0
-        zred_round = round(zred, 3)
+        # NMH_smallbox: matches Fortran's int(...) + 1 converted to 0-based
+        dz_table = (ztable[Ntable-1] - ztable[0]) / float(Ntable - 1)
+        NMH_smallbox = numMHtable[int((zred - ztable[0]) / dz_table)]  # 0-based = Fortran's +1
+
+        # Find idx_zred in zred_array_interp (NOT ztable)
+        # Matches Fortran: find itable where zred_array_interp(itable-1) >= zred_round
+        #                                 and zred_array_interp(itable)   < zred_round
+        idx_zred = 0  # 0-based default
+        zred_round = np.float32(round(zred * 1000) / 1000.0)  # match float32 precision of table
 
         if self.Nzdata > 1:
             for itable in range(1, self.Nzdata):
-                # Fortran: itable-1 and itable
-                if self.ztable[itable-1] >= zred_round and self.ztable[itable] < zred_round:
+                z_prev = self.zred_array_interp[itable - 1]  # already float32
+                z_curr = self.zred_array_interp[itable]       # already float32
+                if z_prev >= zred_round and z_curr < zred_round:
                     idx_zred = itable - 1
                     break
-        
-        # Final clip (matches Fortran's manual if-checks)
+
         idx_zred = np.clip(idx_zred, 0, self.Nzdata - 1)
-        
-        # 2. Bisection Setup
+
+        # Bisection
         lg_low, lg_high = -1.0, 1.0
-        n_max_iter = 100 # Match Nmaxiter
-        
-        # Density preparation
-        # Ensure dens_ND is the same as the Fortran 3D array
+        n_max_iter = 14  # matches Fortran's Nmaxiter
+
         log_flat_dens = np.log10(dens_ND).flatten()
 
         lg_mid = 0.0
         for i in range(1, n_max_iter + 1):
             lg_mid = (lg_low + lg_high) * 0.5
-            
-            # Mask cells >= threshold (matches Fortran if log10(...) >= LGdensND_N)
+
             mask = log_flat_dens >= lg_mid
-            
+
             if np.any(mask):
-                # Calculate lookup indices
-                # Note: Fortran adds 1 for 1-based indexing, 
-                # but Python uses 0-based indexing for self.LGnMH_Mpc3
                 idx_delta = ((log_flat_dens[mask] - self.LGdelta1min) / self.dLGdelta1).astype(int)
                 idx_delta = np.clip(idx_delta, 0, self.Ndelta1data - 1)
-
-                # Sum halos: 10^LGnMH
                 nmh_simbox = np.sum(10**self.LGnMH_Mpc3[idx_zred, idx_delta])
             else:
                 nmh_simbox = 0.0
 
-            # Scaling: Match Fortran exactly
-            # nmh_simbox * vol_cMpc3 * (h/0.7)**3
-            nmh_simbox *= vol_cMpc3 * (self.h / 0.7)**3            
+            # Scale to simulation box — vol in (Mpc/h)^3, h-correction for table
+            nmh_simbox *= vol_cMpc3 * (self.h / 0.7)**3
+
             frac = (nmh_simbox * vol_ratio - NMH_smallbox) / NMH_smallbox
 
-            # Convergence check
             if abs(frac) <= 0.01 or i == n_max_iter:
                 break
 
-            # Bisection Logic (Strictly following your Fortran if/else)
             if nmh_simbox * vol_ratio < NMH_smallbox:
-                lg_high = lg_mid # Too few halos? Lower the upper bound of the threshold
+                lg_high = lg_mid
             else:
-                lg_low = lg_mid  # Too many halos? Raise the lower bound of the threshold
-        
+                lg_low = lg_mid
+
         dens_crit = 10**lg_mid
-        print(f"Theoretical num mini halos: {nmh_simbox}")
-        print(f"DENS CRIT = {dens_crit}")
-    
-        return 10**lg_mid
+        return dens_crit
+
 
     def subsrcM_msun(self, zred, dens_nd, dens_nd_crit):
         """Port of function subsrcM_msun."""
@@ -659,8 +646,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         # NEW idx_zred
         idx_zred = 0
-        zred_round = round(zred * 1000) / 1000.0
-
+        zred_round = np.float32(round(zred * 1000) / 1000.0)
         if self.Nzdata > 1:
             for itable in range(1, self.Nzdata):
                 z_prev = self.zred_array_interp[itable - 1]
@@ -680,7 +666,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # end new inx_zred
 
         # Calculate log density for masked cells
-        lg_delta = np.log10(np.maximum(dens_nd_grid[mask], 1e-5))
+        lg_delta = np.log10(np.maximum(dens_nd_grid[mask], 1e-14))
         
         # Find delta indices
         idx_delta = ((lg_delta - self.LGdelta1min) / self.dLGdelta1).astype(int)
@@ -712,7 +698,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         
         # 2. Calculate Total Potential Mass per cell
         mass_now = self.get_subsrcM_msun_all(zred_now, self.dens_ND, self.densNDcrit)
-
+        self.printlog(f"zred: {zred_now:.4f}, densNDcrit: {self.densNDcrit:.7f}")
         # 3. Calculate Differential Mass (The "Fresh" Minihalos/Sources)
         # This prevents re-igniting sources from the previous step
         if nz > 0:
@@ -743,7 +729,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         print("****************************************************************************************")
         print("Number of active grids: ", np.sum(active_mask))
         print("np.sum(diff_subsrcMsun) = ", np.sum(diff_subsrcMsun))
-
+        
         if not np.any(active_mask):
             return None, None, 0
 
