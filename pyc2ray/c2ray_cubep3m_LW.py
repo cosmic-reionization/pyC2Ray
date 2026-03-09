@@ -81,11 +81,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         super().__init__(paramfile)
 
     def read_sources(self, file, source_lifetime, mass='hm'): # >:( trgeoip
-        """Read sources from a Ramses-formatted file
-
-        The way sources are dealt with is still open and will change significantly
-        in the final version. For now, this method is provided:
-
+        """
         It reads source positions and strengths (total ionizing flux in
         photons/second) from a file that is formatted for the original C2Ray,
         and computes the source strength as normalization factors relative
@@ -501,6 +497,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         np.fromfile(f, dtype=np.int32, count=1)
 
     def read_LGnMH_Mpc3(self, filename=None):
+    """
+    Loads the "Minihalo Table," a 2D binary dataset relating local density and redshift to the number density of minihalos.
+    """
         if filename is None:
             filename = os.path.join(self.inputs_basename, "zred_halodelta1_nMHMpc3_Planck")
 
@@ -535,6 +534,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         print(f"LGnMH_Mpc3 shape: {self.LGnMH_Mpc3.shape}")
 
     def get_denscrit(self, zred, dens_ND, filename=None):
+    """
+    Determines the critical density threshold (1 + delta_crit) required for minihalo formation at a given redshift.
+    """
         if filename is None:
             filename = os.path.join(self.inputs_basename, "z_numMH_6.3Mpc_full")
 
@@ -608,7 +610,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
 
     def subsrcM_msun(self, zred, dens_nd, dens_nd_crit):
-        """Port of function subsrcM_msun."""
+        """Port of function subsrcM_msun: calculate the total mass of Pop III stars (or minihalo sources) within a specific grid cell based on local physical conditions."""
         if dens_nd < dens_nd_crit:
             return 0.0
         
@@ -682,7 +684,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
     def update_agrid_properties(self, nz, AGlifetime, jLWgrid):
         """
-        Complete port of AGrid_properties handling MHflag 1 and 2.
+        Complete port of AGrid_properties handling MHflag 1 and 2: It identifies "fresh" mass in neutral cells, 
+        calculates the local LW background suppression, and generates a list of active subgrid sources.
         """
         zred_now = self.zred_array[nz]
         
@@ -809,6 +812,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         return self.rLW_zobs
 
     def read_greenK(self, zsbegin, zsend, zobs):
+    """
+    Loads pre-computed Green’s Function kernels from binary files. These kernels describe how radiation from a specific source redshift reaches the observer redshift.
+    """
         zb_str = f"{zsbegin:6.3f}".strip()
         ze_str = f"{zsend:6.3f}".strip()
         zo_str = f"{zobs:6.3f}".strip()
@@ -927,7 +933,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
     def compute_jLW_from_history(self, nz0, nz):
         """
-        Complete port of get_jLW: Accumulate LW contributions from all past redshift slices.
+        Complete port of get_jLW: sums contributions from all past redshift slices within the LW horizon (r_LW) by convolving the source luminosity (k-space) with the Green's function.
         """
         # Observer redshift is the END of the current slice
         zobs = self.zred_array[nz+1]
