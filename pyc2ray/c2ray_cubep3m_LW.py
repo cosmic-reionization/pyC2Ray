@@ -42,7 +42,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.M_PIIIstar_msun = 300.0
         self.MHflag = 2  # As per Fortran parameter
 
-        self.M_PIIIstar_msun = 300.0
         self.S_star_nominal = 1e48 # Adjust to match your Fortran c2ray_parameters
         # Internal state for suppression
         self.densNDcrit = 1.0
