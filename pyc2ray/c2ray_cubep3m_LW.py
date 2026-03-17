@@ -69,7 +69,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.QH_M_real_sub = 1.2e48
         
         self.Ni  = np.array([ 6000/6, 50000/6, 55000])
-        self.fstar = np.array([0.008, 0.015, 0.015])
         self.M_solar = 1.98892e33 
         # Read the fit data immediately
         if self.MHflag == 2:
