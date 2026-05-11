@@ -8,6 +8,7 @@ pyc2ray_sources = [
     'c2ray_fstar.py',
     'c2ray_test.py',
     'c2ray_thesan.py',
+    'c2ray_ramses.py',
     'evolve.py',
     'interface_p21c.py',
     'load_extensions.py',
