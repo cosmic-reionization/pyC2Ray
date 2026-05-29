@@ -1,3 +1,4 @@
+import logging
 import h5py
 import numpy as np
 import tools21cm as t2c
@@ -6,19 +7,29 @@ from astropy import constants as c
 from astropy import units as u
 import os 
 import struct
+import re 
+import yaml 
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 from .c2ray_base import C2Ray, msun2g
 from .utils.other_utils import find_bins, get_redshifts_from_output
 
-__all__ = ["C2Ray_CubeP3M_LW"]
+from pyc2ray.asora_core import photo_table_to_device
+from pyc2ray.radiation import BlackBodySource
 
+__all__ = ["C2Ray_CubeP3M_LW_2spectra"]
+logger = logging.getLogger(__name__)
 # ======================================================================
 # This file contains the C2Ray_CubeP3M subclass of C2Ray, which is a
 # version used for simulations that read in N-Body data from CubeP3M
 # ======================================================================
 
 
-class C2Ray_CubeP3M_LW(C2Ray):
+class C2Ray_CubeP3M_LW_2spectra(C2Ray):
     def __init__(self, paramfile):
         """Basis class for a C2Ray Simulation
 
@@ -33,13 +44,15 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         """
         super().__init__(paramfile)
+
+        self._LW_params_init()
+
         # Subgrid Data
         self.LGnMH_Mpc3 = None
         self.zred_array_interp = None
         self.LGdelta1min = 0
         self.LGdelta1max = 0
         self.dLGdelta1 = 0
-        self.M_PIIIstar_msun = 300.0
         self.MHflag = 2  # As per Fortran parameter
 
         self.S_star_nominal = 1e48 # Adjust to match your Fortran c2ray_parameters
@@ -49,8 +62,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         self.StillNeutral = 0.1  # Threshold for considering a cell neutral
         self.M_grid = None  # Will be calculated in _grid_init
-        self.phot_per_atom = np.array([10/6, 150/6, 833])  # Photons per atom for different populations
-        self.fstar = np.array([0.008, 0.015, 0.015])  # Star formation efficiency
+        self.phot_per_atom = np.array([10/6, 150/6, self.phot_per_atom_MH])  # Photons per atom for different populations
+        self.fstar = np.array([0.008, 0.015, self.fstar_MH])  # Star formation efficiency
         self.n_box = 8000
 
         # --- LW Green Function State ---
@@ -66,9 +79,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # Real ionizing photon rates
         self.QH_M_real00 = 6.309573445e46 
         self.QH_M_real01 = 1.2e48
-        self.QH_M_real_sub = 1.2e48
         
-        self.Ni  = np.array([ 6000/6, 50000/6, 55000])
+        self.Ni  = np.array([ 6000/6, 50000/6, self.Ni_MH])
         self.M_solar = 1.98892e33 
         # Read the fit data immediately
         if self.MHflag == 2:
@@ -77,6 +89,14 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.printlog('Running: "C2Ray for %d Mpc/h volume"' % self.boxsize)
 
         super().__init__(paramfile)
+
+    def _LW_params_init(self):
+        """Initialize LW source properties"""
+        self.M_PIIIstar_msun = self._ld["LymanWerner"]["M_PIIIstar_msun"]
+        self.phot_per_atom_MH = self._ld["LymanWerner"]["phot_per_atom_MH"]
+        self.Ni_MH = self._ld["LymanWerner"]["Ni_MH"]
+        self.QH_M_real_sub = self._ld["LymanWerner"]["QH_M_real_MH"]
+        self.fstar_MH = self._ld["LymanWerner"]["fstar_MH"]
 
     def read_sources(self, file, source_lifetime, mass='hm'): # >:( trgeoip
         """
@@ -145,9 +165,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
             # Solar mass versions (for LW calculations downstream)
             self.sM00_msun = srcMass00_grid * grid2msun
-
-            print("grid2msun = ", grid2msun)
-            sys.ext
             self.sM01_msun = srcMass01_grid * grid2msun
 
             # Count source types
@@ -455,7 +472,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         """Set up output & log file"""
         self.results_basename = self._ld["Output"]["results_basename"]
         self.inputs_basename = self._ld["Output"]["inputs_basename"]
-        self.GK_inputs_path = self._ld["Output"]["GK_inputs_path"]
+
         self.logfile = self.results_basename + self._ld["Output"]["logfile"]
         title = r"""
                  _________   ____
@@ -498,15 +515,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         np.fromfile(f, dtype=np.int32, count=1)
 
     def read_LGnMH_Mpc3(self, filename=None):
-<<<<<<< HEAD
-    """
-    Loads the "Minihalo Table," a 2D binary dataset relating local density and redshift to the number density of minihalos.
-    """
-=======
         """
         Loads the "Minihalo Table," a 2D binary dataset relating local density and redshift to the number density of minihalos.
         """
->>>>>>> 43bb46e (Adding the multi LW spectra, note still to add authomoatic spectrum values calculations)
         if filename is None:
             filename = os.path.join(self.inputs_basename, "zred_halodelta1_nMHMpc3_Planck")
 
@@ -541,15 +552,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         print(f"LGnMH_Mpc3 shape: {self.LGnMH_Mpc3.shape}")
 
     def get_denscrit(self, zred, dens_ND, filename=None):
-<<<<<<< HEAD
-    """
-    Determines the critical density threshold (1 + delta_crit) required for minihalo formation at a given redshift.
-    """
-=======
         """
         Determines the critical density threshold (1 + delta_crit) required for minihalo formation at a given redshift.
         """
->>>>>>> 43bb46e (Adding the multi LW spectra, note still to add authomoatic spectrum values calculations)
         if filename is None:
             filename = os.path.join(self.inputs_basename, "z_numMH_6.3Mpc_full")
 
@@ -825,19 +830,13 @@ class C2Ray_CubeP3M_LW(C2Ray):
         return self.rLW_zobs
 
     def read_greenK(self, zsbegin, zsend, zobs):
-<<<<<<< HEAD
-    """
-    Loads pre-computed Green’s Function kernels from binary files. These kernels describe how radiation from a specific source redshift reaches the observer redshift.
-    """
-=======
         """
         Loads pre-computed Green’s Function kernels from binary files. These kernels describe how radiation from a specific source redshift reaches the observer redshift.
         """
->>>>>>> 43bb46e (Adding the multi LW spectra, note still to add authomoatic spectrum values calculations)
         zb_str = f"{zsbegin:6.3f}".strip()
         ze_str = f"{zsend:6.3f}".strip()
         zo_str = f"{zobs:6.3f}".strip()
-        fname = os.path.join(self.GK_inputs_path, "GKresults", f"gK_{zb_str}-{ze_str}-{zo_str}_dat")
+        fname = os.path.join(self.inputs_basename, "GKresults", f"gK_{zb_str}-{ze_str}-{zo_str}_dat")
         print("Reading ", fname)
         with open(fname, "rb") as f:
 
@@ -868,7 +867,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # Calculate C2Ray lifetime for this redshift interval
         C2ray_lifetime = abs(self.zred2time(self.zred_array[nz]) - 
                             self.zred2time(self.zred_array[nz+1]))
-
+        
         QH_M_C2ray00  = self.Ni[0] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
         QH_M_C2ray01  = self.Ni[1] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
         
@@ -882,7 +881,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
         # Initialize source luminosity grid (Fortran order is important!)
         srclum = np.zeros(self.shape, order='F')
-
+        
         # Add HMACHs
         if srcpos is not None and normflux is not None:
             for i in range(normflux.size):
@@ -899,8 +898,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
         # Add minihalo/subgrid sources
         if srcpos_mh is not None and normflux_mh is not None:
             if self.MHflag == 1:
-                QH_M_C2ray_sub = self.Ni[2] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime
-                CC_sub = QH_M_C2ray_sub / self.QH_M_real_sub
+                QH_M_C2ray_sub = self.Ni[2] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime # The number of ionizing photons produced per solar mass per second ($photons \cdot s^{-1} \cdot M_{\odot}^{-1}$) 
+                CC_sub = QH_M_C2ray_sub / self.QH_M_real_sub # A dimensionless scaling factor that bridges the gap between simulation units and real physical units.
                 coeff_sub = self.emissub * CC_sub * self.fstar[2] * self.cosmology.Ob0 / self.cosmology.Om0
                 print('Sanity check: fesc_sub = ', self.phot_per_atom[2] /(self.Ni[2] *self.fstar[2]) )
             elif self.MHflag == 2:
@@ -1073,3 +1072,51 @@ class C2Ray_CubeP3M_LW(C2Ray):
         jLW_grid = np.fft.irfftn(jLW_k, s=source_grid.shape)
         
         return np.maximum(jLW_grid, 0.0)
+    
+    # CODE TO HAVE MULTI BLACK BODY SPECTAR IMPLEMENTED
+    def update_tables(
+        self,
+        bb_Teff: float
+        ):
+        
+        ev2fr = 2.417989e14
+
+        freq_min = ev2fr * self.eth0              # ionising frequncy of Hydrogen
+        freq_max = 10 * ev2fr * self.ethe1        # 10x the ionising frequncy of HeII
+        
+
+        # Initialize spectrum parameters
+        radsource = BlackBodySource(
+            bb_Teff, self.grey, freq_min, self.cs_pl_idx_h
+        )
+
+        logger.info(f"""Recalculating Black-Body sources with effective temperature T = {radsource.temp:.1e} K """)
+
+        photo_thin_table, photo_thick_table = radsource.make_photo_table(
+            self.tau, freq_min, freq_max, 1e48
+        )
+        photo_table_to_device(photo_thin_table, photo_thick_table)
+        logger.info("Successfully copied radiation tables to GPU memory.")
+
+        return None
+    
+    def _read_paramfile(self, paramfile):
+        """Read in YAML parameter file"""
+        loader = SafeLoader
+        # Configure to read scientific notation as floats rather than strings
+        loader.add_implicit_resolver(
+            "tag:yaml.org,2002:float",
+            re.compile(
+                """^(?:
+            [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+            |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+            |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+            |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+            |[-+]?\\.(?:inf|Inf|INF)
+            |\\.(?:nan|NaN|NAN))$""",
+                re.X,
+            ),
+            list("-+0123456789."),
+        )
+        with open(paramfile, "r") as f:
+            self._ld = yaml.load(f, loader)

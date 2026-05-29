@@ -110,6 +110,7 @@ def do_chemistry(
             dt,
             temperature_end,
             de,
+            ndens_p, #Just added extra
             phi_ion_p,
             bh00,
             albpow,
@@ -141,7 +142,7 @@ def do_chemistry(
     return new_xh_p, xh_av_p, xh_intermed_p
 
 
-def doric(xh_old, dt, temp_p, rhe, phi_p, bh00, albpow, colh0, temph0, clumping):
+def doric(xh_old, dt, temp_p, rhe, ndens_p, phi_p, bh00, albpow, colh0, temph0, clumping):
     # Calculate the hydrogen recombination rate at the local temperature
     brech0 = clumping * bh00 * (temp_p / 1e4) ** albpow
 
