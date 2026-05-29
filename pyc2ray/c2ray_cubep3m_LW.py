@@ -498,15 +498,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         np.fromfile(f, dtype=np.int32, count=1)
 
     def read_LGnMH_Mpc3(self, filename=None):
-<<<<<<< HEAD
-    """
-    Loads the "Minihalo Table," a 2D binary dataset relating local density and redshift to the number density of minihalos.
-    """
-=======
         """
         Loads the "Minihalo Table," a 2D binary dataset relating local density and redshift to the number density of minihalos.
         """
->>>>>>> 43bb46e (Adding the multi LW spectra, note still to add authomoatic spectrum values calculations)
         if filename is None:
             filename = os.path.join(self.inputs_basename, "zred_halodelta1_nMHMpc3_Planck")
 
@@ -541,15 +535,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         print(f"LGnMH_Mpc3 shape: {self.LGnMH_Mpc3.shape}")
 
     def get_denscrit(self, zred, dens_ND, filename=None):
-<<<<<<< HEAD
-    """
-    Determines the critical density threshold (1 + delta_crit) required for minihalo formation at a given redshift.
-    """
-=======
         """
         Determines the critical density threshold (1 + delta_crit) required for minihalo formation at a given redshift.
         """
->>>>>>> 43bb46e (Adding the multi LW spectra, note still to add authomoatic spectrum values calculations)
         if filename is None:
             filename = os.path.join(self.inputs_basename, "z_numMH_6.3Mpc_full")
 
@@ -825,15 +813,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
         return self.rLW_zobs
 
     def read_greenK(self, zsbegin, zsend, zobs):
-<<<<<<< HEAD
-    """
-    Loads pre-computed Green’s Function kernels from binary files. These kernels describe how radiation from a specific source redshift reaches the observer redshift.
-    """
-=======
         """
         Loads pre-computed Green’s Function kernels from binary files. These kernels describe how radiation from a specific source redshift reaches the observer redshift.
         """
->>>>>>> 43bb46e (Adding the multi LW spectra, note still to add authomoatic spectrum values calculations)
         zb_str = f"{zsbegin:6.3f}".strip()
         ze_str = f"{zsend:6.3f}".strip()
         zo_str = f"{zobs:6.3f}".strip()
