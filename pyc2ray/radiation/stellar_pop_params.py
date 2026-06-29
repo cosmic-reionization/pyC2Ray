@@ -41,6 +41,24 @@ class StellarPopulation:
     _nu_LW_hi = 13.6 * _eV2Hz      # upper edge = Lyman limit [Hz]
     _nu_HI    = 13.598 * _eV2Hz    # HI ionisation threshold [Hz]
 
+        # Schaerer (2002) Table 3 & 4 (for lifetimes), Z=0 (metal-free Pop III), selected masses
+    # Columns: [M_star/M_sun, log10(T_eff/K), log10(L/L_sun), log10(Q_H/s^-1), t_MS/Myr]
+    _SCHAERER2002_POPIII = np.array([
+        [   5, 4.440, 2.870, np.log10(1.097e45), 61.90],
+        [   9, 4.622, 3.709, np.log10(1.794e47), 20.22],
+        [  15, 4.759, 4.324, np.log10(1.398e48), 10.40],
+        [  25, 4.850, 4.890, np.log10(5.446e48),  6.459],
+        [  40, 4.900, 5.420, np.log10(1.873e49),  3.864],
+        [  60, 4.943, 5.715, np.log10(3.481e49),  3.464],
+        [  80, 4.970, 5.947, np.log10(5.938e49),  3.012],
+        [ 120, 4.981, 6.243, np.log10(1.069e50),  2.521],
+        [ 200, 4.999, 6.574, np.log10(2.292e50),  2.204],
+        [ 300, 5.007, 6.819, np.log10(4.029e50),  2.047],
+        [ 400, 5.028, 6.984, np.log10(5.573e50),  1.974],
+        [ 500, 5.029, 7.106, np.log10(7.380e50),  1.899],
+        [1000, 5.026, 7.444, np.log10(1.607e51),  np.nan],
+    ])
+
     def __init__(self, T_eff, QH_M_real, t_star_Myr, fstar, f_esc):
         self.T_eff      = T_eff
         self.QH_M_real  = QH_M_real
@@ -100,25 +118,6 @@ class StellarPopulation:
         print(f"  phot_per_atom= {self.phot_per_atom:.2f}  [Ni × f_esc, computed]")
         print(f"  fstar        = {self.fstar}  [user input]")
         print(f"  f_esc        = {self.f_esc}  [user input]")
-
-
-    # Schaerer (2002) Table 3 & 4 (for lifetimes), Z=0 (metal-free Pop III), selected masses
-    # Columns: [M_star/M_sun, log10(T_eff/K), log10(L/L_sun), log10(Q_H/s^-1), t_MS/Myr]
-    _SCHAERER2002_POPIII = np.array([
-        [   5, 4.440, 2.870, np.log10(1.097e45), 61.90],
-        [   9, 4.622, 3.709, np.log10(1.794e47), 20.22],
-        [  15, 4.759, 4.324, np.log10(1.398e48), 10.40],
-        [  25, 4.850, 4.890, np.log10(5.446e48),  6.459],
-        [  40, 4.900, 5.420, np.log10(1.873e49),  3.864],
-        [  60, 4.943, 5.715, np.log10(3.481e49),  3.464],
-        [  80, 4.970, 5.947, np.log10(5.938e49),  3.012],
-        [ 120, 4.981, 6.243, np.log10(1.069e50),  2.521],
-        [ 200, 4.999, 6.574, np.log10(2.292e50),  2.204],
-        [ 300, 5.007, 6.819, np.log10(4.029e50),  2.047],
-        [ 400, 5.028, 6.984, np.log10(5.573e50),  1.974],
-        [ 500, 5.029, 7.106, np.log10(7.380e50),  1.899],
-        [1000, 5.026, 7.444, np.log10(1.607e51),  np.nan],
-    ])
 
     def QH_per_Msun_schaerer(M_PIIIstar_msun):
         """

@@ -18,6 +18,7 @@ pyc2ray_sources = [
     'source_model.py',
     'radiation/__init__.py',
     'radiation/blackbody.py',
+    'radiation/stellar_pop_params.py',
     'radiation/common.py',
     'radiation/spectra.py',
     'solver/__init__.py',
