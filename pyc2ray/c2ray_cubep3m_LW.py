@@ -147,7 +147,6 @@ class C2Ray_CubeP3M_LW(C2Ray):
             self.sM00_msun = srcMass00_grid * grid2msun
 
             print("grid2msun = ", grid2msun)
-            sys.ext
             self.sM01_msun = srcMass01_grid * grid2msun
 
             # Count source types
