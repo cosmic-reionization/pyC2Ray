@@ -242,7 +242,7 @@ class C2Ray_fstar(C2Ray):
             h = self.h
             srcmass_msun = hl.get(var="m") / h  # Msun
             srcpos_mpc = hl.get(var="pos") / h  # Mpc
-        elif halo_file.endswith(".txt"):
+        elif halo_file.endswith(".txt") and ("fof" in str(halo_file)):
             # Read haloes from a PKDGrav converted in txt.
             hl = np.loadtxt(halo_file)
             srcmass_msun = hl[:, 0] / self.cosmology.h  # Msun
@@ -253,6 +253,23 @@ class C2Ray_fstar(C2Ray):
                 self.boxsize - srcpos_mpc[srcpos_mpc > self.boxsize]
             )
             srcpos_mpc[srcpos_mpc < 0.0] = self.boxsize + srcpos_mpc[srcpos_mpc < 0.0]
+            srcpos_mpc /= self.cosmology.h  # Mpc
+
+        elif halo_file.endswith(".txt") and ("halo" in str(halo_file)):
+            # Read haloes from a PKDGrav converted in txt (other converntion).
+            hl = np.loadtxt(halo_file)
+            srcmass_msun = hl[:, 0] / self.cosmology.h  # Msun
+
+            srcpos_mpc = hl[:, 1:]  # Mpc/h
+
+            srcpos_mpc[srcpos_mpc < 0.0] = self.boxsize + srcpos_mpc[srcpos_mpc < 0.0]
+            srcpos_mpc[srcpos_mpc > self.boxsize] = (
+                srcpos_mpc[srcpos_mpc > self.boxsize] - self.boxsize
+            )
+
+            assert srcpos_mpc.min() >= 0.0
+            assert srcpos_mpc.min() <= self.boxsize
+
             srcpos_mpc /= self.cosmology.h  # Mpc
         return srcpos_mpc, srcmass_msun
 
@@ -268,14 +285,20 @@ class C2Ray_fstar(C2Ray):
 
         """
         file = self.density_basename + fbase
-        rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
-        self.ndens = (
+        if file.endswith("npy"):
+            overd = np.load(file) - 1.0
+        else:
+            rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
+            overd = rdr.load_density_field(str(file))
+
+        self.ndens: np.ndarray = (
             self.cosmology.critical_density0.cgs.value
             * self.cosmology.Ob0
-            * (1.0 + rdr.load_density_field(file))
+            * (1.0 + overd)
             / (self.mean_molecular * m_p)
             * (1 + z) ** 3
         )
+
         self.printlog("\n---- Reading density file:\n  %s" % file)
         self.printlog(
             " min, mean and max density : %.3e  %.3e  %.3e [1/cm3]"
@@ -305,11 +328,6 @@ class C2Ray_fstar(C2Ray):
     def _material_init(self):
         """Initialize material properties of the grid"""
         if self.resume:
-            # get fields at the resuming redshift
-            self.ndens = self.read_density(
-                fbase="CDM_200Mpc_2048.%05d.den.256.0" % self.resume, z=self.prev_zdens
-            )
-
             # get extension of the output file
             ext = get_extension_in_folder(path=self.results_basename)
             if ext == ".dat":

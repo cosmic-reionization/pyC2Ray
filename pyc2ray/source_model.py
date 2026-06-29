@@ -43,6 +43,8 @@ class StellarToHaloRelation:
             self.get = lambda Mhalo: self.cosmo.Ob0 / self.cosmo.Om0 * Mhalo * self.f0
         elif self.model == "dpl":
             self.get = self.deterministic
+        elif self.model == "norm":
+            self.get = self.stochastic_Gaussian
         elif self.model == "lognorm":
             self.get = self.stochastic_lognormal
         elif self.model == "Muv":
@@ -64,17 +66,11 @@ class StellarToHaloRelation:
         fstar_mean = self.stellar_to_halo_fraction(Mhalo)
         return fstar_mean
 
-    def stochastic_Gaussian(self, Mhalo, sigma):
+    def stochastic_Gaussian(self, Mhalo, sigma=0.01):
         fstar_mean = self.stellar_to_halo_fraction(Mhalo)
 
-        if isinstance(sigma, float):
-            # FIXME: shouldn't the following line be = sigma * np.ones_like(Mhalo)??
-            fstar_std = lambda M: sigma * np.ones_like(Mhalo)  # noqa: E731
-        else:
-            fstar_std = sigma
-
         fstar = np.clip(
-            fstar_mean * (1 + np.random.normal(0, fstar_std)), a_min=0, a_max=1
+            np.random.normal(fstar_mean, sigma), a_min=0, a_max=1
         )
 
         return fstar
@@ -143,8 +139,8 @@ class StellarToHaloRelation:
         M0 = 51.6
 
         # calibrated for 1500 Å dust-corrected rest-frame UV luminosity
-        # k_val = 1.15e-28 # in [Msun/yr * Hz / (s erg)]
-        k_val = 3.64413e-36  # in [Msun/s * Hz / (s erg)]
+        # k_val = 1.15e-28 # in [Msun * Hz / (yr erg)]
+        k_val = 3.64413e-36  # in [Msun * Hz / (s erg)]
 
         M_UV = M0 - 2.5 * (
             np.log10(fstar)
