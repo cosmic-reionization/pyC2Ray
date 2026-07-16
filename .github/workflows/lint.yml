@@ -57,9 +57,7 @@ jobs:
       - name: Install clang-format
         run: pip install "clang-format>=22"
       - name: Check C++ and CUDA code style
-        run: >-
-          find src/ -regex '.*\.\(cu\|cuh\|cpp\|h\)' -exec clang-format -n
-          -Werror {} \;
+        run: find src/ -regex '.*\.\(cu\|cuh\|cpp\|h\)' | xargs clang-format -n -Werror
 
   lintmeson:
     name: Lint meson
@@ -69,4 +67,4 @@ jobs:
       - name: Install meson
         run: pip install meson
       - name: Check meson code style
-        run: 'find . -name meson.build -exec meson format -q {} \;'
+        run: find . -name meson.build | xarts meson format -q
