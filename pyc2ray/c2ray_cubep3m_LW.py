@@ -71,12 +71,38 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.Ni  = np.array([ 6000/6, 50000/6, 55000])
         self.M_solar = 1.98892e33 
         # Read the fit data immediately
-        if self.MHflag == 2:
+        if self.MHflag == 2 and self.minihalo_abundance_model == "empirical":
             self.read_LGnMH_Mpc3()
 
         self.printlog('Running: "C2Ray for %d Mpc/h volume"' % self.boxsize)
 
         super().__init__(paramfile)
+
+    def read_subgrid_nhalo(self, zred):
+        filename = os.path.join(self.minihalo_subgrid_dir, self.minihalo_subgrid_pattern.format(z=zred))
+
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"Subgrid minihalo file not found: {filename}")
+
+        nhalo = np.load(filename)
+
+        expected_size = self.N**3
+
+        if nhalo.size != expected_size:
+            raise ValueError(f"Subgrid minihalo file {filename} contains {nhalo.size:,} cells, expected {expected_size:,}")
+
+        nhalo = nhalo.reshape(self.shape, order="F")
+        nhalo = np.rint(nhalo).astype(np.int32)
+
+        if np.any(nhalo < 0):
+            raise ValueError(f"Negative minihalo counts found in {filename}")
+
+        self.printlog(f"Read subgrid minihalos: {filename}", self.logfile)
+        self.printlog(f"Total unsuppressed minihalos: {np.sum(nhalo):,}", self.logfile)
+        self.printlog(f"Cells containing minihalos: {np.count_nonzero(nhalo):,}", self.logfile)
+        self.printlog(f"Maximum minihalos in one cell: {np.max(nhalo):,}", self.logfile)
+
+        return nhalo
 
     def read_sources(self, file, source_lifetime, mass='hm'): # >:( trgeoip
         """
@@ -476,11 +502,17 @@ class C2Ray_CubeP3M_LW(C2Ray):
                 f.write(title + "\nLog file for pyC2Ray.\n\n")
 
     def _sources_init(self):
-        """Initialize settings to read source files"""
         self.fgamma_hm = self._ld["Sources"]["fgamma_hm"]
         self.fgamma_lm = self._ld["Sources"]["fgamma_lm"]
         self.source_model = self._ld["Sources"]["source_model"]
         self.ts = (self._ld["Sources"]["ts"] * u.Myr).cgs.value
+
+        self.minihalo_abundance_model = self._ld["Sources"].get("minihalo_abundance_model", "empirical")
+        self.minihalo_subgrid_dir = self._ld["Sources"].get("minihalo_subgrid_dir", "")
+        self.minihalo_subgrid_pattern = self._ld["Sources"].get("minihalo_subgrid_pattern", "halo_num_shifted_z{z:.3f}.npy")
+
+        if self.minihalo_abundance_model not in ("empirical", "subgrid_file"):
+            raise ValueError(f"Unknown minihalo_abundance_model: {self.minihalo_abundance_model}")
 
     def _grid_init(self):
         """Set up grid properties"""
@@ -688,30 +720,43 @@ class C2Ray_CubeP3M_LW(C2Ray):
         calculates the local LW background suppression, and generates a list of active subgrid sources.
         """
         zred_now = self.zred_array[nz]
-        
-        self.M_box = self.rho_crit_0* self.cosmology.Om0 *(self.boxsize*self.Mpc / self.h)**3 
-        self.M_grid = self.M_box/(self.n_box**3) 
-        self.M_particle = 8.0*self.M_grid 
 
-        # 1. Calculate Critical Density Threshold (only needed for MHflag 2)
-        if self.MHflag == 2:
-            self.densNDcrit = self.get_denscrit(zred_now, self.dens_ND)
+        self.M_box = self.rho_crit_0 * self.cosmology.Om0 * (self.boxsize * self.Mpc / self.h)**3
+        self.M_grid = self.M_box / (self.n_box**3)
+        self.M_particle = 8.0 * self.M_grid
+
+        if self.minihalo_abundance_model == "empirical":
+            if self.MHflag == 2:
+                self.densNDcrit = self.get_denscrit(zred_now, self.dens_ND)
+
+                if nz > 0:
+                    self.densNDcrit_prev = self.get_denscrit(self.zred_array[nz - 1], self.dens_ND_prev)
+
+            mass_now = self.get_subsrcM_msun_all(zred_now, self.dens_ND, self.densNDcrit)
+
             if nz > 0:
-                self.densNDcrit_prev = self.get_denscrit(self.zred_array[nz-1], self.dens_ND_prev)
-        
-        # 2. Calculate Total Potential Mass per cell
-        mass_now = self.get_subsrcM_msun_all(zred_now, self.dens_ND, self.densNDcrit)
-        self.printlog(f"zred: {zred_now:.4f}, densNDcrit: {self.densNDcrit:.7f}")
-        # 3. Calculate Differential Mass (The "Fresh" Minihalos/Sources)
-        # This prevents re-igniting sources from the previous step
-        if nz > 0:
-            mass_prev = self.get_subsrcM_msun_all(self.zred_array[nz-1], 
-                                                 self.dens_ND_prev, 
-                                                 self.densNDcrit_prev)
-            diff_subsrcMsun = mass_now - mass_prev
-        else:
-            diff_subsrcMsun = mass_now
+                mass_prev = self.get_subsrcM_msun_all(self.zred_array[nz - 1], self.dens_ND_prev, self.densNDcrit_prev)
+                diff_subsrcMsun = mass_now - mass_prev
+            else:
+                diff_subsrcMsun = mass_now
+
+        elif self.minihalo_abundance_model == "subgrid_file":
+            nhalo_now = self.read_subgrid_nhalo(zred_now)
+
+            if nz > 0:
+                zred_prev = self.zred_array[nz - 1]
+                nhalo_prev = self.read_subgrid_nhalo(zred_prev)
+                fresh_nhalo = nhalo_now - nhalo_prev
+            else:
+                fresh_nhalo = nhalo_now.copy()
+
+            fresh_nhalo = np.maximum(fresh_nhalo, 0)
+
+            diff_subsrcMsun = fresh_nhalo.astype(np.float64) * self.M_PIIIstar_msun
        
+        self.printlog(f"Raw subgrid halos: {np.sum(nhalo_now):,.0f}", self.logfile)
+        self.printlog(f"Fresh subgrid halos: {np.sum(fresh_nhalo):,.0f}", self.logfile)
+        ionized_fresh = (self.xh >= self.StillNeutral) & (fresh_nhalo > 0)
 
         # # Ensure no negative growth due to numerical fluctuations
         # diff_subsrcMsun = np.maximum(diff_subsrcMsun, 0.0)
@@ -720,10 +765,21 @@ class C2Ray_CubeP3M_LW(C2Ray):
         jLWc_now = self.get_jLWcrit(zred_now)
         jLWc_min = 0.1 * jLWc_now
 
+        lw_suppressed_fresh = (jLWgrid >= jLWc_now) & (fresh_nhalo > 0)
+
+        self.printlog(f"Fresh halos in ionized cells: {np.sum(fresh_nhalo[ionized_fresh]):,.0f}", self.logfile)
+        self.printlog(f"Fresh halos above JLWcrit: {np.sum(fresh_nhalo[lw_suppressed_fresh]):,.0f}", self.logfile)
+
+        ionized_fresh = (self.xh >= self.StillNeutral) & (fresh_nhalo > 0)
+        lw_suppressed_fresh = (jLWgrid >= jLWc_now) & (fresh_nhalo > 0)
+
+        self.printlog(f"Fresh halos in ionized cells: {np.sum(fresh_nhalo[ionized_fresh]):,.0f}", self.logfile)
+        self.printlog(f"Fresh halos above JLWcrit: {np.sum(fresh_nhalo[lw_suppressed_fresh]):,.0f}", self.logfile)
         # Mask: StillNeutral check and LW suppression check
         active_mask = (self.xh < self.StillNeutral) & \
                       (jLWgrid < jLWc_now) & \
                       (diff_subsrcMsun > 0)
+
         print("self.StillNeutral = ", self.StillNeutral)
         print("self.xh > self.StillNeutral ", np.sum(self.xh > self.StillNeutral))
         print("jLWgrid > jLWc_now ", np.sum(jLWgrid > jLWc_now))
@@ -741,18 +797,23 @@ class C2Ray_CubeP3M_LW(C2Ray):
         active_indices = np.argwhere(active_mask)
         NumAGrid = len(active_indices)
 
-        self.ssM_msun = np.zeros(NumAGrid)
+        active_indices = np.argwhere(active_mask)
+        NumAGrid = active_indices.shape[0]
 
-        for idx, (i, j, k) in enumerate(active_indices):
-            if jLWgrid[i, j, k] <= jLWc_min:
-                # No suppression branch (jLW < jLWc_min)
-                self.ssM_msun[idx] = diff_subsrcMsun[i, j, k]
-            else:
-                # Partial suppression for jLW > jLWc_min
-                self.ssM_msun[idx] = diff_subsrcMsun[i, j, k] * (
-                    (jLWc_now - jLWgrid[i, j, k]) /
-                    (jLWc_now - jLWc_min)
-                )
+        i = active_indices[:, 0]
+        j = active_indices[:, 1]
+        k = active_indices[:, 2]
+
+        fresh_mass = diff_subsrcMsun[i, j, k]
+        local_jLW = jLWgrid[i, j, k]
+
+        suppression_factor = np.ones(NumAGrid, dtype=fresh_mass.dtype, )
+
+        partial = local_jLW > jLWc_min
+
+        suppression_factor[partial] = ((jLWc_now - local_jLW[partial]) /(jLWc_now - jLWc_min))
+
+        self.ssM_msun = fresh_mass * suppression_factor
         
         tot_subsrcM_msun = np.sum(self.ssM_msun)
         print("tot_subsrcM_msun = ",tot_subsrcM_msun)
@@ -776,28 +837,39 @@ class C2Ray_CubeP3M_LW(C2Ray):
             # subsrcMass = self.ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2] / fstar[2]
             subsrcMass = self.ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2] / self.fstar[2]
             subNormFlux = (subsrcMass * self.M_grid / m_p_cgs) / (self.S_star_nominal * AGlifetime)
-            print('Subgrid Total flux= ',sum(subNormFlux))
 
-        self.printlog('Subgrid Total flux= ',sum(subNormFlux))
+        total_subgrid_flux = np.sum(subNormFlux)
+        print("Subgrid Total flux= ", total_subgrid_flux)
+        self.printlog(f"Subgrid Total flux= {total_subgrid_flux}", self.logfile)
         # 7. Save subgrid source list to file (matching Fortran format)
         z_str = f"{zred_now:6.3f}"
         sourcelistfile_sub = f"{self.results_basename}/{z_str}-coarsened_SUBsources.dat"
-        with open(sourcelistfile_sub, 'w') as f:
-            # Write number of active grids
-            f.write(f"{NumAGrid}\n")
-            # Write MHflag to distinguish physical meaning
-            # When MHflag=2, self.ssM_msun is STELLAR BARYON MASS, not BARYON+DM HALO MASS
-            f.write(f"{self.MHflag}\n")
-            # Write source data: i, j, k, subsrcMass, self.ssM_msun
-            # Format matches Fortran: 3I5,2e13.4
-            for idx in range(NumAGrid):
-                i, j, k = active_indices[idx]
-                f.write(f"{i:5d}{j:5d}{k:5d}{subsrcMass[idx]:13.4e}{self.ssM_msun[idx]:13.4e}\n")
-        print(f"Saved subgrid sources to: {sourcelistfile_sub}")
+        if self.rank == 0:
+            with open(sourcelistfile_sub, 'w') as f:
+                # Write number of active grids
+                f.write(f"{NumAGrid}\n")
+                # Write MHflag to distinguish physical meaning
+                # When MHflag=2, self.ssM_msun is STELLAR BARYON MASS, not BARYON+DM HALO MASS
+                f.write(f"{self.MHflag}\n")
+                # Write source data: i, j, k, subsrcMass, self.ssM_msun
+                # Format matches Fortran: 3I5,2e13.4
+                for idx in range(NumAGrid):
+                    i, j, k = active_indices[idx]
+                    f.write(f"{i:5d}{j:5d}{k:5d}{subsrcMass[idx]:13.4e}{self.ssM_msun[idx]:13.4e}\n")
+            print(f"Saved subgrid sources to: {sourcelistfile_sub}")
         # 8. Randomize for raytracing order (Equivalent to Fortran's call permi)
-        p = np.random.permutation(NumAGrid)
-        
-        return active_indices[p], subNormFlux[p], NumAGrid
+        if self.rank == 0:
+            p = np.random.permutation(NumAGrid)
+        else:
+            p = None
+
+        p = self.comm.bcast(p, root=0)
+
+        active_indices = active_indices[p]
+        subNormFlux = subNormFlux[p]
+        self.ssM_msun = self.ssM_msun[p]
+
+        return active_indices, subNormFlux, NumAGrid
     
     def _init_jLW_constants(self):
         """Port of get_HcOm: Simple constant calculation in unit of Mpc^-1."""
@@ -890,10 +962,14 @@ class C2Ray_CubeP3M_LW(C2Ray):
                 coeff_sub = self.emissub * CC_sub
                 print('Sanity check: fesc_sub = ', self.phot_per_atom[2] /(self.Ni[2] *self.fstar[2]) )
             
-            for i in range(normflux_mh.size):
-                ix, iy, iz = srcpos_mh[:, i].astype(int)
-                if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
-                    srclum[ix, iy, iz] = srclum[ix, iy, iz] + self.ssM_msun[i] * coeff_sub
+            if srcpos_mh is not None and srcpos_mh.size > 0:
+                ix = srcpos_mh[0].astype(np.intp, copy=False)
+                iy = srcpos_mh[1].astype(np.intp, copy=False)
+                iz = srcpos_mh[2].astype(np.intp, copy=False)
+
+                valid = ((ix >= 0) & (ix < self.N) &(iy >= 0) & (iy < self.N) &(iz >= 0) & (iz < self.N))
+
+                srclum[ix[valid],iy[valid],iz[valid]] += self.ssM_msun[valid] * coeff_sub
 
         # CRITICAL FIX: Match Fortran FFT convention
         # Fortran reduces first dimension, Python rfftn reduces last dimension
@@ -918,6 +994,12 @@ class C2Ray_CubeP3M_LW(C2Ray):
         fname = os.path.join(self.results_basename, f"{zstr}-srcK.npy")
         np.save(fname, srclumK)
     
+    # def load_srclumK(self, z):
+    #     """Load previously saved source luminosity Fourier transform."""
+    #     zstr = f"{z:6.3f}".strip()
+    #     fname = os.path.join(self.results_basename, f"{zstr}-srcK.npy")
+    #     return np.load(fname)
+
     def load_srclumK(self, z):
         """Load previously saved source luminosity Fourier transform."""
         zstr = f"{z:6.3f}".strip()
