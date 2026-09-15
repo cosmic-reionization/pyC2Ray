@@ -5,9 +5,9 @@ NVCC := nvcc
 GCC_LIB := /cosma/local/gcc/13.1.0/lib64
 
 # Include Paths
-PYTHONINC := -I/cosma/local/Python/3.9.19/include/python3.9
+PYTHONINC := -I/e/software/default/stages/2025/software/Python/3.12.3-GCCcore-13.3.0/include/python3.12
 # Path to NumPy include from your environment
-NUMPYINC := -I/cosma8/data/dp004/dc-atta2/LW_in_pyc2ray/pyc2ray_implementation/pyc2ray-env/lib/python3.9/site-packages/numpy/_core/include
+NUMPYINC := -I/e/project1/lgreion/david/bin/pyc2rayLW-env/lib/python3.12/site-packages/numpy/_core/include
 
 INC := $(PYTHONINC) $(NUMPYINC)
 

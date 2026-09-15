@@ -1,3 +1,4 @@
+import logging
 import h5py
 import numpy as np
 import tools21cm as t2c
@@ -6,11 +7,17 @@ from astropy import constants as c
 from astropy import units as u
 import os 
 import struct
+import re
 
 from .c2ray_base import C2Ray, msun2g
 from .utils.other_utils import find_bins, get_redshifts_from_output
+from .radiation import StellarPopulation
+from pyc2ray.radiation import BlackBodySource
+from pyc2ray.asora_core import photo_table_to_device
+
 
 __all__ = ["C2Ray_CubeP3M_LW"]
+logger = logging.getLogger(__name__)
 
 # ======================================================================
 # This file contains the C2Ray_CubeP3M subclass of C2Ray, which is a
@@ -39,44 +46,144 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.LGdelta1min = 0
         self.LGdelta1max = 0
         self.dLGdelta1 = 0
-        self.M_PIIIstar_msun = 300.0
-        self.MHflag = 2  # As per Fortran parameter
-
-        self.S_star_nominal = 1e48 # Adjust to match your Fortran c2ray_parameters
-        # Internal state for suppression
-        self.densNDcrit = 1.0
-        self.densNDcrit_prev = 1.0
-
-        self.StillNeutral = 0.1  # Threshold for considering a cell neutral
-        self.M_grid = None  # Will be calculated in _grid_init
-        self.phot_per_atom = np.array([10/6, 150/6, 833])  # Photons per atom for different populations
-        self.fstar = np.array([0.008, 0.015, 0.015])  # Star formation efficiency
-        self.n_box = 8000
+        # Initialize all LW / stellar-population parameters from YAML.
+        self._LW_params_init()
 
         # --- LW Green Function State ---
         self.greenK = None
         self.HcOm = 0.0
         self.rLW_zobs = 0.0
 
-        # LW emissivities (erg s^-1 Hz^-1 Msun^-1)
-        self.emis00 = 1.67e21   
-        self.emis01 = 3e21      
-        self.emissub = 3e21     
-        
-        # Real ionizing photon rates
-        self.QH_M_real00 = 6.309573445e46 
-        self.QH_M_real01 = 1.2e48
-        self.QH_M_real_sub = 1.2e48
-        
-        self.Ni  = np.array([ 6000/6, 50000/6, 55000])
-        self.M_solar = 1.98892e33 
-        # Read the fit data immediately
+        self.M_solar = 1.98892e33
+        self._mh_cache_nz = None
+        self._mh_diff_subsrcMsun = None
+        self._mh_candidate_mask = None
+
+        # The empirical minihalo model needs the conditional abundance table.
         if self.MHflag == 2 and self.minihalo_abundance_model == "empirical":
             self.read_LGnMH_Mpc3()
 
         self.printlog('Running: "C2Ray for %d Mpc/h volume"' % self.boxsize)
 
-        super().__init__(paramfile)
+    def _LW_params_init(self):
+        """Initialize LW and stellar-population parameters from the YAML file.
+
+        Pop III spectral quantities are derived self-consistently from the
+        configured stellar mass using the Schaerer-based helper in
+        stellar_pop_params.py.  HMACH/LMACH population parameters are read
+        explicitly from the LymanWerner block.
+        """
+        if "LymanWerner" not in self._ld:
+            raise KeyError("Parameter file is missing the 'LymanWerner' section.")
+
+        p = self._ld["LymanWerner"]
+
+        self.MHflag = int(p.get("MHflag", 2))
+        self.S_star_nominal = float(p.get("S_star_nominal", 1.0e48))
+        self.StillNeutral = float(p.get("StillNeutral", 0.1))
+        self.n_box = int(p.get("n_box", 8000))
+
+        self.M_grid = None
+        self.densNDcrit = 1.0
+        self.densNDcrit_prev = 1.0
+
+        # --------------------------------------------------------------
+        # Pop III / minihalo population
+        # --------------------------------------------------------------
+        self.M_PIIIstar_msun = float(p["M_PIIIstar_msun"])
+        self.fstar_MH = float(p["fstar_MH"])
+        self.f_esc_MH = float(p["f_esc_MH"])
+        self.f_esc_LW_MH = float(p.get("f_esc_LW_MH", 1.0))
+
+        self.pop_sub = StellarPopulation.from_popiii_mass(
+            mass_msun=self.M_PIIIstar_msun,
+            fstar=self.fstar_MH,
+            f_esc_ion=self.f_esc_MH,
+            f_esc_LW=self.f_esc_LW_MH,
+        )
+
+        # --------------------------------------------------------------
+        # HMACH population
+        # --------------------------------------------------------------
+        self.pop_hm = StellarPopulation(
+            T_eff=float(p["T_eff_HMACH"]),
+            QH_M_real=float(p["QH_M_real_HMACH"]),
+            t_star_Myr=float(p["t_star_HMACH_Myr"]),
+            fstar=float(p.get("fstar_HMACH", 0.008)),
+            f_esc_ion=float(p["f_esc_HMACH"]),
+            f_esc_LW=float(p.get("f_esc_LW_HMACH", 1.0)),
+        )
+
+        # --------------------------------------------------------------
+        # LMACH population
+        # --------------------------------------------------------------
+        self.pop_lm = StellarPopulation(
+            T_eff=float(p["T_eff_LMACH"]),
+            QH_M_real=float(p["QH_M_real_LMACH"]),
+            t_star_Myr=float(p["t_star_LMACH_Myr"]),
+            fstar=float(p.get("fstar_LMACH", 0.015)),
+            f_esc_ion=float(p["f_esc_LMACH"]),
+            f_esc_LW=float(p.get("f_esc_LW_LMACH", 1.0)),
+        )
+
+        # Existing downstream routines use these legacy attribute names.
+        # ACH source-file masses are halo masses, while MHflag=2 minihalo
+        # masses are already stellar masses.
+        mh_phot_per_atom = (
+            self.pop_sub.phot_per_halo_baryon
+            if self.MHflag == 1
+            else self.pop_sub.phot_per_stellar_atom
+        )
+
+        self.phot_per_atom = np.array([
+            self.pop_hm.phot_per_halo_baryon,
+            self.pop_lm.phot_per_halo_baryon,
+            mh_phot_per_atom,
+        ])
+        self.fstar = np.array([
+            self.pop_hm.fstar,
+            self.pop_lm.fstar,
+            self.pop_sub.fstar,
+        ])
+        self.Ni = np.array([
+            self.pop_hm.Ni,
+            self.pop_lm.Ni,
+            self.pop_sub.Ni,
+        ])
+
+        self.emis00 = self.pop_hm.emis_LW
+        self.emis01 = self.pop_lm.emis_LW
+        self.emissub = self.pop_sub.emis_LW
+
+        self.QH_M_real00 = self.pop_hm.QH_M_real
+        self.QH_M_real01 = self.pop_lm.QH_M_real
+        self.QH_M_real_sub = self.pop_sub.QH_M_real
+
+        self.printlog("\n---- Lyman-Werner stellar populations ----", self.logfile)
+        self.printlog(
+            f" Pop III: Mstar={self.M_PIIIstar_msun:.3f} Msun, "
+            f"Teff={self.pop_sub.T_eff:.3e} K, "
+            f"QH/M={self.pop_sub.QH_M_real:.3e} s^-1 Msun^-1, "
+            f"Ni={self.pop_sub.Ni:.3e}, fesc_ion={self.f_esc_MH:.4g}, "
+            f"fesc_LW={self.f_esc_LW_MH:.4g}",
+            self.logfile,
+        )
+        self.printlog(
+            f" HMACH: Teff={self.pop_hm.T_eff:.3e} K, "
+            f"QH/M={self.pop_hm.QH_M_real:.3e}, "
+            f"fstar={self.pop_hm.fstar:.4g}, "
+            f"fesc_ion={self.pop_hm.f_esc_ion:.4g}, "
+            f"fesc_LW={self.pop_hm.f_esc_LW:.4g}",
+            self.logfile,
+        )
+        self.printlog(
+            f" LMACH: Teff={self.pop_lm.T_eff:.3e} K, "
+            f"QH/M={self.pop_lm.QH_M_real:.3e}, "
+            f"fstar={self.pop_lm.fstar:.4g}, "
+            f"fesc_ion={self.pop_lm.f_esc_ion:.4g}, "
+            f"fesc_LW={self.pop_lm.f_esc_LW:.4g}",
+            self.logfile,
+        )
 
     def read_subgrid_nhalo(self, zred):
         filename = os.path.join(self.minihalo_subgrid_dir, self.minihalo_subgrid_pattern.format(z=zred))
@@ -135,7 +242,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
         numsrc : int
             Number of sources read from the file
         """
-        S_star_ref = 1e48
+        S_star_ref = self.S_star_nominal
         m_p_cgs = c.m_p.cgs.value
 
         self.M_box = self.rho_crit_0 * self.cosmology.Om0 * (self.boxsize * self.Mpc / self.h)**3
@@ -214,6 +321,72 @@ class C2Ray_CubeP3M_LW(C2Ray):
                 print(normflux* S_star_ref)
                 print(srcMass_combined, self.M_grid, self.cosmology.Ob0, m_p_cgs, S_star_ref, source_lifetime)
 
+            elif self.source_model == 5:
+                # Iliev et al.-style model, modified so that LMACHs in ionized
+                # regions are not fully suppressed. Instead, their ionizing
+                # efficiency is reduced to the HMACH efficiency.
+                #
+                # Neutral cells:
+                #   HMACH -> phot_per_atom[0]
+                #   LMACH -> phot_per_atom[1]
+                #
+                # Ionized cells:
+                #   HMACH -> phot_per_atom[0]
+                #   LMACH -> phot_per_atom[0]
+                # -------------------------------------------------------------------
+
+                srcpos = src[:, :3].T
+
+                # Start with the normal LMACH photon efficiency everywhere
+                lmach_phot_per_atom = np.full(
+                    num_total_sources,
+                    self.phot_per_atom[1],
+                    dtype=float,
+                )
+
+                # In ionized cells, assign LMACHs the HMACH efficiency
+                for i in range(num_total_sources):
+
+                    if srcMass01_grid[i] > 0:
+                        ix = int(src[i, 0])
+                        iy = int(src[i, 1])
+                        iz = int(src[i, 2])
+
+                        if self.xh[ix, iy, iz] > self.StillNeutral:
+
+                            lmach_phot_per_atom[i] = self.phot_per_atom[0]
+                            # Apply the same suppression to the effective mass used for LW.
+                            if not (np.isfinite(self.phot_per_atom[1]) and self.phot_per_atom[1] > 0.0):
+                                raise ValueError("Partial suppression requires a positive LMACH photon efficiency.")
+
+                            suppression_factor = self.phot_per_atom[0] / self.phot_per_atom[1]
+
+                            if not (np.isfinite(suppression_factor) and 0.0 <= suppression_factor <= 1.0):
+                                raise ValueError("Partial suppression requires 0 <= HMACH/LMACH photon efficiency <= 1.")
+
+                            self.sM01_msun[i] *= suppression_factor
+
+                            # This now means "number of LMACHs whose efficiency
+                            # was reduced", rather than fully suppressed sources.
+                            self.NumSupprsdSrc += 1
+
+                # HMACHs always use HMACH efficiency.
+                # LMACHs use either LMACH or HMACH efficiency depending on xHII.
+                srcMass_combined = (
+                    srcMass00_grid * self.phot_per_atom[0]
+                    + srcMass01_grid * lmach_phot_per_atom
+                )
+
+                # NormFlux matching Fortran normalization
+                normflux = (
+                    srcMass_combined
+                    * self.M_grid
+                    * self.cosmology.Ob0
+                    / (self.cosmology.Om0 * m_p_cgs)
+                    / S_star_ref
+                    / source_lifetime
+                )
+
             elif self.source_model is None or self.source_model == 0:
                 srcpos = src[:, :3].T
                 mass2phot_hm = msun2g * self.fgamma_hm * self.cosmology.Ob0 / (self.mean_molecular * m_p_cgs * self.ts * self.cosmology.Om0)
@@ -270,6 +443,14 @@ class C2Ray_CubeP3M_LW(C2Ray):
         self.printlog(' Total flux: %.3e [s^-1]' % (np.sum(normflux) * S_star_ref))
         self.printlog(' min, max normflux: %.3e  %.3e' % (normflux.min(), normflux.max()))
         return srcpos, normflux
+
+    def load_normalized_density_for_z(self, z):
+        """Load a normalized density cube for restart bookkeeping without mutating the simulation state."""
+        candidates = self.zred_density[self.zred_density >= z]
+        high_z = self.zred_density[np.argmin(np.abs(self.zred_density - z))] if candidates.size == 0 else candidates[np.argmin(np.abs(candidates - z))]
+        filename = f"{self.inputs_basename}coarser_densities/{high_z:.3f}n_all.dat"
+        dens = t2c.DensityFile(filename=filename).cgs_density
+        return np.asfortranarray(dens / np.mean(dens))
 
     def read_density(self, z):
         """Read coarser density field from C2Ray-formatted file and track history.
@@ -331,150 +512,100 @@ class C2Ray_CubeP3M_LW(C2Ray):
             pass
 
     def write_output(self, z, ext=".dat"):
-        """Write ionization fraction & ionization rates as C2Ray binary files
-
-        Parameters
-        ----------
-        z : float
-            Redshift (used to name the file)
-        ext : string
-            extension of the output file. If '.dat' save a binary file (with tools21cm), otherwise '.npy'.
-        """
-        if self.rank == 0:
-            suffix = f"_z{z:.3f}" + ext
-            if suffix.endswith(".dat"):
-                t2c.save_cbin(
-                    filename=self.results_basename + "xfrac" + suffix,
-                    data=self.xh,
-                    bits=64,
-                    order="F",
-                )
-                t2c.save_cbin(
-                    filename=self.results_basename + "IonRates" + suffix,
-                    data=self.phi_ion,
-                    bits=32,
-                    order="F",
-                )
-                # t2c.save_cbin(filename=self.results_basename + "coldens" + suffix, data=self.coldens, bits=64, order='F')
-            elif suffix.endswith(".npy"):
-                np.save(file=self.results_basename + "xfrac" + suffix, arr=self.xh)
-                np.save(
-                    file=self.results_basename + "IonRates" + suffix, arr=self.phi_ion
-                )
-                np.save(file=self.results_basename + "jLW3d_" + suffix, arr=self.jLW)
-
-            # print min, max and average quantities
-            self.printlog("\n--- Reionization History ----")
-            self.printlog(
-                " min, mean, max xHII : %.5e  %.5e  %.5e"
-                % (self.xh.min(), self.xh.mean(), self.xh.max())
-            )
-            self.printlog(
-                " min, mean, max Irate : %.5e  %.5e  %.5e [1/s]"
-                % (self.phi_ion.min(), self.phi_ion.mean(), self.phi_ion.max())
-            )
-            self.printlog(
-                " min, mean, max density : %.5e  %.5e  %.5e [1/cm3]"
-                % (self.ndens.min(), self.ndens.mean(), self.ndens.max())
-            )
-
-            # write summary output file
-            summary_exist = os.path.exists(self.results_basename + "PhotonCounts2.txt")
-
-            with open(self.results_basename + "PhotonCounts2.txt", "a") as f:
-                if not (summary_exist):
-                    header = "# z\ttot HI atoms\ttot phots\t mean ndens [1/cm3]\t mean Irate [1/s]\tR_mfp [cMpc]\tmean ionization fraction (by volume and mass)\n"
-                    f.write(header)
-
-                # mass-average neutral faction
-                massavrg_ion_frac = np.sum(self.xh * self.ndens) / np.sum(self.ndens)
-
-                # calculate total number of neutral hydrogen atoms
-                tot_nHI = np.sum(self.ndens * (1 - self.xh) * self.dr**3)
-
-                text = "%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n" % (
-                    z,
-                    tot_nHI,
-                    # self.tot_phots,
-                    np.mean(self.ndens),
-                    np.mean(self.phi_ion),
-                    # self.R_max_LLS / self.N * self.boxsize,
-                    np.mean(self.xh),
-                    massavrg_ion_frac,
-                )
-                f.write(text)
+        """Write xHII, ionization-rate and LW fields plus the global ionization summary."""
+        if self.rank != 0:
+            return
+        suffix = f"_z{z:.3f}{ext}"
+        if ext == ".dat":
+            t2c.save_cbin(filename=self.results_basename + "xfrac" + suffix, data=self.xh, bits=64, order="F")
+            t2c.save_cbin(filename=self.results_basename + "IonRates" + suffix, data=self.phi_ion, bits=32, order="F")
+        elif ext == ".npy":
+            np.save(self.results_basename + "xfrac" + suffix, self.xh)
+            np.save(self.results_basename + "IonRates" + suffix, self.phi_ion)
+            np.save(self.results_basename + "jLW3d" + suffix, self.jLW)
         else:
-            # this is for the other ranks
-            pass
-
-    # =====================================================================================================
-    # Below are the overridden initialization routines specific to the CubeP3M case
-    # =====================================================================================================
+            raise ValueError(f"Unsupported output extension: {ext}")
+        self.printlog("\n--- Reionization History ----")
+        self.printlog(" min, mean, max xHII : %.5e  %.5e  %.5e" % (self.xh.min(), self.xh.mean(), self.xh.max()))
+        self.printlog(" min, mean, max Irate : %.5e  %.5e  %.5e [1/s]" % (self.phi_ion.min(), self.phi_ion.mean(), self.phi_ion.max()))
+        self.printlog(" min, mean, max density : %.5e  %.5e  %.5e [1/cm3]" % (self.ndens.min(), self.ndens.mean(), self.ndens.max()))
+        summary_file = self.results_basename + "PhotonCounts2.txt"
+        summary_exist = os.path.exists(summary_file)
+        massavrg_ion_frac = np.sum(self.xh * self.ndens) / np.sum(self.ndens)
+        tot_nHI = np.sum(self.ndens * (1.0 - self.xh) * self.dr**3)
+        with open(summary_file, "a") as f:
+            if not summary_exist:
+                f.write("# z\ttot HI atoms\tmean ndens [1/cm3]\tmean Irate [1/s]\tmean xHII (vol)\tmean xHII (mass)\n")
+            f.write("%.3f\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e\n" % (z, tot_nHI, np.mean(self.ndens), np.mean(self.phi_ion), np.mean(self.xh), massavrg_ion_frac))
 
     def _redshift_init(self):
+        """Initialize redshift arrays and choose the latest complete restart output when resuming."""
         super()._redshift_init()
-        """Initialize time and redshift counter"""
-        # self.zred_density = t2c.get_dens_redshifts(
-        #     self.inputs_basename + "coarser_densities/"
-        # )[::-1]
-        # # self.zred_sources = get_source_redshifts(self.inputs_basename+'sources/')[::-1]
-        # # TODO: waiting for next tools21cm release
-        # self.zred_sources = t2c.get_source_redshifts(self.inputs_basename + "sources/")[
-        #     ::-1
-        # ]
-
-        #Edited by DA
         self.density_basename = self._ld["Output"]["density_basename"]
         self.zred_density = np.loadtxt(self.inputs_basename + "redshifts_fine.dat", skiprows=1)
         self.zred_sources = np.loadtxt(self.inputs_basename + "redshifts_checkpoints.txt", skiprows=1)
-
         if self.resume:
-            # get the resuming redshift
-            self.zred = np.min(get_redshifts_from_output(self.results_basename))
-            _, self.prev_zdens = find_bins(self.zred, self.zred_density)
-            _, self.prev_zsourc = find_bins(self.zred, self.zred_sources)
+            xfrac_z = set()
+            ion_z = set()
+            jlw_z = set()
+            if os.path.isdir(self.results_basename):
+                for name in os.listdir(self.results_basename):
+                    match = re.match(r"^xfrac_z([0-9]+(?:\.[0-9]+)?)\.npy$", name)
+                    if match:
+                        xfrac_z.add(round(float(match.group(1)), 3))
+                    match = re.match(r"^IonRates_z([0-9]+(?:\.[0-9]+)?)\.npy$", name)
+                    if match:
+                        ion_z.add(round(float(match.group(1)), 3))
+                    match = re.match(r"^jLW3d__?z([0-9]+(?:\.[0-9]+)?)\.npy$", name)
+                    if match:
+                        jlw_z.add(round(float(match.group(1)), 3))
+            complete = sorted(xfrac_z & ion_z & jlw_z, reverse=True)
+            coarse_complete = [z for z in complete if np.any(np.isclose(self.zred_sources, z, atol=5.0e-4, rtol=0.0))]
+            if coarse_complete:
+                self.zred = min(coarse_complete)
+            elif complete:
+                self.zred = min(complete)
+            else:
+                self.zred = np.min(get_redshifts_from_output(self.results_basename))
+            self.prev_zdens = self.zred_density[np.argmin(np.abs(self.zred_density - self.zred))]
+            self.prev_zsourc = self.zred_sources[np.argmin(np.abs(self.zred_sources - self.zred))]
         else:
             self.prev_zdens = -1
             self.prev_zsourc = -1
-
         self.time = self.zred2time(self.zred)
 
     def _material_init(self):
-        """Initialize material properties of the grid"""
+        """Initialize or restore material fields."""
+        temp0 = self._ld["Material"]["temp0"]
         if self.resume:
-            # get fields at the resuming redshift
-            self.ndens = (
-                t2c.DensityFile(
-                    filename="%scoarser_densities/%.3fn_all.dat"
-                    % (self.inputs_basename, self.prev_zdens)
-                ).cgs_density
-                / (self.mean_molecular * c.m_p.cgs.value)
-                * (1 + self.zred) ** 3
-            )
-            # self.ndens = self.read_density(z=self.zred)
-            self.xh = t2c.read_cbin(
-                filename="%sxfrac_%.3f.dat" % (self.results_basename, self.zred),
-                bits=64,
-                order="F",
-            )
-            # TODO: implement heating
-            temp0 = self._ld["Material"]["temp0"]
+            candidates = self.zred_density[self.zred_density >= self.zred]
+            high_z = self.zred_density[np.argmin(np.abs(self.zred_density - self.zred))] if candidates.size == 0 else candidates[np.argmin(np.abs(candidates - self.zred))]
+            density_file = f"{self.inputs_basename}coarser_densities/{high_z:.3f}ntotcoarsened_all.dat"
+            self.ndens = np.asfortranarray(t2c.DensityFile(filename=density_file).cgs_density / (self.mean_molecular * c.m_p.cgs.value) * (1.0 + self.zred)**3)
+            xfrac_npy = os.path.join(self.results_basename, f"xfrac_z{self.zred:.3f}.npy")
+            ion_npy = os.path.join(self.results_basename, f"IonRates_z{self.zred:.3f}.npy")
+            jlw_npy = os.path.join(self.results_basename, f"jLW3d_z{self.zred:.3f}.npy")
+            jlw_legacy_npy = os.path.join(self.results_basename, f"jLW3d__z{self.zred:.3f}.npy")
+            if os.path.exists(xfrac_npy) and os.path.exists(ion_npy):
+                self.xh = np.asfortranarray(np.load(xfrac_npy))
+                self.phi_ion = np.asfortranarray(np.load(ion_npy))
+            else:
+                self.xh = np.asfortranarray(t2c.read_cbin(filename="%sxfrac_%.3f.dat" % (self.results_basename, self.zred), bits=64, order="F"))
+                self.phi_ion = np.asfortranarray(t2c.read_cbin(filename="%sIonRates_%.3f.dat" % (self.results_basename, self.zred), bits=32, order="F"))
+            if os.path.exists(jlw_npy):
+                self.jLW = np.asfortranarray(np.load(jlw_npy))
+            elif os.path.exists(jlw_legacy_npy):
+                self.jLW = np.asfortranarray(np.load(jlw_legacy_npy))
+            else:
+                self.jLW = np.zeros(self.shape, dtype=np.float64, order="F")
             self.temp = temp0 * np.ones(self.shape, order="F")
-            self.phi_ion = t2c.read_cbin(
-                filename="%sIonRates_%.3f.dat" % (self.results_basename, self.zred),
-                bits=32,
-                order="F",
-            )
         else:
             xh0 = self._ld["Material"]["xh0"]
-            temp0 = self._ld["Material"]["temp0"]
             avg_dens = self._ld["Material"]["avg_dens"]
-
-            self.ndens = avg_dens * np.empty(self.shape, order="F")
+            self.ndens = avg_dens * np.ones(self.shape, order="F")
             self.xh = xh0 * np.ones(self.shape, order="F")
             self.temp = temp0 * np.ones(self.shape, order="F")
-            self.phi_ion = np.zeros(self.shape, order="F")        
-
+            self.phi_ion = np.zeros(self.shape, order="F")
 
     def _output_init(self):
         """Set up output & log file"""
@@ -714,163 +845,152 @@ class C2Ray_CubeP3M_LW(C2Ray):
         mass_grid[mask] = n_mh * vol_cMpc3 * h_scaling * self.M_PIIIstar_msun
         return mass_grid
 
-    def update_agrid_properties(self, nz, AGlifetime, jLWgrid):
-        """
-        Complete port of AGrid_properties handling MHflag 1 and 2: It identifies "fresh" mass in neutral cells, 
-        calculates the local LW background suppression, and generates a list of active subgrid sources.
-        """
-        zred_now = self.zred_array[nz]
+    def get_ach_effective_teff(self):
+        """Return the ionizing-photon-budget-weighted effective ACH blackbody temperature."""
+        hm_weight = float(np.sum(self.sM00_msun) * self.phot_per_atom[0]) if hasattr(self, "sM00_msun") else 0.0
+        lm_weight = float(np.sum(self.sM01_msun) * self.phot_per_atom[1]) if hasattr(self, "sM01_msun") else 0.0
+        total_weight = hm_weight + lm_weight
+        if total_weight <= 0.0:
+            return self.pop_hm.T_eff
+        return (hm_weight * self.pop_hm.T_eff + lm_weight * self.pop_lm.T_eff) / total_weight
 
+    def update_tables(
+        self,
+        bb_Teff: float
+        ):
+        
+        ev2fr = 2.417989e14
+
+        freq_min = ev2fr * self.eth0              # ionising frequncy of Hydrogen
+        freq_max = 10 * ev2fr * self.ethe1        # 10x the ionising frequncy of HeII
+        
+
+        # Initialize spectrum parameters
+        radsource = BlackBodySource(
+            bb_Teff, self.grey, freq_min, self.cs_pl_idx_h
+        )
+
+        logger.info(f"""Recalculating Black-Body sources with effective temperature T = {radsource.temp:.1e} K """)
+
+        photo_thin_table, photo_thick_table = radsource.make_photo_table(
+            self.tau, freq_min, freq_max, 1e48
+        )
+        photo_table_to_device(photo_thin_table, photo_thick_table)
+        logger.info("Successfully copied radiation tables to GPU memory.")
+
+        return None
+
+    def get_mh_suppression_factor(self, jLWgrid, zred):
+        """Return the continuous LW survival/formation factor for minihalos."""
+        jcrit = self.get_jLWcrit(zred)
+        jmin = 0.1 * jcrit
+        suppression = np.ones_like(jLWgrid, dtype=np.float64)
+        suppression[jLWgrid >= jcrit] = 0.0
+        partial = (jLWgrid > jmin) & (jLWgrid < jcrit)
+        suppression[partial] = (jcrit - jLWgrid[partial]) / (jcrit - jmin)
+        return suppression
+
+    def _prepare_mh_candidates(self, nz):
+        """Build the fresh, neutral minihalo candidate mass grid once per fine timestep."""
+        zred_now = self.zred_array[nz]
         self.M_box = self.rho_crit_0 * self.cosmology.Om0 * (self.boxsize * self.Mpc / self.h)**3
         self.M_grid = self.M_box / (self.n_box**3)
         self.M_particle = 8.0 * self.M_grid
-
         if self.minihalo_abundance_model == "empirical":
             if self.MHflag == 2:
                 self.densNDcrit = self.get_denscrit(zred_now, self.dens_ND)
-
                 if nz > 0:
                     self.densNDcrit_prev = self.get_denscrit(self.zred_array[nz - 1], self.dens_ND_prev)
-
             mass_now = self.get_subsrcM_msun_all(zred_now, self.dens_ND, self.densNDcrit)
-
             if nz > 0:
                 mass_prev = self.get_subsrcM_msun_all(self.zred_array[nz - 1], self.dens_ND_prev, self.densNDcrit_prev)
                 diff_subsrcMsun = mass_now - mass_prev
             else:
                 diff_subsrcMsun = mass_now
-
+            diff_subsrcMsun = np.maximum(diff_subsrcMsun, 0.0)
         elif self.minihalo_abundance_model == "subgrid_file":
             nhalo_now = self.read_subgrid_nhalo(zred_now)
-
             if nz > 0:
-                zred_prev = self.zred_array[nz - 1]
-                nhalo_prev = self.read_subgrid_nhalo(zred_prev)
+                nhalo_prev = self.read_subgrid_nhalo(self.zred_array[nz - 1])
                 fresh_nhalo = nhalo_now - nhalo_prev
             else:
                 fresh_nhalo = nhalo_now.copy()
-
             fresh_nhalo = np.maximum(fresh_nhalo, 0)
-
             diff_subsrcMsun = fresh_nhalo.astype(np.float64) * self.M_PIIIstar_msun
-       
-        self.printlog(f"Raw subgrid halos: {np.sum(nhalo_now):,.0f}", self.logfile)
-        self.printlog(f"Fresh subgrid halos: {np.sum(fresh_nhalo):,.0f}", self.logfile)
-        ionized_fresh = (self.xh >= self.StillNeutral) & (fresh_nhalo > 0)
+            self.printlog(f"Raw subgrid halos: {np.sum(nhalo_now):,.0f}", self.logfile)
+            self.printlog(f"Fresh subgrid halos: {np.sum(fresh_nhalo):,.0f}", self.logfile)
+        else:
+            raise ValueError(f"Unknown minihalo_abundance_model: {self.minihalo_abundance_model}")
+        candidate_mask = (self.xh < self.StillNeutral) & (diff_subsrcMsun > 0.0)
+        self._mh_cache_nz = int(nz)
+        self._mh_diff_subsrcMsun = np.asfortranarray(diff_subsrcMsun, dtype=np.float64)
+        self._mh_candidate_mask = np.asfortranarray(candidate_mask)
+        self.printlog(f"Fresh neutral MH candidate cells: {np.count_nonzero(candidate_mask):,}", self.logfile)
+        return self._mh_diff_subsrcMsun, self._mh_candidate_mask
 
-        # # Ensure no negative growth due to numerical fluctuations
-        # diff_subsrcMsun = np.maximum(diff_subsrcMsun, 0.0)
-
-        # 4. Filter for Active Grids (Neutral cells with fresh mass)
-        jLWc_now = self.get_jLWcrit(zred_now)
-        jLWc_min = 0.1 * jLWc_now
-
-        lw_suppressed_fresh = (jLWgrid >= jLWc_now) & (fresh_nhalo > 0)
-
-        self.printlog(f"Fresh halos in ionized cells: {np.sum(fresh_nhalo[ionized_fresh]):,.0f}", self.logfile)
-        self.printlog(f"Fresh halos above JLWcrit: {np.sum(fresh_nhalo[lw_suppressed_fresh]):,.0f}", self.logfile)
-
-        ionized_fresh = (self.xh >= self.StillNeutral) & (fresh_nhalo > 0)
-        lw_suppressed_fresh = (jLWgrid >= jLWc_now) & (fresh_nhalo > 0)
-
-        self.printlog(f"Fresh halos in ionized cells: {np.sum(fresh_nhalo[ionized_fresh]):,.0f}", self.logfile)
-        self.printlog(f"Fresh halos above JLWcrit: {np.sum(fresh_nhalo[lw_suppressed_fresh]):,.0f}", self.logfile)
-        # Mask: StillNeutral check and LW suppression check
-        active_mask = (self.xh < self.StillNeutral) & \
-                      (jLWgrid < jLWc_now) & \
-                      (diff_subsrcMsun > 0)
-
-        print("self.StillNeutral = ", self.StillNeutral)
-        print("self.xh > self.StillNeutral ", np.sum(self.xh > self.StillNeutral))
-        print("jLWgrid > jLWc_now ", np.sum(jLWgrid > jLWc_now))
-        print("diff_subsrcMsun < 0 ", np.sum(diff_subsrcMsun <= 0))
-        print("diff_subsrcMsun > 0 ", np.sum(diff_subsrcMsun > 0))
-        print("****************************************************************************************")
-        print("Number of active grids: ", np.sum(active_mask))
-        print("np.sum(diff_subsrcMsun) = ", np.sum(diff_subsrcMsun))
-        
-        if not np.any(active_mask):
-            return None, None, 0
-
-        # 5. Apply Lyman-Werner Suppression
-        # Get active grid indices and count
-        active_indices = np.argwhere(active_mask)
-        NumAGrid = len(active_indices)
-
+    def update_agrid_properties(self, nz, AGlifetime, jLWgrid, write_catalog=True, permute=True):
+        """Apply LW suppression to the fresh minihalo candidates and return the active Pop III source list."""
+        if AGlifetime <= 0.0:
+            raise ValueError("AGlifetime must be positive.")
+        zred_now = self.zred_array[nz]
+        if self._mh_cache_nz != int(nz) or self._mh_diff_subsrcMsun is None or self._mh_candidate_mask is None:
+            self._prepare_mh_candidates(nz)
+        diff_subsrcMsun = self._mh_diff_subsrcMsun
+        candidate_mask = self._mh_candidate_mask
+        suppression_grid = self.get_mh_suppression_factor(jLWgrid, zred_now)
+        active_mass_grid = np.zeros_like(diff_subsrcMsun, dtype=np.float64)
+        active_mass_grid[candidate_mask] = diff_subsrcMsun[candidate_mask] * suppression_grid[candidate_mask]
+        active_mask = active_mass_grid > 0.0
         active_indices = np.argwhere(active_mask)
         NumAGrid = active_indices.shape[0]
-
+        if NumAGrid == 0:
+            self.ssM_msun = np.empty(0, dtype=np.float64)
+            if write_catalog and self.rank == 0:
+                z_str = f"{zred_now:.3f}"
+                sourcelistfile_sub = os.path.join(self.results_basename, f"{z_str}-coarsened_SUBsources.dat")
+                with open(sourcelistfile_sub, "w") as f:
+                    f.write("0\n")
+                    f.write(f"{self.MHflag}\n")
+            return None, None, 0
         i = active_indices[:, 0]
         j = active_indices[:, 1]
         k = active_indices[:, 2]
-
-        fresh_mass = diff_subsrcMsun[i, j, k]
-        local_jLW = jLWgrid[i, j, k]
-
-        suppression_factor = np.ones(NumAGrid, dtype=fresh_mass.dtype, )
-
-        partial = local_jLW > jLWc_min
-
-        suppression_factor[partial] = ((jLWc_now - local_jLW[partial]) /(jLWc_now - jLWc_min))
-
-        self.ssM_msun = fresh_mass * suppression_factor
-        
-        tot_subsrcM_msun = np.sum(self.ssM_msun)
-        print("tot_subsrcM_msun = ",tot_subsrcM_msun)
-        self.printlog(f"Total active stellar mass in subgrids, in solar mass: {np.sum(tot_subsrcM_msun)}", self.logfile)
-        print("Total mini halos generated = ", tot_subsrcM_msun/self.M_PIIIstar_msun)
-
-        # 6. Convert to Grid Units and Normalized Flux
-        # Constants from Fortran module: Omega_B, Omega0, m_p, M_SOLAR, S_star_nominal
+        self.ssM_msun = active_mass_grid[i, j, k]
+        tot_subsrcM_msun = float(np.sum(self.ssM_msun))
+        self.printlog(f"Total active stellar mass in subgrids: {tot_subsrcM_msun:.6e} Msun", self.logfile)
+        self.printlog(f"Equivalent active Pop III stars: {tot_subsrcM_msun / self.M_PIIIstar_msun:.6e}", self.logfile)
         m_p_cgs = c.m_p.cgs.value
-        m_solar_cgs = 1.98892e33 # astroconstants.M_SOLAR
-        
+        m_solar_cgs = 1.98892e33
         if self.MHflag == 1:
-            # Case 1: Proportional to Baryon fraction
-            # subsrcMass = self.ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2]
             subsrcMass = self.ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2]
-            subNormFlux = (subsrcMass * self.M_grid * self.cosmology.Ob0 / 
-                          (self.cosmology.Om0 * m_p_cgs)) / (self.S_star_nominal * AGlifetime)
-            
+            subNormFlux = (subsrcMass * self.M_grid * self.cosmology.Ob0 / (self.cosmology.Om0 * m_p_cgs)) / (self.S_star_nominal * AGlifetime)
         elif self.MHflag == 2:
-            # Case 2: Discrete Pop III stars
-            # subsrcMass = self.ssM_msun * (M_SOLAR/M_grid) * phot_per_atom[2] / fstar[2]
-            subsrcMass = self.ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2] / self.fstar[2]
+            subsrcMass = self.ssM_msun * (m_solar_cgs / self.M_grid) * self.phot_per_atom[2]
             subNormFlux = (subsrcMass * self.M_grid / m_p_cgs) / (self.S_star_nominal * AGlifetime)
-
-        total_subgrid_flux = np.sum(subNormFlux)
-        print("Subgrid Total flux= ", total_subgrid_flux)
-        self.printlog(f"Subgrid Total flux= {total_subgrid_flux}", self.logfile)
-        # 7. Save subgrid source list to file (matching Fortran format)
-        z_str = f"{zred_now:6.3f}"
-        sourcelistfile_sub = f"{self.results_basename}/{z_str}-coarsened_SUBsources.dat"
-        if self.rank == 0:
-            with open(sourcelistfile_sub, 'w') as f:
-                # Write number of active grids
-                f.write(f"{NumAGrid}\n")
-                # Write MHflag to distinguish physical meaning
-                # When MHflag=2, self.ssM_msun is STELLAR BARYON MASS, not BARYON+DM HALO MASS
-                f.write(f"{self.MHflag}\n")
-                # Write source data: i, j, k, subsrcMass, self.ssM_msun
-                # Format matches Fortran: 3I5,2e13.4
-                for idx in range(NumAGrid):
-                    i, j, k = active_indices[idx]
-                    f.write(f"{i:5d}{j:5d}{k:5d}{subsrcMass[idx]:13.4e}{self.ssM_msun[idx]:13.4e}\n")
-            print(f"Saved subgrid sources to: {sourcelistfile_sub}")
-        # 8. Randomize for raytracing order (Equivalent to Fortran's call permi)
-        if self.rank == 0:
-            p = np.random.permutation(NumAGrid)
         else:
-            p = None
-
-        p = self.comm.bcast(p, root=0)
-
-        active_indices = active_indices[p]
-        subNormFlux = subNormFlux[p]
-        self.ssM_msun = self.ssM_msun[p]
-
+            raise ValueError(f"Unsupported MHflag={self.MHflag}")
+        self.printlog(f"Subgrid Total flux = {np.sum(subNormFlux):.6e} in units of S_star", self.logfile)
+        if write_catalog and self.rank == 0:
+            z_str = f"{zred_now:.3f}"
+            sourcelistfile_sub = os.path.join(self.results_basename, f"{z_str}-coarsened_SUBsources.dat")
+            with open(sourcelistfile_sub, "w") as f:
+                f.write(f"{NumAGrid}\n")
+                f.write(f"{self.MHflag}\n")
+                for idx in range(NumAGrid):
+                    ii, jj, kk = active_indices[idx]
+                    f.write(f"{ii:5d}{jj:5d}{kk:5d}{subsrcMass[idx]:13.4e}{self.ssM_msun[idx]:13.4e}\n")
+            self.printlog(f"Saved subgrid sources to: {sourcelistfile_sub}", self.logfile)
+        if permute:
+            if self.rank == 0:
+                p = np.random.permutation(NumAGrid)
+            else:
+                p = None
+            p = self.comm.bcast(p, root=0)
+            active_indices = active_indices[p]
+            subNormFlux = subNormFlux[p]
+            self.ssM_msun = self.ssM_msun[p]
         return active_indices, subNormFlux, NumAGrid
-    
+
     def _init_jLW_constants(self):
         """Port of get_HcOm: Simple constant calculation in unit of Mpc^-1."""
         speed_of_light_cms = c.c.cgs.value
@@ -898,8 +1018,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
             m1, m2, m3 = struct.unpack("<iii", f.read(12))
             print("m1, m2, m3 =", m1, m2, m3)
 
-            if (m1 != self.N) & (m2 != self.N) & (m3 != self.N):  
-                raise ValueError("mesh number not matched for greenK!! Aborting!")
+            if (m1, m2, m3) != (self.N, self.N, self.N):
+                raise ValueError(f"Green-function mesh {(m1, m2, m3)} does not match RT mesh {(self.N, self.N, self.N)}.")
 
             # --- read complex(dp) array ---
             nkx = m1 // 2 + 1
@@ -914,79 +1034,41 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
 
     def get_srclumK(self, nz, srcpos, normflux, srcpos_mh, normflux_mh):
-        """
-        Port of get_srclumK: Create and FFT the source luminosity distribution.
-        Returns the Fourier transform matching Fortran's layout: (N//2+1, N, N)
-        """
-        # Calculate C2Ray lifetime for this redshift interval
-        C2ray_lifetime = abs(self.zred2time(self.zred_array[nz]) - 
-                            self.zred2time(self.zred_array[nz+1]))
-
-        QH_M_C2ray00  = self.Ni[0] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
-        QH_M_C2ray01  = self.Ni[1] * (self.M_solar/c.m_p.cgs.value)  /C2ray_lifetime
-        
-        # Correction coefficients
+        """Create and FFT the current-slice LW source-luminosity grid."""
+        C2ray_lifetime = abs(self.zred2time(self.zred_array[nz]) - self.zred2time(self.zred_array[nz + 1]))
+        QH_M_C2ray00 = self.Ni[0] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime
+        QH_M_C2ray01 = self.Ni[1] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime
         CC00 = QH_M_C2ray00 / self.QH_M_real00
         CC01 = QH_M_C2ray01 / self.QH_M_real01
-        
-        # Coefficients for source luminosity
-        coeff00 = self.emis00 * CC00 * self.fstar[0] * self.cosmology.Ob0 / self.cosmology.Om0
-        coeff01 = self.emis01 * CC01 * self.fstar[1] * self.cosmology.Ob0 / self.cosmology.Om0
-
-        # Initialize source luminosity grid (Fortran order is important!)
-        srclum = np.zeros(self.shape, order='F')
-
-        # Add HMACHs
-        if srcpos is not None and normflux is not None:
-            for i in range(normflux.size):
-                ix, iy, iz = srcpos[:, i].astype(int)
-                if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
-                    srclum[ix, iy, iz] += self.sM00_msun[i] * coeff00
-
-        if srcpos is not None and normflux is not None:
-            for i in range(normflux.size):
-                ix, iy, iz = srcpos[:, i].astype(int)
-                if 0 <= ix < self.N and 0 <= iy < self.N and 0 <= iz < self.N:
-                    srclum[ix, iy, iz] += self.sM01_msun[i] * coeff01 # For suppressed sources self.sM01_msun = 0
-
-        # Add minihalo/subgrid sources
-        if srcpos_mh is not None and normflux_mh is not None:
+        coeff00 = self.emis00 * CC00 * self.fstar[0] * self.pop_hm.f_esc_LW * self.cosmology.Ob0 / self.cosmology.Om0
+        coeff01 = self.emis01 * CC01 * self.fstar[1] * self.pop_lm.f_esc_LW * self.cosmology.Ob0 / self.cosmology.Om0
+        srclum = np.zeros(self.shape, dtype=np.float64, order="F")
+        if srcpos is not None and normflux is not None and normflux.size > 0:
+            ix = srcpos[0].astype(np.intp, copy=False)
+            iy = srcpos[1].astype(np.intp, copy=False)
+            iz = srcpos[2].astype(np.intp, copy=False)
+            valid = (ix >= 0) & (ix < self.N) & (iy >= 0) & (iy < self.N) & (iz >= 0) & (iz < self.N)
+            np.add.at(srclum, (ix[valid], iy[valid], iz[valid]), self.sM00_msun[valid] * coeff00)
+            np.add.at(srclum, (ix[valid], iy[valid], iz[valid]), self.sM01_msun[valid] * coeff01)
+        if srcpos_mh is not None and normflux_mh is not None and normflux_mh.size > 0:
             if self.MHflag == 1:
                 QH_M_C2ray_sub = self.Ni[2] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime
                 CC_sub = QH_M_C2ray_sub / self.QH_M_real_sub
-                coeff_sub = self.emissub * CC_sub * self.fstar[2] * self.cosmology.Ob0 / self.cosmology.Om0
-                print('Sanity check: fesc_sub = ', self.phot_per_atom[2] /(self.Ni[2] *self.fstar[2]) )
+                coeff_sub = self.emissub * CC_sub * self.fstar[2] * self.f_esc_LW_MH * self.cosmology.Ob0 / self.cosmology.Om0
             elif self.MHflag == 2:
                 QH_M_C2ray_sub = self.Ni[2] * (self.M_solar / c.m_p.cgs.value) / C2ray_lifetime
                 CC_sub = QH_M_C2ray_sub / self.QH_M_real_sub
-                coeff_sub = self.emissub * CC_sub
-                print('Sanity check: fesc_sub = ', self.phot_per_atom[2] /(self.Ni[2] *self.fstar[2]) )
-            
-            if srcpos_mh is not None and srcpos_mh.size > 0:
-                ix = srcpos_mh[0].astype(np.intp, copy=False)
-                iy = srcpos_mh[1].astype(np.intp, copy=False)
-                iz = srcpos_mh[2].astype(np.intp, copy=False)
-
-                valid = ((ix >= 0) & (ix < self.N) &(iy >= 0) & (iy < self.N) &(iz >= 0) & (iz < self.N))
-
-                srclum[ix[valid],iy[valid],iz[valid]] += self.ssM_msun[valid] * coeff_sub
-
-        # CRITICAL FIX: Match Fortran FFT convention
-        # Fortran reduces first dimension, Python rfftn reduces last dimension
-        # Solution: transpose before and after FFT
-        
-        # Transpose: (N, N, N) -> (N, N, N) but with axes swapped
-        srclum_T = np.transpose(srclum, (2, 1, 0))  # Now (Nz, Ny, Nx)
-        
-        # FFT: reduces last axis, giving (Nz, Ny, Nx//2+1)
+                coeff_sub = self.emissub * CC_sub * self.f_esc_LW_MH
+            else:
+                raise ValueError(f"Unsupported MHflag={self.MHflag}")
+            ix = srcpos_mh[0].astype(np.intp, copy=False)
+            iy = srcpos_mh[1].astype(np.intp, copy=False)
+            iz = srcpos_mh[2].astype(np.intp, copy=False)
+            valid = (ix >= 0) & (ix < self.N) & (iy >= 0) & (iy < self.N) & (iz >= 0) & (iz < self.N)
+            np.add.at(srclum, (ix[valid], iy[valid], iz[valid]), self.ssM_msun[valid] * coeff_sub)
+        srclum_T = np.transpose(srclum, (2, 1, 0))
         srclumK_T = np.fft.rfftn(srclum_T)
-        
-        # Transpose back to Fortran convention: (Nx//2+1, Ny, Nz)
-        srclumK = np.transpose(srclumK_T, (2, 1, 0))
-        # Normalize (matching Fortran normalization)
-        srclumK = srclumK / float(self.N**3)
-        
-        return srclumK
+        return np.transpose(srclumK_T, (2, 1, 0)) / float(self.N**3)
 
     def save_srclumK(self, srclumK, z):
         """Save source luminosity Fourier transform for later use."""
@@ -1006,75 +1088,46 @@ class C2Ray_CubeP3M_LW(C2Ray):
         fname = os.path.join(self.results_basename, f"{zstr}-srcK.npy")
         return np.load(fname)
 
-    def compute_jLW_from_history(self, nz0, nz):
-        """
-        Complete port of get_jLW: sums contributions from all past redshift slices within the LW horizon (r_LW) by convolving the source luminosity (k-space) with the Green's function.
-        """
-        # Observer redshift is the END of the current slice
-        zobs = self.zred_array[nz+1]
-        
-        # Calculate LW horizon
+    def compute_jLW_current_slice(self, nz, srclumK, greenK=None):
+        """Convolve only the current fine-slice luminosity with its Green function."""
+        zobs = self.zred_array[nz + 1]
+        zsbegin = self.zred_array[nz]
+        zsend = self.zred_array[nz + 1]
+        if greenK is None:
+            greenK = self.read_greenK(zsbegin, zsend, zobs)
+        gK_sK = greenK * srclumK
+        gK_sK_T = np.transpose(gK_sK, (2, 1, 0))
+        jLW_contrib_T = np.fft.irfftn(gK_sK_T, s=(self.N, self.N, self.N), norm="forward")
+        return np.asfortranarray(np.transpose(jLW_contrib_T, (2, 1, 0)))
+
+    def compute_jLW_from_history(self, nz0, nz, current_srclumK=None):
+        """Sum all LW light-cone slices through the observer redshift at the end of fine interval nz."""
+        zobs = self.zred_array[nz + 1]
         self.get_rLW(zobs)
-        
-        # Find starting redshift for LW calculation
         zstart = ((1.0 + zobs)**(-0.5) - self.rLW_zobs * 0.5 * self.HcOm)**(-2.0) - 1.0
-        # Find which redshift index to start from
         nz_LWbegin = 0
-        if zstart > self.zred_array[0]:
-            nz_LWbegin = 0
-        else:
+        if zstart <= self.zred_array[0]:
             for nzz in range(nz + 1):
-                if (self.zred_array[nzz] >= zstart and 
-                    zstart > self.zred_array[nzz + 1]):
+                if self.zred_array[nzz] >= zstart > self.zred_array[nzz + 1]:
                     nz_LWbegin = nzz
                     break
-        
         n_pastslice = nz + 1 - nz_LWbegin
-        self.printlog(f"LW calculation: {n_pastslice} past slices from z={self.zred_array[nz_LWbegin]:.3f}", 
-                    self.logfile)
-
-        # Initialize jLW accumulator
-        jLW_total = np.zeros(self.shape, order='F')
-        
-        # Loop over all past slices that contribute
+        self.printlog(f"LW calculation: {n_pastslice} slices from z={self.zred_array[nz_LWbegin]:.3f} to observer z={zobs:.3f}", self.logfile)
+        jLW_total = np.zeros(self.shape, dtype=np.float64, order="F")
         for nzz in range(nz_LWbegin, nz + 1):
             zsbegin = self.zred_array[nzz]
             zsend = self.zred_array[nzz + 1]
-            
-            self.printlog(f"  Adding LW contribution from z={zsbegin:.3f} to z={zsend:.3f}", 
-                        self.logfile)
-            
-            # Read Green's function for this slice observed at zobs
-            # greenK is already in correct shape (N//2+1, N, N) from read_greenK
             greenK = self.read_greenK(zsbegin, zsend, zobs)
-            srclumK = self.load_srclumK(zsbegin)
-
-            # CRITICAL FIX: Both arrays now have shape (N//2+1, N, N)
-            # Direct multiplication (convolution theorem)
+            if nzz == nz and current_srclumK is not None:
+                srclumK = current_srclumK
+            else:
+                srclumK = self.load_srclumK(zsbegin)
             gK_sK = greenK * srclumK
-
-            # Inverse FFT back to real space
-            # Need to match Fortran's C2R FFT which expects first dimension reduced
-            # Transpose to Python convention, IFFT, transpose back
             gK_sK_T = np.transpose(gK_sK, (2, 1, 0))
-        
-            # Inverse FFT WITHOUT normalization (norm='forward' means no normalization on inverse)
-            # FFTW does NOT normalize, so we need to match that
-            jLW_contrib_T = np.fft.irfftn(gK_sK_T, s=(self.N, self.N, self.N), norm='forward')
-            
-            # Transpose back to Fortran order
-            jLW_contrib = np.transpose(jLW_contrib_T, (2, 1, 0))
-            
-            # Accumulate
-            jLW_total += jLW_contrib
-        
-        # Ensure non-negative and Fortran-ordered
-        jLW_total = np.maximum(jLW_total, 0.0)
-        jLW_total = np.asfortranarray(jLW_total)
-        
-        jLW_mean = np.mean(jLW_total)
-        self.printlog(f"Total LW background: mean={jLW_mean:.3e} erg/s/cm^2/Hz/sr", self.logfile)
-        
+            jLW_contrib_T = np.fft.irfftn(gK_sK_T, s=(self.N, self.N, self.N), norm="forward")
+            jLW_total += np.transpose(jLW_contrib_T, (2, 1, 0))
+        jLW_total = np.asfortranarray(np.maximum(jLW_total, 0.0))
+        self.printlog(f"Total LW background: mean={np.mean(jLW_total):.3e} erg/s/cm^2/Hz/sr", self.logfile)
         return jLW_total
 
     def compute_jLW_grid(self, source_grid):
