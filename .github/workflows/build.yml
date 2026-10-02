@@ -30,7 +30,7 @@ jobs:
     - name: Install ruff
       run: |
         python -m pip install --upgrade pip
-        pip install ruff clang-format
+        pip install ruff==0.14.0 clang-format  # same ruff as .pre-commit-config.yaml
 
     - name: Check code format
       run: ruff format --check pyc2ray/ tests/
