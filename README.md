@@ -5,7 +5,7 @@
 # pyC2Ray: A flexible and GPU-accelerated radiative transfer framework
 `pyc2ray` is the updated version of [C2Ray](https://github.com/garrelt/C2-Ray3Dm/tree/factorization) [(G. Mellema, I.T. Illiev, A. Alvarez & P.R. Shapiro, 2006)](https://ui.adsabs.harvard.edu/abs/2006NewA...11..374M/abstract), an astrophysical radiative transfer code widely used to simulate the Epoch of Reionization (EoR). `pyc2ray` features a new raytracing method developed for GPUs, named <b>A</b>ccelerated <b>S</b>hort-characteristics <b>O</b>cthaedral <b>RA</b>ytracing (<b>ASORA</b>). `pyc2ray` has a modern python interface that allows easy and customizable use of the code without compromising computational efficiency. A full description of the update and new raytracing method can be found at [Hirling, Bianco, Giri, Iliev, Mellema & Kneib (2024)](https://arxiv.org/abs/2311.01492).
 
-The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as a Python extension module, while the new raytracing library, _ASORA_, is implemented in C++ using CUDA. Both are native Python C extensions and can be directly accessed from any Python script.
+The core features of `C2Ray`, written in Fortran90, are wrapped using `f2py` as a Python extension module, while the new raytracing library, _ASORA_, is implemented in C++ using CUDA, and can also be built with HIP for AMD GPUs. Both are native Python C extensions and can be directly accessed from any Python script.
 
 Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the complete documentation, tutorials, installation instructions, and more.
 
@@ -14,7 +14,8 @@ Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the com
 **Requirements**:
 - C++ compiler that supports the c++20 standard, e.g. gcc >= 12.0
 - Fortran compiler, e.g. gfortran >= 12.0
-- CUDA toolkit with `nvcc` compiler, at least version 12.0
+- For NVIDIA GPUs: CUDA toolkit with `nvcc` compiler, at least version 12.0
+- For AMD GPUs: ROCm with the `hipcc` compiler
 
 In your environment simply run
 
@@ -26,6 +27,20 @@ To specify a different host compiler for `nvcc` than the default one, you can ru
 
 ```bash
 pip install . -Csetup-args="-Dcuda_ccbindir=my-other-compiler"
+```
+
+### AMD GPUs (HIP)
+
+ASORA is a single source for CUDA and HIP. To build it with `hipcc` instead of `nvcc`, use the `hipnative.ini` native file:
+
+```bash
+pip install . -Csetup-args=--native-file=$PWD/hipnative.ini
+```
+
+The GPU architecture is detected on the build machine; if it has no GPU (e.g. a login node), set it explicitly, for example for the AMD MI250X:
+
+```bash
+pip install . -Csetup-args=--native-file=$PWD/hipnative.ini -Csetup-args=-Dgpu-architecture=gfx90a
 ```
 
 If the setuptools method doesn't work, you can alway compile the libraries manually.
