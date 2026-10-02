@@ -218,7 +218,7 @@ class C2Ray:
             # Set cell size to current proper size
             # self.dr = self.dr_c * self.cosmology.scale_factor(z_half)
             self.dr /= dilution_factor
-            self.printlog(f"zfactor = {1.0 / dilution_factor: .10f}")
+            # self.printlog(f"zfactor = {1.0 / dilution_factor: .10f}")
         # Set new time and redshift (after timestep)
         self.zred = z_now
 
@@ -716,6 +716,10 @@ class C2Ray:
         self.sources_basename = self._ld["Output"]["sources_basename"]
         self.density_basename = self._ld["Output"]["density_basename"]
 
+        # all processor wait for rank=0 to be done. This is to avoid that some ranks go ahead.
+        if self.mpi:
+            self.comm.Barrier()
+
         self.logfile = self.results_basename + self._ld["Output"]["logfile"]
         title = r"""
                  _________   ____            
@@ -739,10 +743,8 @@ class C2Ray:
                 print(title)
                 with open(self.logfile, "w") as f:
                     # Clear file and write header line
-                    f.write(title+"\nLog file for pyC2Ray.\n\n") 
+                    f.write(title + "\nLog file for pyC2Ray.\n\n")
 
-        # all processor wait for rank=0 to be done. This is to avoid that some ranks go ahead.
-        self.comm.Barrier()
 
     def _sinks_init(self):
         """Initialize sinks physics class for the mean-free path and clumping factor"""

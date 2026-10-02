@@ -33,8 +33,10 @@ static PyObject *asora_do_all_sources(PyObject *self, PyObject *args) {
     double dlogtau;
     int NumTau;
 
-    if (!PyArg_ParseTuple(args, "dOddOOOiiddi", &R, &coldensh_out, &sig, &dr, &ndens, &xh_av,
-                          &phi_ion, &NumSrc, &m1, &minlogtau, &dlogtau, &NumTau))
+    if (!PyArg_ParseTuple(
+            args, "dOddOOOiiddi", &R, &coldensh_out, &sig, &dr, &ndens, &xh_av,
+            &phi_ion, &NumSrc, &m1, &minlogtau, &dlogtau, &NumTau
+        ))
         return NULL;
 
     // Error checking
@@ -49,8 +51,10 @@ static PyObject *asora_do_all_sources(PyObject *self, PyObject *args) {
     double *phi_ion_data = (double *)PyArray_DATA(phi_ion);
     double *xh_av_data = (double *)PyArray_DATA(xh_av);
 
-    do_all_sources_gpu(R, coldensh_out_data, sig, dr, ndens_data, xh_av_data, phi_ion_data, NumSrc,
-                       m1, minlogtau, dlogtau, NumTau);
+    do_all_sources_gpu(
+        R, coldensh_out_data, sig, dr, ndens_data, xh_av_data, phi_ion_data, NumSrc, m1,
+        minlogtau, dlogtau, NumTau
+    );
 
     return Py_None;
 }
@@ -63,7 +67,8 @@ static PyObject *asora_device_init(PyObject *self, PyObject *args) {
     int num_src_par;
     int mpi_rank;
     int num_gpus;
-    if (!PyArg_ParseTuple(args, "iiii", &N, &num_src_par, &mpi_rank, &num_gpus)) return NULL;
+    if (!PyArg_ParseTuple(args, "iiii", &N, &num_src_par, &mpi_rank, &num_gpus))
+        return NULL;
     device_init(N, num_src_par, mpi_rank, num_gpus);
     return Py_None;
 }
@@ -115,7 +120,8 @@ static PyObject *asora_source_data_to_device(PyObject *self, PyObject *args) {
     PyArrayObject *flux;
     PyArrayObject *rdir;
     PyArrayObject *angl;
-    if (!PyArg_ParseTuple(args, "OOOOi", &pos, &flux, &rdir, &angl, &NumSrc)) return NULL;
+    if (!PyArg_ParseTuple(args, "OOOOi", &pos, &flux, &rdir, &angl, &NumSrc))
+        return NULL;
 
     int *pos_data = (int *)PyArray_DATA(pos);
     double *flux_data = (double *)PyArray_DATA(flux);
@@ -134,7 +140,8 @@ static PyMethodDef asoraMethods[] = {
     {"do_all_sources", asora_do_all_sources, METH_VARARGS, "Do OCTA raytracing (GPU)"},
     {"device_init", asora_device_init, METH_VARARGS, "Free GPU memory"},
     {"device_close", asora_device_close, METH_VARARGS, "Free GPU memory"},
-    {"density_to_device", asora_density_to_device, METH_VARARGS, "Copy density field to GPU"},
+    {"density_to_device", asora_density_to_device, METH_VARARGS,
+     "Copy density field to GPU"},
     {"photo_table_to_device", asora_photo_table_to_device, METH_VARARGS,
      "Copy radiation table to GPU"},
     {"source_data_to_device", asora_source_data_to_device, METH_VARARGS,
@@ -149,7 +156,8 @@ static struct PyModuleDef asoramodule = {
                                                                   may be NULL */
     -1, /* size of per-interpreter state of the module,
           or -1 if the module keeps state in global variables. */
-    asoraMethods};
+    asoraMethods
+};
 
 PyMODINIT_FUNC PyInit_libasora_anisotr(void) {
     PyObject *module = PyModule_Create(&asoramodule);

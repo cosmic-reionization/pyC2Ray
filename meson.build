@@ -7,9 +7,9 @@ project(
     meson_version: '>= 1.4.0',
     default_options: [
         'buildtype=release',
-        'warning_level=2',
-        'cpp_std=c++14',
-        'cuda_std=c++14',
+        'warning_level=3',
+        'cpp_std=c++20',
+        'cuda_std=c++20',
     ],
 )
 

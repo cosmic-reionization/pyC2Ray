@@ -28,7 +28,7 @@ classifiers = [
 ]
 dependencies = [
   "h5py",
-  "mpi4py",
+  "mpi4py==4.0.3",
   "numpy",
   "scipy",
   "tools21cm",
@@ -40,4 +40,12 @@ dev = [
   "ruff",
   "clang-format",
   "meson",
+  "pytest",
+  "pytest-benchmark",
 ]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+
+[tool.meson-python.args]
+setup = ["-Dbuildtype=release"]

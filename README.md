@@ -11,35 +11,25 @@ Visit the [ReadTheDocs](https://pyc2ray.readthedocs.io) of `pyc2ray` for the com
 
 ## Installation
 
-### Requirements
-- C Compiler
-- `gfortran` Fortran Compiler
-- `hipcc` HIP compiler
-- CUDA toolkit with the `nvcc` compiler (only for NVIDIA devices)
+**Requirements**:
+- C++ compiler that supports the c++20 standard, e.g. gcc >= 12.0
+- Fortran compiler, e.g. gfortran >= 12.0
+- CUDA toolkit with `nvcc` compiler, at least version 12.0
 
-### With an NVIDIA device
-
-Set the platform for the HIP compiler
+In your environment simply run
 
 ```bash
-export HIP_PLATFORM="nvidia"
+pip install .
 ```
 
-`hipcc` forwards the compilation arguments to `nvcc`.
-Edit the `hipnative.ini` configuration file and set the `cuda` variable to the `hipcc` compiler.
-Then in your environment run
+To specify a different host compiler for `nvcc` than the default one, you can run
 
 ```bash
-pip install . -Csetup-args="-Drocm-root=/path/to/rocm"
+pip install . -Csetup-args="-Dcuda_ccbindir=my-other-compiler"
 ```
-
-where `/path/to/rocm` is the location of the ROCm installation, i.e. where the header directory is located.
 
 If the setuptools method doesn't work, you can alway compile the libraries manually.
 
-### With a AMD device
-
-Meson, as of version 1.9.0, doesn't support the HIP compiler, therefore follow the manual compilation instructions.
 Please see our [documentation](https://pyc2ray.readthedocs.io/en/latest/installation.html) for step-by-step instructions on how to install `pyc2ray`.
 
 A few example scripts summarizing the installation steps can be found in the repository [`/install_script/`](https://github.com/cosmic-reionization/pyC2Ray/tree/main/install_scripts).
@@ -116,7 +106,21 @@ Here we list a series of numerical and astrophysical implementations we would li
 
 ## CONTRIBUTING
 
-If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues). The issue page is also good if you seek help or have suggestions for us.
+If you find any bugs or unexpected behavior in the code, please feel free to open a [Github issue](https://github.com/cosmic-reionization/pyC2Ray/issues).
+The issue page is also good if you seek help or have suggestions for us.
+
+### Submitting changes to the code
+
+Please follow these instructions to ensure a smooth integration, at least until a CI system is put into place:
+
+0. **Only the first time**, install `pre-commit` in your enviornment and the pre-commit hooks with `pre-commit install`.
+1. Create a new branch off the main trunk and make your modifications there.
+2. Commit your changes and fix any issue highlighted by the pre-commit hooks; code format is automatically fixed.
+3. Push your branch to the remote repository.
+4. Open a Pull Request on GitHub to the main branch.
+5. It is strongly suggested to squash all the commits into one.
+6. In the PR's description on GitHub, specify blocking dependencies with the message "Depends on #..." and close issues with "Closes #...".
+7. Ask the code to be reviewed before merging.
 
 ## AKNOWLEDGMENT
 

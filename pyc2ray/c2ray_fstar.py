@@ -75,8 +75,13 @@ class C2Ray_fstar(C2Ray):
             ts = dt
 
         # get stellar-to-halo ratio
-        if(self.fstar_kind == 'Muv'):
-            fstar = self.fstar_model.get(Mhalo=srcmass_msun, z=z, a_s=self.fstar_pars['a_s'], b_s=self.fstar_pars['b_s'])
+        if self.fstar_kind == "Muv":
+            fstar = self.fstar_model.get(
+                Mhalo=srcmass_msun,
+                z=z,
+                a_s=self.fstar_pars["a_s"],
+                b_s=self.fstar_pars["b_s"],
+            )
         else:
             fstar = self.fstar_model.get(Mhalo=srcmass_msun)
 
@@ -85,10 +90,10 @@ class C2Ray_fstar(C2Ray):
             fesc = self.fesc_model.f0_esc
         elif self.fesc_kind == "power":
             fesc = self.fesc_model.get(Mhalo=srcmass_msun)
-        elif(self.fesc_kind == 'power_obs'):
+        elif self.fesc_kind == "power_obs":
             # here the escaping fraction is fitted to data that uses stellar mass
-            fesc = self.fesc_model.get(Mhalo=fstar*srcmass_msun)
-        elif(self.fesc_kind == 'Gelli2024'):
+            fesc = self.fesc_model.get(Mhalo=fstar * srcmass_msun, z=z)
+        elif self.fesc_kind == "Gelli2024":
             # mean quantities
             mean_fstar = self.fstar_model.stellar_to_halo_fraction(Mhalo=srcmass_msun)
             mean_Muv = self.fstar_model.UV_magnitude(
@@ -99,12 +104,12 @@ class C2Ray_fstar(C2Ray):
             Muv = self.fstar_model.UV_magnitude(fstar=fstar, mdot=srcmass_msun / ts)
 
             # magnitude dependent escaping fraction
-            fesc = self.fesc_model.get(delta_Muv=mean_Muv-Muv)
-        elif(self.fesc_kind == 'thesan'):
+            fesc = self.fesc_model.get(delta_Muv=mean_Muv - Muv)
+        elif self.fesc_kind == "thesan":
             fesc = self.fesc_model.get(Mhalo=srcmass_msun, z=z)
-            
-        # get for star formation history 
-        if(self.bursty_kind == 'instant' or self.bursty_kind == 'integrate'):
+
+        # get for star formation history
+        if self.bursty_kind == "instant" or self.bursty_kind == "integrate":
             burst_mask = self.bursty_model.get_bursty(mass=srcmass_msun, z=z)
 
             nr_switchon = np.count_nonzero(burst_mask)
@@ -237,7 +242,7 @@ class C2Ray_fstar(C2Ray):
             h = self.h
             srcmass_msun = hl.get(var="m") / h  # Msun
             srcpos_mpc = hl.get(var="pos") / h  # Mpc
-        elif halo_file.endswith(".txt"):
+        elif halo_file.endswith(".txt") and ("fof" in str(halo_file)):
             # Read haloes from a PKDGrav converted in txt.
             hl = np.loadtxt(halo_file)
             srcmass_msun = hl[:, 0] / self.cosmology.h  # Msun
@@ -248,6 +253,23 @@ class C2Ray_fstar(C2Ray):
                 self.boxsize - srcpos_mpc[srcpos_mpc > self.boxsize]
             )
             srcpos_mpc[srcpos_mpc < 0.0] = self.boxsize + srcpos_mpc[srcpos_mpc < 0.0]
+            srcpos_mpc /= self.cosmology.h  # Mpc
+
+        elif halo_file.endswith(".txt") and ("halo" in str(halo_file)):
+            # Read haloes from a PKDGrav converted in txt (other converntion).
+            hl = np.loadtxt(halo_file)
+            srcmass_msun = hl[:, 0] / self.cosmology.h  # Msun
+
+            srcpos_mpc = hl[:, 1:]  # Mpc/h
+
+            srcpos_mpc[srcpos_mpc < 0.0] = self.boxsize + srcpos_mpc[srcpos_mpc < 0.0]
+            srcpos_mpc[srcpos_mpc > self.boxsize] = (
+                srcpos_mpc[srcpos_mpc > self.boxsize] - self.boxsize
+            )
+
+            assert srcpos_mpc.min() >= 0.0
+            assert srcpos_mpc.min() <= self.boxsize
+
             srcpos_mpc /= self.cosmology.h  # Mpc
         return srcpos_mpc, srcmass_msun
 
@@ -263,14 +285,20 @@ class C2Ray_fstar(C2Ray):
 
         """
         file = self.density_basename + fbase
-        rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
-        self.ndens = (
+        if file.endswith("npy"):
+            overd = np.load(file) - 1.0
+        else:
+            rdr = t2c.Pkdgrav3data(self.boxsize, self.N, Omega_m=self.cosmology.Om0)
+            overd = rdr.load_density_field(str(file))
+
+        self.ndens: np.ndarray = (
             self.cosmology.critical_density0.cgs.value
             * self.cosmology.Ob0
-            * (1.0 + rdr.load_density_field(file))
+            * (1.0 + overd)
             / (self.mean_molecular * m_p)
             * (1 + z) ** 3
         )
+
         self.printlog("\n---- Reading density file:\n  %s" % file)
         self.printlog(
             " min, mean and max density : %.3e  %.3e  %.3e [1/cm3]"
@@ -300,11 +328,6 @@ class C2Ray_fstar(C2Ray):
     def _material_init(self):
         """Initialize material properties of the grid"""
         if self.resume:
-            # get fields at the resuming redshift
-            self.ndens = self.read_density(
-                fbase="CDM_200Mpc_2048.%05d.den.256.0" % self.resume, z=self.prev_zdens
-            )
-
             # get extension of the output file
             ext = get_extension_in_folder(path=self.results_basename)
             if ext == ".dat":
@@ -363,8 +386,8 @@ class C2Ray_fstar(C2Ray):
             "g3": self._ld["Sources"]["g3"],
             "g4": self._ld["Sources"]["g4"],
             "alpha_h": self._ld["Sources"]["alpha_h"],
-            'a_s': self._ld['Sources']['a_s'],
-            'b_s': self._ld['Sources']['b_s']
+            "a_s": self._ld["Sources"]["a_s"],
+            "b_s": self._ld["Sources"]["b_s"],
         }
 
         # print message that inform of the f_star model employed
@@ -406,7 +429,7 @@ class C2Ray_fstar(C2Ray):
                 "beta2": self._ld["Sources"]["beta2"],
                 "tB0": self._ld["Sources"]["tB0"],
                 "tQ_frac": self._ld["Sources"]["tQ_frac"],
-                "z0": self._ld["Sources"]["z0"]
+                "z0": self._ld["Sources"]["z0"],
             }
 
             self.printlog(
@@ -429,6 +452,7 @@ class C2Ray_fstar(C2Ray):
             "f0_esc": self._ld["Sources"]["f0_esc"],
             "Mp_esc": self._ld["Sources"]["Mp_esc"],
             "al_esc": self._ld["Sources"]["al_esc"],
+            "al_esc_z": self._ld["Sources"]["al_esc_z"],
         }
         if self.fesc_kind == "constant":
             self.printlog(
@@ -438,6 +462,10 @@ class C2Ray_fstar(C2Ray):
         elif self.fesc_kind == "power":
             self.printlog(
                 f"Using mass-dependent power law model for the escaping fraction with parameters: {self.fesc_pars}"
+            )
+        elif self.fesc_kind == "power_obs":
+            self.printlog(
+                f"Using mass- and redshift-dependent power law model for the escaping fraction derived from observation () with parameters: {self.fesc_pars}"
             )
         elif self.fesc_kind == "Gelli2024":
             self.printlog(
