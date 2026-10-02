@@ -16,9 +16,21 @@ project(
 # For lowercase-uppercase stuff
 add_project_arguments('-cpp', language: 'fortran')
 
-has_cuda = add_languages('cuda', required: false, native: false)
-if not has_cuda
-    warning('CUDA compiler not found, will not build ASORA library')
+gpu_backend = get_option('gpu-backend')
+if gpu_backend == 'cuda'
+    has_gpu = add_languages('cuda', required: false, native: false)
+    if not has_gpu
+        warning('CUDA compiler not found, will not build ASORA library')
+    endif
+else
+    # Meson has no HIP language: ASORA is compiled as C++ by hipcc (see hipnative.ini)
+    has_gpu = meson.get_compiler('cpp').has_header(
+        'hip/hip_runtime.h',
+        args: ['-x', 'hip'],
+    )
+    if not has_gpu
+        warning('C++ compiler is not hipcc, will not build ASORA library')
+    endif
 endif
 
 py = import('python').find_installation(pure: false)

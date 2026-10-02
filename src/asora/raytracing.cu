@@ -4,11 +4,8 @@
 #include "rates.cuh"
 #include "utils.cuh"
 
-#include <cuda_runtime.h>
+#include "gpu_runtime.cuh"
 
-#include <cuda/std/array>
-#include <cuda/std/tuple>
-#include <cuda/std/utility>
 #include <exception>
 
 // ========================================================================

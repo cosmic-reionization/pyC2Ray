@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gpu_runtime.cuh"
+
 #include <array>
 
 namespace asoratest {

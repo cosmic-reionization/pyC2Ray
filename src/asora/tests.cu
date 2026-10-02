@@ -12,7 +12,7 @@ namespace asoratest {
         __global__ void cinterp_gpu_kernel(
             double *out_data, const double *dens_data, int3 pos0, int m1
         ) {
-            auto &[i, j, k] = threadIdx;
+            const int i = threadIdx.x, j = threadIdx.y, k = threadIdx.z;
             auto &[i0, j0, k0] = pos0;
 
             auto &&[cdens, path] = asora::cinterp_gpu(
@@ -42,11 +42,11 @@ namespace asoratest {
         double *out_dev;
         asora::safe_cuda(cudaMalloc(&out_dev, out_size));
 
-        uint3 ts = {
+        dim3 ts(
             static_cast<unsigned int>(out_shape[0]),  //
             static_cast<unsigned int>(out_shape[1]),  //
             static_cast<unsigned int>(out_shape[2])   //
-        };
+        );
         cinterp_gpu_kernel<<<1, ts>>>(out_dev, dens_dev, pos0, m1);
 
         asora::safe_cuda(cudaPeekAtLastError());

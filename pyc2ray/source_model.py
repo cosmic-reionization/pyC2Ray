@@ -69,9 +69,7 @@ class StellarToHaloRelation:
     def stochastic_Gaussian(self, Mhalo, sigma=0.01):
         fstar_mean = self.stellar_to_halo_fraction(Mhalo)
 
-        fstar = np.clip(
-            np.random.normal(fstar_mean, sigma), a_min=0, a_max=1
-        )
+        fstar = np.clip(np.random.normal(fstar_mean, sigma), a_min=0, a_max=1)
 
         return fstar
 

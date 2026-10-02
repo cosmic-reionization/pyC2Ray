@@ -1,2 +1,4 @@
-# Get nvidia compute capability
-option('gpu-architecture', type : 'string', value : '', description : 'Compute capability for target CUDA device')
+# GPU backend used to build ASORA
+option('gpu-backend', type : 'combo', choices : ['cuda', 'hip'], value : 'cuda', description : 'GPU backend for ASORA: cuda (nvcc) or hip (hipcc, see hipnative.ini)')
+# Get GPU architecture
+option('gpu-architecture', type : 'string', value : '', description : 'Target GPU architecture: CUDA compute capability (e.g. 90) or AMD gfx target (e.g. gfx90a)')

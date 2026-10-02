@@ -745,7 +745,6 @@ class C2Ray:
                     # Clear file and write header line
                     f.write(title + "\nLog file for pyC2Ray.\n\n")
 
-
     def _sinks_init(self):
         """Initialize sinks physics class for the mean-free path and clumping factor"""
 

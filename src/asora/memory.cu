@@ -2,7 +2,7 @@
 
 #include "utils.cuh"
 
-#include <cuda_runtime.h>
+#include "gpu_runtime.cuh"
 
 #include <iostream>
 #include <sstream>

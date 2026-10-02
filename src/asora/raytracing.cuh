@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cuda/std/utility>
+#include "gpu_runtime.cuh"
 
 namespace asora {
 
