@@ -1,7 +1,7 @@
 """C1. Strong scaling of the ASORA raytracing step over several GPUs.
 
-Fixed total problem (default N=256 with 1e4 sources at R=30 and 1e5 sources at
-R=15, batch 8), run on P MPI ranks with one GPU each: sources are split over
+Fixed total problem (default N=256 with 1e4 sources at R=30, 1e5 and 1e4
+sources at R=15, batch 8), run on P MPI ranks with one GPU each: sources are split over
 the ranks and the rates are summed with MPI Reduce + Bcast, as in pyC2Ray's MPI
 mode (see mpi_scaling.py). One run per P; the job script sweeps P.
 
@@ -16,7 +16,7 @@ import mpi_scaling
 
 p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument("--mesh-size", type=int, default=256)
-p.add_argument("--cases", nargs="+", default=["30:10000", "15:100000"],
+p.add_argument("--cases", nargs="+", default=["30:10000", "15:100000", "15:10000"],
                help="R:num_sources pairs (total sources, split over ranks)")
 p.add_argument("--batch-size", type=int, default=8)
 common.add_common_args(p)

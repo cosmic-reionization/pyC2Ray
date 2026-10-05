@@ -82,13 +82,16 @@ def measure(mesh_size, batch_size, num_sources, radius, warmup=1, repeats=5, max
         # silently on GPU errors, and the broadcast would hide a failed rank)
         phi[:] = 0.0
         common.asora.do_all_sources(*args)
-        valid = bool(np.all(np.isfinite(phi)) and (i1 == i0 or np.any(phi > 0)))
+        check = {"nonfinite": int(np.sum(~np.isfinite(phi))), "positive": int(np.sum(phi > 0)),
+                 "negative": int(np.sum(phi < 0)), "num_sources": i1 - i0}
+        valid = bool(check["nonfinite"] == 0 and (i1 == i0 or check["positive"] > 0))
 
     # gather per-rank results on rank 0
     all_rt = comm.gather(t_rt, root=0)
     all_comm = comm.gather(t_comm, root=0)
     all_step = comm.gather(t_step, root=0)
     all_valid = comm.gather(valid, root=0)
+    all_check = comm.gather(check, root=0)
     all_used = comm.gather(info["device_bytes_used"], root=0)
     if rank != 0:
         return None
@@ -104,7 +107,11 @@ def measure(mesh_size, batch_size, num_sources, radius, warmup=1, repeats=5, max
         "t_comm_median_s": float(np.median(np.array(all_comm).max(axis=0))),
         "time_median_s": float(np.median(np.array(all_step).max(axis=0))),
         "valid": all(all_valid),
+        "check_per_rank": all_check,
     })
+    for r, (v, c) in enumerate(zip(all_valid, all_check)):
+        if not v:
+            log(f"  rank {r} invalid: {c}")
     rec["sources_per_s"] = num_sources / rec["time_median_s"]
     log(f"P={nprocs} N={mesh_size} src={num_sources} R={radius}: step {rec['time_median_s']:.4f} s "
         f"(raytracing {rec['t_rt_max_median_s']:.4f} s, comm {rec['t_comm_median_s']:.4f} s, "

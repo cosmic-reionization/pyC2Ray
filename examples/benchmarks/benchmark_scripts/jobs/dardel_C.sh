@@ -15,10 +15,15 @@
 # Trento topology, as on LUMI-G); GCD k -> core MAP[k].
 source envs/dardel_hip.sh || { echo "submit from examples/benchmarks"; exit 1; }
 MAP=49,57,17,25,1,9,33,41
+# default: N=256 with each script's default cases, and N=100 with 10^4 sources at
+# R=15; with arguments, C1 and C2 once with those arguments
+if [ $# -gt 0 ]; then runs=("$*"); else runs=("" "--mesh-size 100 --cases 15:10000"); fi
+for run in "${runs[@]}"; do
 for test in C1_strong_scaling C2_weak_scaling; do
     for np in 1 2 4 8; do
-        echo "=== $test P=$np ($(date +%T))"
+        echo "=== $test $run P=$np ($(date +%T))"
         srun -n $np --gpus-per-task=1 --cpu-bind=map_cpu:$(echo $MAP | cut -d, -f1-$np) \
-            python benchmark_scripts/$test.py "$@" || echo "=== FAILED: $test P=$np"
+            python benchmark_scripts/$test.py $run || echo "=== FAILED: $test P=$np"
     done
+done
 done

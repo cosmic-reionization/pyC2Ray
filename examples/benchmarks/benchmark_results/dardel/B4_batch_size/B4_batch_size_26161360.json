@@ -1,0 +1,219 @@
+{
+ "test": "B4_batch_size",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002797",
+  "date": "2026-10-05T14:01:23",
+  "slurm": {
+   "job_id": "26161360",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002797",
+   "num_nodes": "1",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "26161360",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0,1,2,3,4,5,6,7",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 512,
+  "num_sources": [
+   100
+  ],
+  "batch_sizes": [
+   1,
+   2,
+   4,
+   8,
+   16,
+   32,
+   64,
+   128,
+   256
+  ],
+  "radius": "30",
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0
+ },
+ "records": [
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 1,
+   "device_bytes_expected": 4294967296,
+   "device_bytes_used": 4294967296,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    0.9720150500070304,
+    0.9693376838695258,
+    0.9713130781892687,
+    0.9745952670928091,
+    0.9747921659145504
+   ],
+   "time_median_s": 0.9720150500070304,
+   "valid": true,
+   "time_per_source_s": 0.009720150500070303,
+   "sources_per_s": 102.87906550343713
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 2,
+   "device_bytes_expected": 5368709120,
+   "device_bytes_used": 5368709120,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68444749824,
+   "times_s": [
+    0.561446106992662,
+    0.5567557760514319,
+    0.5598530489951372,
+    0.5647770198993385,
+    0.569943425944075
+   ],
+   "time_median_s": 0.561446106992662,
+   "valid": true,
+   "time_per_source_s": 0.0056144610699266195,
+   "sources_per_s": 178.1114852423529
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 4,
+   "device_bytes_expected": 7516192768,
+   "device_bytes_used": 7516192768,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68444749824,
+   "times_s": [
+    0.3555434390436858,
+    0.3566526938229799,
+    0.3555517450440675,
+    0.3555568759329617,
+    0.3560957028530538
+   ],
+   "time_median_s": 0.3555568759329617,
+   "valid": true,
+   "time_per_source_s": 0.003555568759329617,
+   "sources_per_s": 281.24895556471944
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 8,
+   "device_bytes_expected": 11811160064,
+   "device_bytes_used": 11811160064,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68444749824,
+   "times_s": [
+    0.2470140710938722,
+    0.24612962920218706,
+    0.2459962519351393,
+    0.2461504079401493,
+    0.24593295017257333
+   ],
+   "time_median_s": 0.24612962920218706,
+   "valid": true,
+   "time_per_source_s": 0.0024612962920218706,
+   "sources_per_s": 406.2899713624215
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 16,
+   "device_bytes_expected": 20401094656,
+   "device_bytes_used": 20401094656,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68444749824,
+   "times_s": [
+    0.1913750460371375,
+    0.19214844494126737,
+    0.1929703678470105,
+    0.19325390295125544,
+    0.19358007097616792
+   ],
+   "time_median_s": 0.1929703678470105,
+   "valid": true,
+   "time_per_source_s": 0.001929703678470105,
+   "sources_per_s": 518.2142787812963
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 32,
+   "device_bytes_expected": 37580963840,
+   "device_bytes_used": 37580963840,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68444749824,
+   "times_s": [
+    0.1642367949243635,
+    0.163924815133214,
+    0.1635643399786204,
+    0.16445804107934237,
+    0.16369285783730447
+   ],
+   "time_median_s": 0.163924815133214,
+   "valid": true,
+   "time_per_source_s": 0.00163924815133214,
+   "sources_per_s": 610.0357649861292
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 64,
+   "device_bytes_expected": 71940702208,
+   "skipped": "needs 71.9 GB > 95% of 68.7 GB"
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 128,
+   "device_bytes_expected": 140660178944,
+   "skipped": "needs 140.7 GB > 95% of 68.7 GB"
+  },
+  {
+   "mesh_size": 512,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 256,
+   "device_bytes_expected": 278099132416,
+   "skipped": "needs 278.1 GB > 95% of 68.7 GB"
+  }
+ ]
+}

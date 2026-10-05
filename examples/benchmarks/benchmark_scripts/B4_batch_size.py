@@ -6,8 +6,8 @@ allocates one column-density grid per batch slot, so device memory is
 mesh size N=256 and R=30 cells, sweep the batch size to find the
 throughput/memory sweet spot. Batch sizes that do not fit are skipped.
 
-For N=1024 only batch sizes <= 4 fit on a 64 GB MI250X GCD, e.g.:
-  python benchmark_scripts/B4_batch_size.py --mesh-size 1024 --num-sources 100 --batch-sizes 1 2 4
+For N=512 batch sizes up to 32 fit on a 64 GB MI250X GCD, e.g.:
+  python benchmark_scripts/B4_batch_size.py --mesh-size 512 --num-sources 100
 
 Usage (on a GPU node):
   python benchmark_scripts/B4_batch_size.py [--batch-sizes 1 2 4 8 16 32 64 128 256] ...

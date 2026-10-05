@@ -16,6 +16,6 @@ set -e
 for np in 1 2 8; do
     bind=--cpu-bind=map_cpu:$(echo $MAP | cut -d, -f1-$np)
     srun -n $np --gpus-per-task=1 $bind python benchmark_scripts/C1_strong_scaling.py --mesh-size 64 --cases 15:200 30:100 --repeats 2
-    srun -n $np --gpus-per-task=1 $bind python benchmark_scripts/C2_weak_scaling.py --mesh-size 64 --sources-per-rank 50 --repeats 2
+    srun -n $np --gpus-per-task=1 $bind python benchmark_scripts/C2_weak_scaling.py --mesh-size 64 --cases 15:50 --repeats 2
 done
 srun -n 2 --gpus-per-task=1 --cpu-bind=map_cpu:49,57 bash -c 'echo "rank $SLURM_PROCID ROCR=$ROCR_VISIBLE_DEVICES cpu $(taskset -pc $$ | cut -d: -f2)"'

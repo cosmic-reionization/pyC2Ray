@@ -1,0 +1,98 @@
+{
+ "test": "C1_strong_scaling",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002797",
+  "date": "2026-10-05T14:01:44",
+  "slurm": {
+   "job_id": "26161360",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002797",
+   "num_nodes": "1",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "26161360",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 100,
+  "cases": [
+   "15:10000"
+  ],
+  "batch_size": 8,
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0,
+  "nprocs": 1,
+  "mpi": "MPI VERSION    : CRAY MPICH version 9.1.0.794 (ANL base 4.3.0a1)"
+ },
+ "records": [
+  {
+   "mesh_size": 100,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 10000,
+   "device_bytes_expected": 88000000,
+   "device_bytes_used": [
+    90177536
+   ],
+   "t_rt_per_rank_s": [
+    [
+     0.5870266668498516,
+     0.5879383119754493,
+     0.5902188899926841,
+     0.5907544491346925,
+     0.5907815122045577
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     8.647097274661064e-06,
+     9.699026122689247e-06,
+     6.783055141568184e-06,
+     7.5248535722494125e-06,
+     6.7229848355054855e-06
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     0.5870360359549522,
+     0.5879485220648348,
+     0.5902259929571301,
+     0.5907625451218337,
+     0.5907890270464122
+    ]
+   ],
+   "t_rt_max_median_s": 0.5902188899926841,
+   "t_rt_mean_median_s": 0.5902188899926841,
+   "imbalance": 1.0,
+   "t_comm_median_s": 7.5248535722494125e-06,
+   "time_median_s": 0.5902259929571301,
+   "valid": true,
+   "sources_per_s": 16942.662843258295
+  }
+ ]
+}

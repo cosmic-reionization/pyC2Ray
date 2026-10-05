@@ -1,0 +1,148 @@
+{
+ "test": "C2_weak_scaling",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002797",
+  "date": "2026-10-05T14:02:55",
+  "slurm": {
+   "job_id": "26161360",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002797",
+   "num_nodes": "1",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "26161360",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 256,
+  "cases": [
+   "15:100000",
+   "15:10000"
+  ],
+  "batch_size": 8,
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0,
+  "nprocs": 1,
+  "mpi": "MPI VERSION    : CRAY MPICH version 9.1.0.794 (ANL base 4.3.0a1)"
+ },
+ "records": [
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 100000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 100000,
+   "device_bytes_expected": 1476395008,
+   "sources_per_rank": 100000,
+   "device_bytes_used": [
+    1478492160
+   ],
+   "t_rt_per_rank_s": [
+    [
+     8.605587853118777,
+     8.60839296109043,
+     8.610390305984765,
+     8.607266712002456,
+     8.60910932905972
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     2.151099033653736e-05,
+     2.1351967006921768e-05,
+     2.1660933271050453e-05,
+     2.1961983293294907e-05,
+     2.209283411502838e-05
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     8.605610325932503,
+     8.60841555497609,
+     8.610412878915668,
+     8.607289785984904,
+     8.609132272889838
+    ]
+   ],
+   "t_rt_max_median_s": 8.60839296109043,
+   "t_rt_mean_median_s": 8.60839296109043,
+   "imbalance": 1.0,
+   "t_comm_median_s": 2.1660933271050453e-05,
+   "time_median_s": 8.60841555497609,
+   "valid": true,
+   "sources_per_s": 11616.539578203221
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 10000,
+   "device_bytes_expected": 1476395008,
+   "sources_per_rank": 10000,
+   "device_bytes_used": [
+    1476395008
+   ],
+   "t_rt_per_rank_s": [
+    [
+     0.8855350241065025,
+     0.8854395800735801,
+     0.8843338410370052,
+     0.8845221241936088,
+     0.885394733864814
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     1.543993130326271e-05,
+     1.1011026799678802e-05,
+     1.0008923709392548e-05,
+     9.238021448254585e-06,
+     9.387964382767677e-06
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     0.8855511250440031,
+     0.8854510220699012,
+     0.884344341000542,
+     0.88453174312599,
+     0.8854046128690243
+    ]
+   ],
+   "t_rt_max_median_s": 0.885394733864814,
+   "t_rt_mean_median_s": 0.885394733864814,
+   "imbalance": 1.0,
+   "t_comm_median_s": 1.0008923709392548e-05,
+   "time_median_s": 0.8854046128690243,
+   "valid": true,
+   "sources_per_s": 11294.271403891224
+  }
+ ]
+}

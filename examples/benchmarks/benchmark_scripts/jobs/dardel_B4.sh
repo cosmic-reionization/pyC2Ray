@@ -13,7 +13,6 @@ if [ $# -gt 0 ]; then
     python benchmark_scripts/B4_batch_size.py "$@"
 else
     python benchmark_scripts/B4_batch_size.py                                 # N=256, 100 and 10^4 sources
-    # N=1024: only batch sizes <= 4 fit on a 64 GB GCD
-    python benchmark_scripts/B4_batch_size.py --mesh-size 1024 --num-sources 100 --batch-sizes 1 2 4
+    python benchmark_scripts/B4_batch_size.py --mesh-size 512 --num-sources 100  # batch <= 32 fits on a GCD
     python benchmark_scripts/B4_batch_size.py --mesh-size 100 --num-sources 100  # non-power-of-2 grid
 fi
