@@ -6,6 +6,12 @@ sub-issue per system: [#44](https://github.com/cosmic-reionization/pyC2Ray/issue
 Dardel-GPU (AMD MI250X, HIP) and [#45](https://github.com/cosmic-reionization/pyC2Ray/issues/45)
 Arrhenius (NVIDIA GH200, CUDA and HIP).
 
+**For details on the Dardel-GPU benchmarks see
+[#44](https://github.com/cosmic-reionization/pyC2Ray/issues/44)**: build and
+branch, checklist, progress log with the findings and open problems. Test
+definitions and comparisons between systems are in
+[#43](https://github.com/cosmic-reionization/pyC2Ray/issues/43).
+
 ## Results
 
 | Notebook | Contents |
