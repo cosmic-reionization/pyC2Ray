@@ -7,11 +7,11 @@
 #SBATCH -o logs/%x-%j.out
 #SBATCH --gpus-per-node=1
 
-# Execute pyc2ray_gpu_validation.ipynb (in place, with all plots) with GPU
+# Execute pyc2ray_gpu_validation_dardel.ipynb (in place, with all plots) with GPU
 # raytracing on one MI250X GCD. Section 3a's CPU comparison needs
 # validation/jobs/dardel_multi_sources_cpu.sh to have run first.
 source envs/dardel_hip.sh || { echo "submit from examples/benchmarks"; exit 1; }
 python -c "import sys; sys.path.insert(0, 'benchmark_scripts'); import common; print(common.metadata()['pyc2ray'])"
 time jupyter nbconvert --to notebook --execute --inplace \
     --ExecutePreprocessor.timeout=-1 --ExecutePreprocessor.kernel_name=python3 \
-    pyc2ray_gpu_validation.ipynb
+    pyc2ray_gpu_validation_dardel.ipynb

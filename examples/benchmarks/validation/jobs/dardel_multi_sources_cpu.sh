@@ -9,7 +9,7 @@
 #SBATCH -c 16
 
 # Multi-source test 3a with CPU (Fortran) raytracing, as cell-by-cell reference
-# for the GPU run in pyc2ray_gpu_validation.ipynb (writes test_results_mult_equal_cpu/).
+# for the GPU run in pyc2ray_gpu_validation_dardel.ipynb (writes test_results_mult_equal_cpu/).
 # (gpu partition only because the allocation is a GPU one; the GPU is unused)
 source envs/dardel_hip.sh || { echo "submit from examples/benchmarks"; exit 1; }
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK

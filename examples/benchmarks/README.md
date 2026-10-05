@@ -10,7 +10,7 @@ Arrhenius (NVIDIA GH200, CUDA and HIP).
 
 | Notebook | Contents |
 |---|---|
-| [`pyc2ray_gpu_validation.ipynb`](pyc2ray_gpu_validation.ipynb) | **A.** Correctness gate: I-front, shadow and multi-source tests with GPU raytracing |
+| [`pyc2ray_gpu_validation_dardel.ipynb`](pyc2ray_gpu_validation_dardel.ipynb) | **A** on Dardel-GPU: correctness gate, I-front, shadow and multi-source tests with GPU raytracing |
 | [`pyc2ray_benchmarks_dardel.ipynb`](pyc2ray_benchmarks_dardel.ipynb) | **B–E** on Dardel-GPU: plots and tables |
 
 The notebooks are stored with their outputs, so the figures show on GitHub.
@@ -19,7 +19,7 @@ results they print which script to run.
 
 ## Tests
 
-- **A. Correctness gate** — `pyc2ray_gpu_validation.ipynb`; in addition every
+- **A. Correctness gate** — `pyc2ray_gpu_validation_<system>.ipynb`; in addition every
   benchmark point checks that the ASORA output is finite and nonzero.
 - **B. Single-GPU microbenchmarks** (one `asora.do_all_sources` call)
   - B1 grid size N, B2 number of sources, B3 raytracing radius R,
@@ -36,14 +36,14 @@ no input data is needed.
 ## Layout
 
 ```
-pyc2ray_gpu_validation.ipynb      A
-pyc2ray_benchmarks_<system>.ipynb B-E, one per system
-benchmark_scripts/                one script per test (B1_grid_size.py, ...), common.py, mpi_scaling.py
-benchmark_scripts/jobs/           Slurm job scripts, <system>_<test>.sh
+pyc2ray_gpu_validation_<system>.ipynb  A, one per system
+pyc2ray_benchmarks_<system>.ipynb      B-E, one per system
+benchmark_scripts/                     one script per test (B1_grid_size.py, ...), common.py, mpi_scaling.py
+benchmark_scripts/jobs/                Slurm job scripts, <system>_<test>.sh
 benchmark_results/<system>/<test>/<test>_<slurm job id>.json
-validation/                       parameter and source files of the validation notebook, its job scripts
-envs/<system>_<build>.sh          environment sourced by the job scripts
-logs/                             Slurm logs (not tracked)
+validation/                            parameter and source files of the validation notebook, its job scripts
+envs/<system>_<build>.sh               environment sourced by the job scripts
+logs/                                  Slurm logs (not tracked)
 ```
 
 Each result file holds the parameters, the measured records and the metadata of
@@ -70,4 +70,5 @@ so a single-GCD job is billed for all 8 GCDs.
 
 A new system needs `envs/<system>_<build>.sh`, job scripts
 `benchmark_scripts/jobs/<system>_*.sh` that export `BENCH_SYSTEM=<system>`, and a
-copy of the results notebook with `SYSTEM` set in its first code cell.
+copy of the results notebook with `SYSTEM` set in its first code cell, and a copy of
+the validation notebook, `pyc2ray_gpu_validation_<system>.ipynb`.

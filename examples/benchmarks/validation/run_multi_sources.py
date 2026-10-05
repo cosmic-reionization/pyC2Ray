@@ -1,4 +1,4 @@
-"""Multi-source cosmological test, same loop as pyc2ray_gpu_validation.ipynb
+"""Multi-source cosmological test, same loop as pyc2ray_gpu_validation_dardel.ipynb
 (section 3), without plotting. Usage, from examples/benchmarks (results_basename
 in the parameter file is relative):
   python validation/run_multi_sources.py <paramfile> <srcfile>"""
