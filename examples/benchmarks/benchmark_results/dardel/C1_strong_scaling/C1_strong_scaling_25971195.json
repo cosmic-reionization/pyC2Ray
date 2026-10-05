@@ -1,0 +1,145 @@
+{
+ "test": "C1_strong_scaling",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002795",
+  "date": "2026-10-02T20:01:33",
+  "slurm": {
+   "job_id": "25971195",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002795",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "25971195",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 256,
+  "cases": [
+   "30:10000",
+   "15:100000"
+  ],
+  "batch_size": 8,
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0,
+  "nprocs": 1,
+  "mpi": "MPI VERSION    : CRAY MPICH version 9.1.0.794 (ANL base 4.3.0a1)"
+ },
+ "records": [
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 10000,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": [
+    1476395008
+   ],
+   "t_rt_per_rank_s": [
+    [
+     7.378471006057225,
+     7.3797051049768925,
+     7.374031719984487,
+     7.382685553980991,
+     7.377177961054258
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     2.363603562116623e-05,
+     2.469797618687153e-05,
+     2.3385975509881973e-05,
+     2.3144995793700218e-05,
+     2.4075969122350216e-05
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     7.37849555304274,
+     7.37973082496319,
+     7.374056117958389,
+     7.382709660916589,
+     7.3772028690436855
+    ]
+   ],
+   "t_rt_max_median_s": 7.378471006057225,
+   "t_rt_mean_median_s": 7.378471006057225,
+   "imbalance": 1.0,
+   "t_comm_median_s": 2.363603562116623e-05,
+   "time_median_s": 7.37849555304274,
+   "valid": true,
+   "sources_per_s": 1355.28983220383
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 100000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 100000,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": [
+    1478492160
+   ],
+   "t_rt_per_rank_s": [
+    [
+     8.727874442003667,
+     8.732457199017517,
+     8.739143638056703,
+     8.736069118021987,
+     8.733719735057093
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     2.5168992578983307e-05,
+     2.0990031771361828e-05,
+     2.109096385538578e-05,
+     2.1302024833858013e-05,
+     2.1170941181480885e-05
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     8.727900582016446,
+     8.73247901094146,
+     8.73916537000332,
+     8.736091532045975,
+     8.73374161706306
+    ]
+   ],
+   "t_rt_max_median_s": 8.733719735057093,
+   "t_rt_mean_median_s": 8.733719735057093,
+   "imbalance": 1.0,
+   "t_comm_median_s": 2.1170941181480885e-05,
+   "time_median_s": 8.73374161706306,
+   "valid": true,
+   "sources_per_s": 11449.846398550488
+  }
+ ]
+}

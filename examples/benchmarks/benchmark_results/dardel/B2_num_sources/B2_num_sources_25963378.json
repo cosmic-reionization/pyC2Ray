@@ -1,0 +1,342 @@
+{
+ "test": "B2_num_sources",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002812",
+  "date": "2026-10-02T18:38:42",
+  "slurm": {
+   "job_id": "25963378",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002812",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "25963378",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0,1,2,3,4,5,6,7",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 256,
+  "num_sources": [
+   1,
+   10,
+   100,
+   1000,
+   10000,
+   100000,
+   1000000
+  ],
+  "batch_size": 8,
+  "radii": [
+   "15",
+   "30"
+  ],
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0
+ },
+ "records": [
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 1,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.01640651817433536,
+    0.016340760979801416,
+    0.0163577429484576,
+    0.01635938696563244,
+    0.01637817407026887
+   ],
+   "time_median_s": 0.01635938696563244,
+   "valid": true,
+   "time_per_source_s": 0.01635938696563244,
+   "sources_per_s": 61.126984898687546
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 10,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.017059496138244867,
+    0.017033606069162488,
+    0.017045678105205297,
+    0.017067159991711378,
+    0.01704504806548357
+   ],
+   "time_median_s": 0.017045678105205297,
+   "valid": true,
+   "time_per_source_s": 0.0017045678105205297,
+   "sources_per_s": 586.6589723377602
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 100,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.024611220927909017,
+    0.0246315891854465,
+    0.024584498954936862,
+    0.02458300511352718,
+    0.024653581902384758
+   ],
+   "time_median_s": 0.024611220927909017,
+   "valid": true,
+   "time_per_source_s": 0.00024611220927909014,
+   "sources_per_s": 4063.187287332033
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 1000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.10157554689794779,
+    0.10174311185255647,
+    0.10143002518452704,
+    0.10183975007385015,
+    0.10187024809420109
+   ],
+   "time_median_s": 0.10174311185255647,
+   "valid": true,
+   "time_per_source_s": 0.00010174311185255646,
+   "sources_per_s": 9828.675197679962
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.8807493159547448,
+    0.8806635600049049,
+    0.8797119129449129,
+    0.8802643148228526,
+    0.8794866558164358
+   ],
+   "time_median_s": 0.8802643148228526,
+   "valid": true,
+   "time_per_source_s": 8.802643148228526e-05,
+   "sources_per_s": 11360.224232209657
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 100000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1478492160,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    8.663050466915593,
+    8.663063322892413,
+    8.662672804901376,
+    8.665382663020864,
+    8.658840968972072
+   ],
+   "time_median_s": 8.663050466915593,
+   "valid": true,
+   "time_per_source_s": 8.663050466915593e-05,
+   "sources_per_s": 11543.278015279087
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 1000000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1497366528,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    86.00285153719597,
+    85.85592307080515
+   ],
+   "time_median_s": 85.92938730400056,
+   "valid": true,
+   "time_per_source_s": 8.592938730400055e-05,
+   "sources_per_s": 11637.462239340832
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 1,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.020939412992447615,
+    0.020967837888747454,
+    0.02105487696826458,
+    0.021173036890104413,
+    0.0212566580157727
+   ],
+   "time_median_s": 0.02105487696826458,
+   "valid": true,
+   "time_per_source_s": 0.02105487696826458,
+   "sources_per_s": 47.494934380631705
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.02726461412385106,
+    0.026299020973965526,
+    0.026637777918949723,
+    0.0270151998847723,
+    0.027237161062657833
+   ],
+   "time_median_s": 0.0270151998847723,
+   "valid": true,
+   "time_per_source_s": 0.00270151998847723,
+   "sources_per_s": 370.1619844625586
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.0914177920203656,
+    0.0911302249878645,
+    0.09125527716241777,
+    0.09114087512716651,
+    0.09138863580301404
+   ],
+   "time_median_s": 0.09125527716241777,
+   "valid": true,
+   "time_per_source_s": 0.0009125527716241777,
+   "sources_per_s": 1095.8270371807453
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 1000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1478492160,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    0.74981928197667,
+    0.7470663408748806,
+    0.7510211940389127,
+    0.7501586410216987,
+    0.746981275966391
+   ],
+   "time_median_s": 0.74981928197667,
+   "valid": true,
+   "time_per_source_s": 0.0007498192819766701,
+   "sources_per_s": 1333.6546872518466
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    7.355216193012893,
+    7.357570216059685,
+    7.353567455895245,
+    7.356415840797126,
+    7.354238749016076
+   ],
+   "time_median_s": 7.355216193012893,
+   "valid": true,
+   "time_per_source_s": 0.0007355216193012893,
+   "sources_per_s": 1359.579343092529
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1478492160,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    73.39672537217848,
+    73.39098551985808
+   ],
+   "time_median_s": 73.39385544601828,
+   "valid": true,
+   "time_per_source_s": 0.0007339385544601828,
+   "sources_per_s": 1362.5118804877438
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 1000000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1497366528,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    734.0289806530345
+   ],
+   "time_median_s": 734.0289806530345,
+   "valid": true,
+   "time_per_source_s": 0.0007340289806530345,
+   "sources_per_s": 1362.3440304909248
+  }
+ ]
+}

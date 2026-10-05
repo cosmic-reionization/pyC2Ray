@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -J bench-C-multi
+#SBATCH -A naiss2026-4-1146
+#SBATCH -p gpu
+#SBATCH -N 2
+#SBATCH -t 00:45:00
+#SBATCH -o logs/%x-%j.out
+#SBATCH --gpus-per-node=8
+#SBATCH --ntasks-per-node=8
+
+# C1 (strong) and C2 (weak scaling) on all GCDs of the allocated nodes
+# (default 2 nodes = 16 GCDs; e.g. sbatch -N 4 for 32), one MPI rank per GCD.
+# Same GPU and CPU binding per node as dardel_C.sh.
+source envs/dardel_hip.sh || { echo "submit from examples/benchmarks"; exit 1; }
+MAP=49,57,17,25,1,9,33,41
+np=$((SLURM_JOB_NUM_NODES * 8))
+for test in C1_strong_scaling C2_weak_scaling; do
+    echo "=== $test P=$np on $SLURM_JOB_NUM_NODES nodes ($(date +%T))"
+    srun -n $np --ntasks-per-node=8 --gpus-per-task=1 --cpu-bind=map_cpu:$MAP \
+        python benchmark_scripts/$test.py "$@" || echo "=== FAILED: $test P=$np"
+done

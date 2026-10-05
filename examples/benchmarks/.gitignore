@@ -1,0 +1,6 @@
+# outputs of the validation runs (pyc2ray results_basename) and of smoke tests
+test_results_*/
+smoke_results/
+logs/*
+!logs/.gitkeep
+__pycache__/

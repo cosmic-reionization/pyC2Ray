@@ -1,0 +1,236 @@
+{
+ "test": "B3_radius",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002827",
+  "date": "2026-10-03T21:22:05",
+  "slurm": {
+   "job_id": "26041332",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002827",
+   "num_nodes": "1",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "26041332",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0,1,2,3,4,5,6,7",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 256,
+  "num_sources": [
+   10000
+  ],
+  "batch_size": 8,
+  "radii": [
+   "5",
+   "10",
+   "15",
+   "30",
+   "60",
+   "120",
+   "box"
+  ],
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0
+ },
+ "records": [
+  {
+   "mesh_size": 256,
+   "radius": "5",
+   "R_max": 5.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    0.09463826986029744,
+    0.0946530478540808,
+    0.0946577568538487,
+    0.09467900800518692,
+    0.09465061407536268
+   ],
+   "time_median_s": 0.0946530478540808,
+   "valid": true,
+   "time_per_source_s": 9.46530478540808e-06,
+   "sources_per_s": 105649.00155583175,
+   "device_bytes_used_after_calls": 1478492160,
+   "device_bytes_docs_formula": 3221568099.416998,
+   "rate_fraction": 0.039937497413597825,
+   "cells_within_1pc": 0.0,
+   "median_rel_deficit": 1.0
+  },
+  {
+   "mesh_size": 256,
+   "radius": "10",
+   "R_max": 10.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    0.3370798979885876,
+    0.3371779168955982,
+    0.3366524751763791,
+    0.3367598110344261,
+    0.33712934399954975
+   ],
+   "time_median_s": 0.3370798979885876,
+   "valid": true,
+   "time_per_source_s": 3.370798979885876e-05,
+   "sources_per_s": 29666.556978543307,
+   "device_bytes_used_after_calls": 1478492160,
+   "device_bytes_docs_formula": 3221726491.3359838,
+   "rate_fraction": 0.08174443308307056,
+   "cells_within_1pc": 0.0,
+   "median_rel_deficit": 0.9500593585562757
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    0.859477715101093,
+    0.8597700379323214,
+    0.8585837320424616,
+    0.85842733993195,
+    0.8580011688172817
+   ],
+   "time_median_s": 0.8585837320424616,
+   "valid": true,
+   "time_per_source_s": 8.585837320424617e-05,
+   "sources_per_s": 11647.087671008243,
+   "device_bytes_used_after_calls": 1478492160,
+   "device_bytes_docs_formula": 3222156412.258945,
+   "rate_fraction": 0.12259988789830467,
+   "cells_within_1pc": 0.0,
+   "median_rel_deficit": 0.9055299595414867
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    7.331888783955947,
+    7.333185513038188,
+    7.337625500978902,
+    7.329098995076492,
+    7.331341698067263
+   ],
+   "time_median_s": 7.331888783955947,
+   "valid": true,
+   "time_per_source_s": 0.0007331888783955946,
+   "sources_per_s": 1363.9050311132057,
+   "device_bytes_used_after_calls": 1478492160,
+   "device_bytes_docs_formula": 3226432994.0715613,
+   "rate_fraction": 0.24006771962930384,
+   "cells_within_1pc": 0.0,
+   "median_rel_deficit": 0.7829027234308932
+  },
+  {
+   "mesh_size": 256,
+   "radius": "60",
+   "R_max": 60.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    70.8573471349664,
+    70.82731413911097
+   ],
+   "time_median_s": 70.84233063703869,
+   "valid": true,
+   "time_per_source_s": 0.007084233063703868,
+   "sources_per_s": 141.15854052339256,
+   "device_bytes_used_after_calls": 1478492160,
+   "device_bytes_docs_formula": 3260645648.572491,
+   "rate_fraction": 0.45570411146813006,
+   "cells_within_1pc": 0.0,
+   "median_rel_deficit": 0.560841525826594
+  },
+  {
+   "mesh_size": 256,
+   "radius": "120",
+   "R_max": 120.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    522.1055166102014
+   ],
+   "time_median_s": 522.1055166102014,
+   "valid": true,
+   "time_per_source_s": 0.05221055166102014,
+   "sources_per_s": 19.153216508658147,
+   "device_bytes_used_after_calls": 1478492160,
+   "device_bytes_docs_formula": 3534346884.579931,
+   "rate_fraction": 0.8199267334522722,
+   "cells_within_1pc": 0.0,
+   "median_rel_deficit": 0.18557919424335784
+  },
+  {
+   "mesh_size": 256,
+   "radius": "box",
+   "R_max": 221.70250336881628,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 68702699520,
+   "device_bytes_free_before": 68446846976,
+   "times_s": [
+    1069.8562128469348
+   ],
+   "time_median_s": 1069.8562128469348,
+   "valid": true,
+   "time_per_source_s": 0.10698562128469348,
+   "sources_per_s": 9.347050453994708,
+   "device_bytes_used_after_calls": 1478492160,
+   "device_bytes_docs_formula": 5194135160.213976,
+   "rate_fraction": 1.0,
+   "cells_within_1pc": 1.0,
+   "median_rel_deficit": 0.0
+  }
+ ]
+}

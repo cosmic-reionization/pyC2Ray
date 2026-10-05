@@ -1,0 +1,119 @@
+{
+ "test": "C2_weak_scaling",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002795",
+  "date": "2026-10-02T20:05:29",
+  "slurm": {
+   "job_id": "25971195",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002795",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "25971195",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 256,
+  "sources_per_rank": 10000,
+  "radius": "30",
+  "batch_size": 8,
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0,
+  "nprocs": 2,
+  "mpi": "MPI VERSION    : CRAY MPICH version 9.1.0.794 (ANL base 4.3.0a1)"
+ },
+ "records": [
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 20000,
+   "batch_size": 8,
+   "nprocs": 2,
+   "sources_per_rank_max": 10000,
+   "device_bytes_expected": 1476395008,
+   "sources_per_rank": 10000,
+   "device_bytes_used": [
+    1476395008,
+    1476395008
+   ],
+   "t_rt_per_rank_s": [
+    [
+     7.381432814989239,
+     7.37849729298614,
+     7.375219271052629,
+     7.380918949027546,
+     7.380853752954863
+    ],
+    [
+     7.4406028870726,
+     7.44428134302143,
+     7.442434740019962,
+     7.440884178970009,
+     7.440369593095966
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     0.20939160394482315,
+     0.21549779898487031,
+     0.2168316199677065,
+     0.20889520400669426,
+     0.20845191599801183
+    ],
+    [
+     0.1502233559731394,
+     0.14971646503545344,
+     0.14961932704318315,
+     0.14893280901014805,
+     0.14893933199346066
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     7.590832534944639,
+     7.594006343977526,
+     7.592059727991,
+     7.589822699083015,
+     7.589314054930583
+    ],
+    [
+     7.590833056019619,
+     7.594005492050201,
+     7.592060419963673,
+     7.589823561022058,
+     7.589315257035196
+    ]
+   ],
+   "t_rt_max_median_s": 7.440884178970009,
+   "t_rt_mean_median_s": 7.410901563998777,
+   "imbalance": 1.0040457445983204,
+   "t_comm_median_s": 0.20939160394482315,
+   "time_median_s": 7.590833056019619,
+   "valid": true,
+   "sources_per_s": 2634.7569301553494
+  }
+ ]
+}

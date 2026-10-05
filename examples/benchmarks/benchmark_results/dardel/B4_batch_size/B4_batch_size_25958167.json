@@ -1,0 +1,116 @@
+{
+ "test": "B4_batch_size",
+ "meta": {
+  "system": "dardel",
+  "build": "hip",
+  "hostname": "nid002848",
+  "date": "2026-10-02T16:56:52",
+  "slurm": {
+   "job_id": "25958167",
+   "cluster": "dardel",
+   "partition": "gpu",
+   "nodelist": "nid002848",
+   "gpus_on_node": "8"
+  },
+  "slurm_job_id": "25958167",
+  "gpu": "AMD Instinct MI250X",
+  "visible_devices": "0,1,2,3,4,5,6,7",
+  "backend": "hip",
+  "runtime_version": {
+   "runtime": 70051831,
+   "driver": 70051831
+  },
+  "rocm": "/opt/rocm-7.0.2",
+  "cuda": "",
+  "cpu": "AMD EPYC 7A53 64-Core Processor",
+  "cpu_arch": "x86_64",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "pyc2ray": {
+   "source": "/cfs/klemming/projects/supr/cosmic_reion_2026/myPackages/pyC2Ray_hip_port",
+   "commit": "867b3ef",
+   "branch": "hip_port",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 1024,
+  "num_sources": [
+   100
+  ],
+  "batch_sizes": [
+   1,
+   2,
+   4
+  ],
+  "radius": "30",
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0
+ },
+ "records": [
+  {
+   "mesh_size": 1024,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 1,
+   "device_bytes_expected": 34359738368,
+   "device_bytes_used": 34359738368,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    1.8614474730566144,
+    1.8613819449674338,
+    1.8630244471132755,
+    1.8644742919132113,
+    1.8601979948580265
+   ],
+   "time_median_s": 1.8614474730566144,
+   "valid": true,
+   "time_per_source_s": 0.018614474730566145,
+   "sources_per_s": 53.72163407640704
+  },
+  {
+   "mesh_size": 1024,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 2,
+   "device_bytes_expected": 42949672960,
+   "device_bytes_used": 42949672960,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    1.454678155016154,
+    1.4526495190802962,
+    1.4542156180832535,
+    1.4521231970284134,
+    1.4541328269988298
+   ],
+   "time_median_s": 1.4541328269988298,
+   "valid": true,
+   "time_per_source_s": 0.014541328269988298,
+   "sources_per_s": 68.76950863312054
+  },
+  {
+   "mesh_size": 1024,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 4,
+   "device_bytes_expected": 60129542144,
+   "device_bytes_used": 60129542144,
+   "device_bytes_total": 68702699520,
+   "times_s": [
+    1.2322289729490876,
+    1.2323065530508757,
+    1.2313217129558325,
+    1.2288346169516444,
+    1.2294443501159549
+   ],
+   "time_median_s": 1.2313217129558325,
+   "valid": true,
+   "time_per_source_s": 0.012313217129558325,
+   "sources_per_s": 81.21354390799003
+  }
+ ]
+}
