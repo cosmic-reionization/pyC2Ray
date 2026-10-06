@@ -85,10 +85,8 @@ sbatch validation/jobs/arrhenius_validation_notebook.sh
 ```
 
 Then re-execute the results notebook of the system (no GPU needed; it only reads `benchmark_results/`,
-so it must be executed again after new results arrive), e.g. `pyc2ray_benchmarks_dardel.ipynb`. The Dardel
-job scripts charge the NAISS allocation `naiss2026-4-1146` and the Arrhenius ones `naiss2026-4-1146-gpu`;
-use `sbatch -A` to charge another one. Note that Dardel's `gpu` partition allocates whole nodes,
-so a single-GCD job is billed for all 8 GCDs (on Arrhenius a single GPU is billed on its own).
+so it must be executed again after new results arrive), e.g. `pyc2ray_benchmarks_dardel.ipynb`. The job
+scripts set the Slurm account in `#SBATCH -A`; use `sbatch -A` to charge another one.
 
 A new system needs `envs/<system>_<build>.sh`, job scripts
 `benchmark_scripts/jobs/<system>_*.sh` that export `BENCH_SYSTEM=<system>`, and a
