@@ -1,0 +1,258 @@
+{
+ "test": "B4_batch_size",
+ "meta": {
+  "system": "arrhenius",
+  "build": "cuda",
+  "hostname": "n449",
+  "date": "2026-10-05T19:24:06",
+  "slurm": {
+   "job_id": "3397050",
+   "cluster": "arrhenius",
+   "partition": "gpu",
+   "nodelist": "n449",
+   "num_nodes": "1",
+   "gpus_on_node": "4"
+  },
+  "slurm_job_id": "3397050",
+  "gpu": "NVIDIA GH200 120GB",
+  "visible_devices": "0,1,2,3",
+  "backend": "cuda",
+  "runtime_version": {
+   "runtime": 13000,
+   "driver": 13000
+  },
+  "rocm": "",
+  "cuda": "/software/sse2/el9_gh200/manual/CUDA/13.0.3_580.126.20",
+  "cpu": "Neoverse-V2",
+  "cpu_arch": "aarch64",
+  "python": "3.13.5",
+  "numpy": "2.3.2",
+  "pyc2ray": {
+   "source": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray",
+   "commit": "6c1702b",
+   "branch": "benchmark",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 100,
+  "num_sources": [
+   100
+  ],
+  "batch_sizes": [
+   1,
+   2,
+   4,
+   8,
+   16,
+   32,
+   64,
+   128,
+   256
+  ],
+  "radius": "30",
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0
+ },
+ "records": [
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 1,
+   "device_bytes_expected": 32000000,
+   "device_bytes_used": 33554432,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101355552768,
+   "times_s": [
+    0.2756516490189824,
+    0.27567881700815633,
+    0.2756853450264316,
+    0.2756668170040939,
+    0.2757074870169163
+   ],
+   "time_median_s": 0.27567881700815633,
+   "valid": true,
+   "time_per_source_s": 0.0027567881700815635,
+   "sources_per_s": 362.7409645951918
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 2,
+   "device_bytes_expected": 40000000,
+   "device_bytes_used": 41943040,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101355552768,
+   "times_s": [
+    0.14319920699927025,
+    0.1432532530161552,
+    0.14329507501679473,
+    0.14322957300464623,
+    0.14322679000906646
+   ],
+   "time_median_s": 0.14322957300464623,
+   "valid": true,
+   "time_per_source_s": 0.0014322957300464622,
+   "sources_per_s": 698.1798374610535
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 4,
+   "device_bytes_expected": 56000000,
+   "device_bytes_used": 58720256,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101344477184,
+   "times_s": [
+    0.07436424397747032,
+    0.07443259400315583,
+    0.07450974298990332,
+    0.07444532899535261,
+    0.07901864300947636
+   ],
+   "time_median_s": 0.07444532899535261,
+   "valid": true,
+   "time_per_source_s": 0.0007444532899535261,
+   "sources_per_s": 1343.2676213472398
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 8,
+   "device_bytes_expected": 88000000,
+   "device_bytes_used": 90177536,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101339365376,
+   "times_s": [
+    0.04132138699060306,
+    0.04127063599298708,
+    0.04477877201861702,
+    0.04132020298857242,
+    0.045416731998557225
+   ],
+   "time_median_s": 0.04132138699060306,
+   "valid": true,
+   "time_per_source_s": 0.0004132138699060306,
+   "sources_per_s": 2420.0542935003878
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 16,
+   "device_bytes_expected": 152000000,
+   "device_bytes_used": 155189248,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101339365376,
+   "times_s": [
+    0.023963938001543283,
+    0.024063135992037132,
+    0.03053257698775269,
+    0.023990177985979244,
+    0.023939717008033767
+   ],
+   "time_median_s": 0.023990177985979244,
+   "valid": true,
+   "time_per_source_s": 0.00023990177985979243,
+   "sources_per_s": 4168.372575578378
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 32,
+   "device_bytes_expected": 280000000,
+   "device_bytes_used": 282263552,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101339365376,
+   "times_s": [
+    0.014836607006145641,
+    0.014842078991932794,
+    0.014829182997345924,
+    0.014858365000691265,
+    0.014859646005788818
+   ],
+   "time_median_s": 0.014842078991932794,
+   "valid": true,
+   "time_per_source_s": 0.00014842078991932794,
+   "sources_per_s": 6737.600578352508
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 64,
+   "device_bytes_expected": 536000000,
+   "device_bytes_used": 538968064,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101340413952,
+   "times_s": [
+    0.008226562000345439,
+    0.008294338011182845,
+    0.008254978980403394,
+    0.008304800983751193,
+    0.00827904199832119
+   ],
+   "time_median_s": 0.00827904199832119,
+   "valid": true,
+   "time_per_source_s": 8.27904199832119e-05,
+   "sources_per_s": 12078.692198961888
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 128,
+   "device_bytes_expected": 1048000000,
+   "device_bytes_used": 1050673152,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101339037696,
+   "times_s": [
+    0.004714845010312274,
+    0.0047358369920402765,
+    0.00472607699339278,
+    0.004740475997095928,
+    0.0047117090143729
+   ],
+   "time_median_s": 0.00472607699339278,
+   "valid": true,
+   "time_per_source_s": 4.72607699339278e-05,
+   "sources_per_s": 21159.19823985167
+  },
+  {
+   "mesh_size": 100,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 256,
+   "device_bytes_expected": 2072000000,
+   "device_bytes_used": 2074083328,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101339037696,
+   "times_s": [
+    0.004816313012270257,
+    0.004750939988298342,
+    0.004739132011309266,
+    0.004804090014658868,
+    0.004735900001833215
+   ],
+   "time_median_s": 0.004750939988298342,
+   "valid": true,
+   "time_per_source_s": 4.750939988298342e-05,
+   "sources_per_s": 21048.466250110916
+  }
+ ]
+}

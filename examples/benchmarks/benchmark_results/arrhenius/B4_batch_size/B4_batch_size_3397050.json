@@ -1,0 +1,456 @@
+{
+ "test": "B4_batch_size",
+ "meta": {
+  "system": "arrhenius",
+  "build": "cuda",
+  "hostname": "n449",
+  "date": "2026-10-05T19:23:35",
+  "slurm": {
+   "job_id": "3397050",
+   "cluster": "arrhenius",
+   "partition": "gpu",
+   "nodelist": "n449",
+   "num_nodes": "1",
+   "gpus_on_node": "4"
+  },
+  "slurm_job_id": "3397050",
+  "gpu": "NVIDIA GH200 120GB",
+  "visible_devices": "0,1,2,3",
+  "backend": "cuda",
+  "runtime_version": {
+   "runtime": 13000,
+   "driver": 13000
+  },
+  "rocm": "",
+  "cuda": "/software/sse2/el9_gh200/manual/CUDA/13.0.3_580.126.20",
+  "cpu": "Neoverse-V2",
+  "cpu_arch": "aarch64",
+  "python": "3.13.5",
+  "numpy": "2.3.2",
+  "pyc2ray": {
+   "source": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray",
+   "commit": "6c1702b",
+   "branch": "benchmark",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 256,
+  "num_sources": [
+   100,
+   10000
+  ],
+  "batch_sizes": [
+   1,
+   2,
+   4,
+   8,
+   16,
+   32,
+   64,
+   128,
+   256
+  ],
+  "radius": "30",
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0
+ },
+ "records": [
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 1,
+   "device_bytes_expected": 536870912,
+   "device_bytes_used": 536870912,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406408704,
+   "times_s": [
+    0.33203257000423037,
+    0.3319900439819321,
+    0.33213423000415787,
+    0.3320297529862728,
+    0.33198697201441973
+   ],
+   "time_median_s": 0.3320297529862728,
+   "valid": true,
+   "time_per_source_s": 0.003320297529862728,
+   "sources_per_s": 301.17782849458774
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 2,
+   "device_bytes_expected": 671088640,
+   "device_bytes_used": 671088640,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406212096,
+   "times_s": [
+    0.170403449999867,
+    0.17015910701593384,
+    0.17036271499819122,
+    0.17012342700036243,
+    0.17014403399662115
+   ],
+   "time_median_s": 0.17015910701593384,
+   "valid": true,
+   "time_per_source_s": 0.0017015910701593383,
+   "sources_per_s": 587.6852655946057
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 4,
+   "device_bytes_expected": 939524096,
+   "device_bytes_used": 939524096,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406212096,
+   "times_s": [
+    0.08717452301061712,
+    0.0871270049829036,
+    0.08714930800488219,
+    0.08735304401488975,
+    0.08706492601777427
+   ],
+   "time_median_s": 0.08714930800488219,
+   "valid": true,
+   "time_per_source_s": 0.0008714930800488218,
+   "sources_per_s": 1147.4560416979778
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406212096,
+   "times_s": [
+    0.04711391098680906,
+    0.047091032000025734,
+    0.047116664005443454,
+    0.04825134499697015,
+    0.04718152599525638
+   ],
+   "time_median_s": 0.047116664005443454,
+   "valid": true,
+   "time_per_source_s": 0.00047116664005443455,
+   "sources_per_s": 2122.3913473255843
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 16,
+   "device_bytes_expected": 2550136832,
+   "device_bytes_used": 2550136832,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406212096,
+   "times_s": [
+    0.02759437300846912,
+    0.027537477988516912,
+    0.027526632009539753,
+    0.027541349991224706,
+    0.02753802199731581
+   ],
+   "time_median_s": 0.02753802199731581,
+   "valid": true,
+   "time_per_source_s": 0.0002753802199731581,
+   "sources_per_s": 3631.3428760332613
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 32,
+   "device_bytes_expected": 4697620480,
+   "device_bytes_used": 4697489408,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406015488,
+   "times_s": [
+    0.017754670989234,
+    0.01771364701562561,
+    0.017728398001054302,
+    0.017712175991619006,
+    0.017724591016303748
+   ],
+   "time_median_s": 0.017724591016303748,
+   "valid": true,
+   "time_per_source_s": 0.00017724591016303747,
+   "sources_per_s": 5641.879121950753
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 64,
+   "device_bytes_expected": 8992587776,
+   "device_bytes_used": 8992587776,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406146560,
+   "times_s": [
+    0.010969136987114325,
+    0.010914065991528332,
+    0.010930226999334991,
+    0.010927026014542207,
+    0.010921681998297572
+   ],
+   "time_median_s": 0.010927026014542207,
+   "valid": true,
+   "time_per_source_s": 0.00010927026014542207,
+   "sources_per_s": 9151.620932073854
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 128,
+   "device_bytes_expected": 17582522368,
+   "device_bytes_used": 17582522368,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101406146560,
+   "times_s": [
+    0.007182318979175761,
+    0.007130608981242403,
+    0.00714212900493294,
+    0.007165168994106352,
+    0.007125809002900496
+   ],
+   "time_median_s": 0.00714212900493294,
+   "valid": true,
+   "time_per_source_s": 7.14212900493294e-05,
+   "sources_per_s": 14001.42729582899
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 100,
+   "batch_size": 256,
+   "device_bytes_expected": 34762391552,
+   "device_bytes_used": 34762391552,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405949952,
+   "times_s": [
+    0.00716059299884364,
+    0.007173038990003988,
+    0.007140625006286427,
+    0.007125617994461209,
+    0.007114802021533251
+   ],
+   "time_median_s": 0.007140625006286427,
+   "valid": true,
+   "time_per_source_s": 7.140625006286427e-05,
+   "sources_per_s": 14004.376355285778
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 1,
+   "device_bytes_expected": 536870912,
+   "device_bytes_used": 538968064,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405949952,
+   "times_s": [
+    33.03411022401997,
+    32.99147949498729,
+    32.99242191002122,
+    32.99156256899005
+   ],
+   "time_median_s": 32.991992239505635,
+   "valid": true,
+   "time_per_source_s": 0.0032991992239505634,
+   "sources_per_s": 303.1038540323639
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 2,
+   "device_bytes_expected": 671088640,
+   "device_bytes_used": 673185792,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101407588352,
+   "times_s": [
+    16.913579775980907,
+    16.836389752977993,
+    16.904108960996382,
+    16.845256370987045,
+    16.8421818909992
+   ],
+   "time_median_s": 16.845256370987045,
+   "valid": true,
+   "time_per_source_s": 0.0016845256370987044,
+   "sources_per_s": 593.638931920515
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 4,
+   "device_bytes_expected": 939524096,
+   "device_bytes_used": 939524096,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405294592,
+   "times_s": [
+    8.52182851699763,
+    8.527085040987004,
+    8.520738977997098,
+    8.520378348010127,
+    8.520748495007865
+   ],
+   "time_median_s": 8.520748495007865,
+   "valid": true,
+   "time_per_source_s": 0.0008520748495007865,
+   "sources_per_s": 1173.6058171249624
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": 1476395008,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405425664,
+   "times_s": [
+    4.348349251988111,
+    4.348097272013547,
+    4.348141233000206,
+    4.34830055499333,
+    4.35013153401087
+   ],
+   "time_median_s": 4.34830055499333,
+   "valid": true,
+   "time_per_source_s": 0.000434830055499333,
+   "sources_per_s": 2299.74903379588
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 16,
+   "device_bytes_expected": 2550136832,
+   "device_bytes_used": 2550071296,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405229056,
+   "times_s": [
+    2.313765748986043,
+    2.3137237030023243,
+    2.313328228017781,
+    2.3139210079971235,
+    2.313470271008555
+   ],
+   "time_median_s": 2.3137237030023243,
+   "valid": true,
+   "time_per_source_s": 0.00023137237030023243,
+   "sources_per_s": 4322.037236781489
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 32,
+   "device_bytes_expected": 4697620480,
+   "device_bytes_used": 4697620480,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405294592,
+   "times_s": [
+    1.2889571790001355,
+    1.2890598630183376,
+    1.2893998829822522,
+    1.289097111002775,
+    1.2892798240063712
+   ],
+   "time_median_s": 1.289097111002775,
+   "valid": true,
+   "time_per_source_s": 0.00012890971110027748,
+   "sources_per_s": 7757.367474216979
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 64,
+   "device_bytes_expected": 8992587776,
+   "device_bytes_used": 8992587776,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405097984,
+   "times_s": [
+    0.748014928016346,
+    0.7478933310194407,
+    0.7480952109908685,
+    0.7479599849903025,
+    0.748014607001096
+   ],
+   "time_median_s": 0.748014607001096,
+   "valid": true,
+   "time_per_source_s": 7.48014607001096e-05,
+   "sources_per_s": 13368.722891778165
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 128,
+   "device_bytes_expected": 17582522368,
+   "device_bytes_used": 17582522368,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101405163520,
+   "times_s": [
+    0.442820844007656,
+    0.44249579799361527,
+    0.4425961789966095,
+    0.4426553450175561,
+    0.4425534599868115
+   ],
+   "time_median_s": 0.4425961789966095,
+   "valid": true,
+   "time_per_source_s": 4.425961789966095e-05,
+   "sources_per_s": 22593.959176671076
+  },
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 256,
+   "device_bytes_expected": 34762391552,
+   "device_bytes_used": 34762391552,
+   "device_bytes_total": 102005473280,
+   "device_bytes_free_before": 101404966912,
+   "times_s": [
+    0.3716617689933628,
+    0.3715951140038669,
+    0.37150042998837307,
+    0.3716139949974604,
+    0.37151738797547296
+   ],
+   "time_median_s": 0.3715951140038669,
+   "valid": true,
+   "time_per_source_s": 3.715951140038669e-05,
+   "sources_per_s": 26911.010460422625
+  }
+ ]
+}

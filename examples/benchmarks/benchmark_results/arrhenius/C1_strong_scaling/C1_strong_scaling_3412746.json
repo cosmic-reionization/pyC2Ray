@@ -1,0 +1,218 @@
+{
+ "test": "C1_strong_scaling",
+ "meta": {
+  "system": "arrhenius",
+  "build": "cuda",
+  "hostname": "n161",
+  "date": "2026-10-06T08:07:01",
+  "slurm": {
+   "job_id": "3412746",
+   "cluster": "arrhenius",
+   "partition": "gpu",
+   "nodelist": "n161",
+   "num_nodes": "1",
+   "gpus_on_node": "4"
+  },
+  "slurm_job_id": "3412746",
+  "gpu": "NVIDIA GH200 120GB",
+  "visible_devices": "0,1,2,3",
+  "backend": "cuda",
+  "runtime_version": {
+   "runtime": 13000,
+   "driver": 13000
+  },
+  "rocm": "",
+  "cuda": "/software/sse2/el9_gh200/manual/CUDA/13.0.3_580.126.20",
+  "cpu": "Neoverse-V2",
+  "cpu_arch": "aarch64",
+  "python": "3.13.5",
+  "numpy": "2.3.2",
+  "pyc2ray": {
+   "source": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray",
+   "commit": "6c1702b",
+   "branch": "benchmark",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 256,
+  "cases": [
+   "30:10000",
+   "15:100000",
+   "15:10000"
+  ],
+  "batch_size": 8,
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0,
+  "nprocs": 1,
+  "mpi": "MPICH Version:      4.3.2"
+ },
+ "records": [
+  {
+   "mesh_size": 256,
+   "radius": "30",
+   "R_max": 30.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 10000,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": [
+    1476395008
+   ],
+   "t_rt_per_rank_s": [
+    [
+     4.350812332006171,
+     4.35280289495131,
+     4.3501327380072325,
+     4.350007653993089,
+     4.349762094032485
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     1.750304363667965e-05,
+     4.063901724293828e-05,
+     2.969498746097088e-05,
+     1.4334975276142359e-05,
+     9.82295023277402e-06
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     4.3508307310403325,
+     4.352844237990212,
+     4.350163137016352,
+     4.350022597005591,
+     4.34977233299287
+    ]
+   ],
+   "t_rt_max_median_s": 4.3501327380072325,
+   "t_rt_mean_median_s": 4.3501327380072325,
+   "imbalance": 1.0,
+   "t_comm_median_s": 1.750304363667965e-05,
+   "time_median_s": 4.350163137016352,
+   "valid": true,
+   "check_per_rank": [
+    {
+     "nonfinite": 0,
+     "positive": 16777216,
+     "negative": 0,
+     "num_sources": 10000
+    }
+   ],
+   "sources_per_s": 2298.7643646989072
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 100000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 100000,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": [
+    1478492160
+   ],
+   "t_rt_per_rank_s": [
+    [
+     6.473897946008947,
+     6.473397162044421,
+     6.47244119097013,
+     6.473070900014136,
+     6.47144248400582
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     1.0144023690372705e-05,
+     2.0670995581895113e-05,
+     9.695999324321747e-06,
+     8.639995940029621e-06,
+     2.3967004381120205e-05
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     6.473908442014363,
+     6.473418281006161,
+     6.472451270965394,
+     6.473079956020229,
+     6.471466802991927
+    ]
+   ],
+   "t_rt_max_median_s": 6.473070900014136,
+   "t_rt_mean_median_s": 6.473070900014136,
+   "imbalance": 1.0,
+   "t_comm_median_s": 1.0144023690372705e-05,
+   "time_median_s": 6.473079956020229,
+   "valid": true,
+   "check_per_rank": [
+    {
+     "nonfinite": 0,
+     "positive": 16777216,
+     "negative": 0,
+     "num_sources": 100000
+    }
+   ],
+   "sources_per_s": 15448.596445498239
+  },
+  {
+   "mesh_size": 256,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 10000,
+   "device_bytes_expected": 1476395008,
+   "device_bytes_used": [
+    1476395008
+   ],
+   "t_rt_per_rank_s": [
+    [
+     0.650701530976221,
+     0.6518582960125059,
+     0.6514035260188393,
+     0.6510865110321902,
+     0.6513747900025919
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     1.1616037227213383e-05,
+     1.0047981049865484e-05,
+     1.2254982721060514e-05,
+     7.583992555737495e-06,
+     7.775961421430111e-06
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     0.6507137549924664,
+     0.6518688239739276,
+     0.6514163570245728,
+     0.651094479020685,
+     0.6513829499599524
+    ]
+   ],
+   "t_rt_max_median_s": 0.6513747900025919,
+   "t_rt_mean_median_s": 0.6513747900025919,
+   "imbalance": 1.0,
+   "t_comm_median_s": 1.0047981049865484e-05,
+   "time_median_s": 0.6513829499599524,
+   "valid": true,
+   "check_per_rank": [
+    {
+     "nonfinite": 0,
+     "positive": 16772804,
+     "negative": 0,
+     "num_sources": 10000
+    }
+   ],
+   "sources_per_s": 15351.952335588165
+  }
+ ]
+}

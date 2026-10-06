@@ -1,0 +1,106 @@
+{
+ "test": "C1_strong_scaling",
+ "meta": {
+  "system": "arrhenius",
+  "build": "cuda",
+  "hostname": "n161",
+  "date": "2026-10-06T08:13:01",
+  "slurm": {
+   "job_id": "3412746",
+   "cluster": "arrhenius",
+   "partition": "gpu",
+   "nodelist": "n161",
+   "num_nodes": "1",
+   "gpus_on_node": "4"
+  },
+  "slurm_job_id": "3412746",
+  "gpu": "NVIDIA GH200 120GB",
+  "visible_devices": "0,1,2,3",
+  "backend": "cuda",
+  "runtime_version": {
+   "runtime": 13000,
+   "driver": 13000
+  },
+  "rocm": "",
+  "cuda": "/software/sse2/el9_gh200/manual/CUDA/13.0.3_580.126.20",
+  "cpu": "Neoverse-V2",
+  "cpu_arch": "aarch64",
+  "python": "3.13.5",
+  "numpy": "2.3.2",
+  "pyc2ray": {
+   "source": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray",
+   "commit": "6c1702b",
+   "branch": "benchmark",
+   "dirty": false
+  }
+ },
+ "params": {
+  "mesh_size": 100,
+  "cases": [
+   "15:10000"
+  ],
+  "batch_size": 8,
+  "warmup": 1,
+  "repeats": 5,
+  "max_seconds": 120.0,
+  "nprocs": 1,
+  "mpi": "MPICH Version:      4.3.2"
+ },
+ "records": [
+  {
+   "mesh_size": 100,
+   "radius": "15",
+   "R_max": 15.0,
+   "num_sources": 10000,
+   "batch_size": 8,
+   "nprocs": 1,
+   "sources_per_rank_max": 10000,
+   "device_bytes_expected": 88000000,
+   "device_bytes_used": [
+    90177536
+   ],
+   "t_rt_per_rank_s": [
+    [
+     0.6003926330013201,
+     0.6018709230120294,
+     0.6003176269587129,
+     0.600346841965802,
+     0.6002783320145682
+    ]
+   ],
+   "t_comm_per_rank_s": [
+    [
+     1.5967001672834158e-05,
+     3.2958982046693563e-05,
+     1.4496035873889923e-05,
+     1.2799049727618694e-05,
+     1.305498881265521e-05
+    ]
+   ],
+   "t_step_per_rank_s": [
+    [
+     0.6004093040246516,
+     0.6019046180299483,
+     0.6003327309736051,
+     0.6003599289688282,
+     0.6002919310121797
+    ]
+   ],
+   "t_rt_max_median_s": 0.600346841965802,
+   "t_rt_mean_median_s": 0.600346841965802,
+   "imbalance": 1.0,
+   "t_comm_median_s": 1.4496035873889923e-05,
+   "time_median_s": 0.6003599289688282,
+   "valid": true,
+   "check_per_rank": [
+    {
+     "nonfinite": 0,
+     "positive": 1000000,
+     "negative": 0,
+     "num_sources": 10000
+    }
+   ],
+   "sources_per_s": 16656.67463379159
+  }
+ ]
+}
