@@ -140,8 +140,31 @@ class C2Ray:
                 )
 
             # Allocate GPU memory
+            # Allocate GPU memory
             src_batch_size = self._ld["Raytracing"]["source_batch_size"]
-            device_init(self.N, src_batch_size, self.rank, nr_gpus)
+
+            cuda_visible = os.getenv("CUDA_VISIBLE_DEVICES", "")
+            visible_gpu_ids = [x for x in cuda_visible.split(",") if x.strip()]
+
+            if len(visible_gpu_ids) == 1:
+                # Slurm has already bound this MPI rank to one physical GPU.
+                # Inside the process that GPU is CUDA device 0.
+                gpu_id = 0
+                nr_visible_gpus = 1
+            else:
+                # Fallback for environments where all GPUs are visible to every rank.
+                gpu_id = self.rank % nr_gpus
+                nr_visible_gpus = nr_gpus
+
+            print(
+                f"[GPU INIT] MPI rank={self.rank}, "
+                f"CUDA_VISIBLE_DEVICES={cuda_visible}, "
+                f"ASORA local GPU={gpu_id}, "
+                f"visible GPUs={nr_visible_gpus}",
+                flush=True,
+            )
+
+            device_init(self.N, src_batch_size, gpu_id, nr_visible_gpus)
 
             # Register deallocation function (automatically calls this on program termination)
             atexit.register(self._gpu_close)

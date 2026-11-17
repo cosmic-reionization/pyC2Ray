@@ -10,6 +10,7 @@ pyc2ray_sources = [
     'c2ray_thesan.py',
     'c2ray_cubep3m_LW.py',
     'c2ray_cubep3m_LW_2spectra.py',
+    'giri_source_model.py',
     'evolve.py',
     'interface_p21c.py',
     'load_extensions.py',
