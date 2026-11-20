@@ -727,6 +727,9 @@ class C2Ray:
         self.boxsize = self._ld["Grid"]["boxsize"]
         self.boxsize_c = self.boxsize * Mpc / self.h
         self.dr_c = self.boxsize_c / self.N
+        
+        if "n_box" in self._ld["Grid"]:
+            self.n_box = int(self._ld["Grid"]["n_box"])
 
         self.printlog(f"Welcome! Mesh size is N = {self.N:n}.")
         self.printlog(f"Simulation Box size (comoving Mpc): {self.boxsize:.3e}")

@@ -531,22 +531,19 @@ class C2Ray_CubeP3M_LW(C2Ray):
             else:
                 self.prev_ndens = None
 
-            file = "%scoarser_densities/%.3fn_all.dat" % (self.inputs_basename, high_z)
-            self.printlog("\n---- Reading density file:\n " + file)
+            file = "%scoarser_densities/%.3fntotcoarsened_all.dat" % (self.inputs_basename, high_z)
+            self.printlog("\n---- Reading density file (including halos):\n " + file)
 
             self.dens_ND = t2c.DensityFile(filename=file).cgs_density
             self.dens_ND = self.dens_ND/np.mean(self.dens_ND)
 
-            file = "%scoarser_densities/%.3fntotcoarsened_all.dat" % (self.inputs_basename, high_z)
+            file = "%scoarser_densities/%.3fn_all.dat" % (self.inputs_basename, high_z)
             self.printlog("\n---- Reading density file (without halos):\n " + file)   
-
-            self.ndens = (
-                t2c.DensityFile(filename=file).cgs_density
-                / (self.mean_molecular * c.m_p.cgs.value)
-                * (1 + redshift) ** 3
-            )          
-
-            # self.dens_ND  = self.ndens / np.mean(self.ndens)
+            
+            density_convert_grid = (self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value) * (self.N / self.n_box)**3  * (1.0 + redshift)**3)
+            rho = t2c.DensityFile(filename=file)
+            raw_density = rho.raw_density.astype(np.float64)
+            self.ndens = raw_density * density_convert_grid
 
             # 3. Logic for the first redshift of the sim: prev_ndens = ndens
             if self.prev_ndens is None:
@@ -574,6 +571,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
             np.save(self.results_basename + "xfrac" + suffix, self.xh)
             np.save(self.results_basename + "IonRates" + suffix, self.phi_ion)
             np.save(self.results_basename + "jLW3d" + suffix, self.jLW)
+            if getattr(self, "xh_max", None) is not None:
+                np.save(self.results_basename + "xhmax" + suffix, self.xh_max)
         else:
             raise ValueError(f"Unsupported output extension: {ext}")
         self.printlog("\n--- Reionization History ----")
@@ -631,8 +630,13 @@ class C2Ray_CubeP3M_LW(C2Ray):
         if self.resume:
             candidates = self.zred_density[self.zred_density >= self.zred]
             high_z = self.zred_density[np.argmin(np.abs(self.zred_density - self.zred))] if candidates.size == 0 else candidates[np.argmin(np.abs(candidates - self.zred))]
-            density_file = f"{self.inputs_basename}coarser_densities/{high_z:.3f}ntotcoarsened_all.dat"
-            self.ndens = np.asfortranarray(t2c.DensityFile(filename=density_file).cgs_density / (self.mean_molecular * c.m_p.cgs.value) * (1.0 + self.zred)**3)
+            density_file = f"{self.inputs_basename}coarser_densities/{high_z:.3f}n_all.dat"
+            
+            density_convert_grid = (self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value) * (self.N / self.n_box)**3  * (1.0 + redshift)**3)
+            rho = t2c.DensityFile(filename=file)
+            raw_density = rho.raw_density.astype(np.float64)
+            self.ndens = raw_density * density_convert_grid
+
             xfrac_npy = os.path.join(self.results_basename, f"xfrac_z{self.zred:.3f}.npy")
             ion_npy = os.path.join(self.results_basename, f"IonRates_z{self.zred:.3f}.npy")
             jlw_npy = os.path.join(self.results_basename, f"jLW3d_z{self.zred:.3f}.npy")
@@ -650,6 +654,13 @@ class C2Ray_CubeP3M_LW(C2Ray):
             else:
                 self.jLW = np.zeros(self.shape, dtype=np.float64, order="F")
             self.temp = temp0 * np.ones(self.shape, order="F")
+            xhmax_npy = os.path.join(self.results_basename, f"xhmax_z{self.zred:.3f}.npy")
+            if os.path.exists(xhmax_npy):
+                self.xh_max = np.asfortranarray(np.load(xhmax_npy))
+            else:
+                self.printlog("WARNING: no xhmax file for resume; restarting relic memory from current xHII.")
+                self.xh_max = np.asfortranarray(self.xh.copy())
+
         else:
             xh0 = self._ld["Material"]["xh0"]
             avg_dens = self._ld["Material"]["avg_dens"]
@@ -657,6 +668,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
             self.xh = xh0 * np.ones(self.shape, order="F")
             self.temp = temp0 * np.ones(self.shape, order="F")
             self.phi_ion = np.zeros(self.shape, order="F")
+            self.xh_max = np.asfortranarray(self.xh.copy())
 
     def _output_init(self):
         """Set up output & log file"""
@@ -684,24 +696,62 @@ class C2Ray_CubeP3M_LW(C2Ray):
                 f.write(title + "\nLog file for pyC2Ray.\n\n")
 
     def _sources_init(self):
-        self.fgamma_hm = self._ld["Sources"]["fgamma_hm"]
-        self.fgamma_lm = self._ld["Sources"]["fgamma_lm"]
-        self.source_model = self._ld["Sources"]["source_model"]
-        self.ts = (self._ld["Sources"]["ts"] * u.Myr).cgs.value
+        src = self._ld["Sources"]
+        self.fgamma_hm = src["fgamma_hm"]
+        self.fgamma_lm = src["fgamma_lm"]
+        self.source_model = src["source_model"]
+        self.ts = (src["ts"] * u.Myr).cgs.value  # noqa: F821  (u is imported in the class module)
 
-        self.minihalo_abundance_model = self._ld["Sources"].get("minihalo_abundance_model", "empirical")
-        self.minihalo_subgrid_dir = self._ld["Sources"].get("minihalo_subgrid_dir", "")
-        self.minihalo_subgrid_pattern = self._ld["Sources"].get("minihalo_subgrid_pattern", "halo_num_shifted_z{z:.3f}.npy")
-
+        self.minihalo_abundance_model = src.get("minihalo_abundance_model", "empirical")
+        self.minihalo_subgrid_dir = src.get("minihalo_subgrid_dir", "")
+        self.minihalo_subgrid_pattern = src.get("minihalo_subgrid_pattern", "halo_num_shifted_z{z:.3f}.npy")
         if self.minihalo_abundance_model not in ("empirical", "subgrid_file"):
             raise ValueError(f"Unknown minihalo_abundance_model: {self.minihalo_abundance_model}")
 
-        self.minihalo_ionization_model = self._ld["Sources"].get("minihalo_ionization_model", "threshold")
-        self.minihalo_random_seed = int(self._ld["Sources"].get("minihalo_random_seed", 12345))
+        self.minihalo_ionization_model = src.get("minihalo_ionization_model", "threshold")
+        self.minihalo_random_seed = int(src.get("minihalo_random_seed", 12345))
+        if self.minihalo_ionization_model not in ("threshold", "probabilistic", "clustered"):
+            raise ValueError(f"Unknown minihalo_ionization_model: {self.minihalo_ionization_model}")
 
-        if self.minihalo_ionization_model not in ("threshold", "probabilistic"):
-            raise ValueError("Unknown minihalo_ionization_model: "f"{self.minihalo_ionization_model}")
+        # Clustered-suppression parameters
+        self.mh_bias_mode = src.get("mh_bias_mode", "constant")
+        self.mh_bias = float(src.get("mh_bias", 1.0))
+        self.mh_bias_slope = float(src.get("mh_bias_slope", 0.0))
+        self.mh_bias_xref = float(src.get("mh_bias_xref", 0.1))
+        self.mh_bias_max = float(src.get("mh_bias_max", 50.0))
+        self.mh_use_xmax = bool(src.get("mh_use_xmax", True))
+        self.mh_bias_table = None
+        if self.mh_bias_mode not in ("constant", "power_x", "table_x", "table_z"):
+            raise ValueError(f"Unknown mh_bias_mode: {self.mh_bias_mode}")
+        if self.minihalo_ionization_model == "clustered" and self.mh_bias_mode in ("table_x", "table_z"):
+            table = np.atleast_2d(np.loadtxt(src["mh_bias_file"]))
+            self.mh_bias_table = table[np.argsort(table[:, 0])]
+        if self.mh_bias < 0.0 or self.mh_bias_max < 1.0 or self.mh_bias_xref <= 0.0:
+            raise ValueError("mh_bias must be >= 0, mh_bias_max >= 1 and mh_bias_xref > 0.")
 
+    def get_mh_bias(self, zred):
+        """Sub-cell clustering factor b of fresh minihaloes relative to ionized gas."""
+        if self.mh_bias_mode == "constant":
+            b = self.mh_bias
+        elif self.mh_bias_mode == "table_z":
+            b = np.interp(zred, self.mh_bias_table[:, 0], self.mh_bias_table[:, 1])
+        else:
+            # The measured b depends on how much volume is already ionized, so key it to the
+            # simulation's own volume-weighted mean ionized fraction rather than to redshift.
+            xbar = float(np.mean(self.xh_max if self.mh_use_xmax else self.xh))
+            if self.mh_bias_mode == "power_x":
+                b = self.mh_bias * (max(xbar, 1.0e-8) / self.mh_bias_xref) ** self.mh_bias_slope
+            else:  # table_x, interpolated in log x
+                b = np.interp(np.log10(max(xbar, 1.0e-8)), np.log10(self.mh_bias_table[:, 0]), self.mh_bias_table[:, 1])
+        return float(np.clip(b, 1.0, self.mh_bias_max))
+
+
+    def get_mh_ionization_survival(self, zred):
+        """Per-cell probability that a fresh minihalo forms in neutral gas: clip(1 - b x, 0, 1)."""
+        x = self.xh_max if self.mh_use_xmax else self.xh
+        b = self.get_mh_bias(zred)
+        return np.clip(1.0 - b * np.clip(x, 0.0, 1.0), 0.0, 1.0), b
+        
     def _grid_init(self):
         """Set up grid properties"""
         super()._grid_init()
@@ -954,13 +1004,22 @@ class C2Ray_CubeP3M_LW(C2Ray):
 
     def _prepare_mh_candidates(self, nz):
         """Build the fresh minihalo candidate mass grid once per fine timestep."""
-
         zred_now = self.zred_array[nz]
         ionization_model = getattr(self, "minihalo_ionization_model", "threshold")
         random_seed = getattr(self, "minihalo_random_seed", 12345)
-
-        if ionization_model not in ("threshold", "probabilistic"):
+        if ionization_model not in ("threshold", "probabilistic", "clustered"):
             raise ValueError(f"Unknown minihalo_ionization_model: {ionization_model}")
+
+        # Relic-HII memory: highest ionized fraction each cell has reached so far.
+        if getattr(self, "xh_max", None) is None:
+            self.xh_max = np.asfortranarray(self.xh.copy())
+        self.xh_max = np.asfortranarray(np.maximum(self.xh_max, self.xh))
+
+        p_survive = None
+        if ionization_model == "clustered":
+            p_survive, b_now = self.get_mh_ionization_survival(zred_now)
+            self.printlog(f"Clustered MH suppression: b={b_now:.3f}, <x_max>={np.mean(self.xh_max):.4e}, "
+                        f"mean p_survive={np.mean(p_survive):.4f}", self.logfile)
 
         self.M_box = self.rho_crit_0 * self.cosmology.Om0 * (self.boxsize * self.Mpc / self.h)**3
         self.M_grid = self.M_box / (self.n_box**3)
@@ -971,15 +1030,12 @@ class C2Ray_CubeP3M_LW(C2Ray):
                 self.densNDcrit = self.get_denscrit(zred_now, self.dens_ND)
                 if nz > 0:
                     self.densNDcrit_prev = self.get_denscrit(self.zred_array[nz - 1], self.dens_ND_prev)
-
             mass_now = self.get_subsrcM_msun_all(zred_now, self.dens_ND, self.densNDcrit)
-
             if nz > 0:
                 mass_prev = self.get_subsrcM_msun_all(self.zred_array[nz - 1], self.dens_ND_prev, self.densNDcrit_prev)
                 diff_subsrcMsun = mass_now - mass_prev
             else:
                 diff_subsrcMsun = mass_now
-
             diff_subsrcMsun = np.maximum(diff_subsrcMsun, 0.0)
 
             if ionization_model == "threshold":
@@ -987,36 +1043,34 @@ class C2Ray_CubeP3M_LW(C2Ray):
             elif ionization_model == "probabilistic":
                 diff_subsrcMsun *= 1.0 - np.clip(self.xh, 0.0, 1.0)
                 candidate_mask = diff_subsrcMsun > 0.0
+            else:  # clustered: expected surviving mass
+                diff_subsrcMsun *= p_survive
+                candidate_mask = diff_subsrcMsun > 0.0
 
         elif self.minihalo_abundance_model == "subgrid_file":
             nhalo_now = self.read_subgrid_nhalo(zred_now)
-
             if nz > 0:
                 nhalo_prev = self.read_subgrid_nhalo(self.zred_array[nz - 1])
                 fresh_nhalo = nhalo_now - nhalo_prev
             else:
                 fresh_nhalo = nhalo_now.copy()
-
             fresh_nhalo = np.maximum(fresh_nhalo, 0).astype(np.int64)
-
             self.printlog(f"Raw subgrid halos: {np.sum(nhalo_now):,.0f}", self.logfile)
             self.printlog(f"Fresh subgrid halos: {np.sum(fresh_nhalo):,.0f}", self.logfile)
 
             if ionization_model == "threshold":
                 active_nhalo = fresh_nhalo.copy()
                 active_nhalo[self.xh >= self.StillNeutral] = 0
-            elif ionization_model == "probabilistic":
-                p_neutral = 1.0 - np.clip(self.xh, 0.0, 1.0)
+            else:
+                p_neutral = 1.0 - np.clip(self.xh, 0.0, 1.0) if ionization_model == "probabilistic" else p_survive
                 rng = np.random.default_rng(np.random.SeedSequence([random_seed, int(nz)]))
                 active_nhalo = rng.binomial(fresh_nhalo, p_neutral)
 
             suppressed_nhalo = fresh_nhalo - active_nhalo
             diff_subsrcMsun = active_nhalo.astype(np.float64) * self.M_PIIIstar_msun
             candidate_mask = active_nhalo > 0
-
             self.printlog(f"Fresh MH halos suppressed by ionization: {np.sum(suppressed_nhalo):,}", self.logfile)
             self.printlog(f"Fresh MH halos surviving ionization suppression: {np.sum(active_nhalo):,}", self.logfile)
-
         else:
             raise ValueError(f"Unknown minihalo_abundance_model: {self.minihalo_abundance_model}")
 
