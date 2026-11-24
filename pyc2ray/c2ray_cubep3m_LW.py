@@ -186,6 +186,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
             self.logfile,
         )
 
+        self.track_popiii_lifetime = bool(p.get("track_popiii_lifetime", True))
+        self.printlog(f" Pop III lifetime: {self.pop_sub.t_star_Myr:.3f} Myr "f"(tracked across steps: {self.track_popiii_lifetime})", self.logfile)
+
     def read_subgrid_nhalo(self, zred):
         filename = os.path.join(self.minihalo_subgrid_dir, self.minihalo_subgrid_pattern.format(z=zred))
 
@@ -573,6 +576,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
             np.save(self.results_basename + "jLW3d" + suffix, self.jLW)
             if getattr(self, "xh_max", None) is not None:
                 np.save(self.results_basename + "xhmax" + suffix, self.xh_max)
+            if getattr(self, "track_popiii_lifetime", False):
+                self._save_pop3_cohorts(self.results_basename + f"pop3cohorts_z{z:.3f}.npz")
+
         else:
             raise ValueError(f"Unsupported output extension: {ext}")
         self.printlog("\n--- Reionization History ----")
@@ -632,8 +638,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
             high_z = self.zred_density[np.argmin(np.abs(self.zred_density - self.zred))] if candidates.size == 0 else candidates[np.argmin(np.abs(candidates - self.zred))]
             density_file = f"{self.inputs_basename}coarser_densities/{high_z:.3f}n_all.dat"
             
-            density_convert_grid = (self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value) * (self.N / self.n_box)**3  * (1.0 + redshift)**3)
-            rho = t2c.DensityFile(filename=file)
+            density_convert_grid = (self.cosmology.critical_density0.cgs.value * self.cosmology.Ob0 / (self.mean_molecular * c.m_p.cgs.value) * (self.N / self.n_box)**3  * (1.0 + self.zred)**3)
+            rho = t2c.DensityFile(filename=density_file)
             raw_density = rho.raw_density.astype(np.float64)
             self.ndens = raw_density * density_convert_grid
 
@@ -660,6 +666,8 @@ class C2Ray_CubeP3M_LW(C2Ray):
             else:
                 self.printlog("WARNING: no xhmax file for resume; restarting relic memory from current xHII.")
                 self.xh_max = np.asfortranarray(self.xh.copy())
+            
+            self._load_pop3_cohorts(os.path.join(self.results_basename, f"pop3cohorts_z{self.zred:.3f}.npz"))
 
         else:
             xh0 = self._ld["Material"]["xh0"]
@@ -669,6 +677,7 @@ class C2Ray_CubeP3M_LW(C2Ray):
             self.temp = temp0 * np.ones(self.shape, order="F")
             self.phi_ion = np.zeros(self.shape, order="F")
             self.xh_max = np.asfortranarray(self.xh.copy())
+            self._pop3_cohorts = []
 
     def _output_init(self):
         """Set up output & log file"""
@@ -1090,27 +1099,41 @@ class C2Ray_CubeP3M_LW(C2Ray):
         diff_subsrcMsun = self._mh_diff_subsrcMsun
         candidate_mask = self._mh_candidate_mask
         suppression_grid = self.get_mh_suppression_factor(jLWgrid, zred_now)
-        active_mass_grid = np.zeros_like(diff_subsrcMsun, dtype=np.float64)
-        active_mass_grid[candidate_mask] = diff_subsrcMsun[candidate_mask] * suppression_grid[candidate_mask]
-        active_mask = active_mass_grid > 0.0
-        active_indices = np.argwhere(active_mask)
+
+        # Stars born this step
+        born_mass_grid = np.zeros_like(diff_subsrcMsun, dtype=np.float64)
+        born_mass_grid[candidate_mask] = diff_subsrcMsun[candidate_mask] * suppression_grid[candidate_mask]
+        self.printlog(f"Pop III stars born this step: {np.sum(born_mass_grid) / self.M_PIIIstar_msun:.6e}", self.logfile)
+
+        if getattr(self, "track_popiii_lifetime", False):
+            if getattr(self, "_pop3_cohorts", None) is None:
+                self._pop3_cohorts = []
+            t0 = self.zred2time(zred_now)
+            t1 = t0 + AGlifetime
+            self._add_pop3_cohort(born_mass_grid, t0)
+            cells, eff_mass = self._effective_pop3_mass(t0, t1)
+            active_indices = np.column_stack(np.unravel_index(cells, self.shape, order="F")) if cells.size else np.empty((0, 3), dtype=np.int64)
+            self.printlog(f"Pop III cohorts still shining after this step: {len(self._pop3_cohorts)}; "
+                        f"star-equivalents emitting this step: {np.sum(eff_mass) / self.M_PIIIstar_msun:.6e} "
+                        f"(t_star = {self.pop_sub.t_star_Myr:.3f} Myr, step = {AGlifetime / 3.15576e13:.3f} Myr)",
+                        self.logfile)
+        else:
+            active_indices = np.argwhere(born_mass_grid > 0.0)
+            eff_mass = born_mass_grid[tuple(active_indices.T)] if active_indices.size else np.empty(0)
+
         NumAGrid = active_indices.shape[0]
         if NumAGrid == 0:
             self.ssM_msun = np.empty(0, dtype=np.float64)
             if write_catalog and self.rank == 0:
-                z_str = f"{zred_now:.3f}"
-                sourcelistfile_sub = os.path.join(self.results_basename, f"{z_str}-coarsened_SUBsources.dat")
+                sourcelistfile_sub = os.path.join(self.results_basename, f"{zred_now:.3f}-coarsened_SUBsources.dat")
                 with open(sourcelistfile_sub, "w") as f:
                     f.write("0\n")
                     f.write(f"{self.MHflag}\n")
             return None, None, 0
-        i = active_indices[:, 0]
-        j = active_indices[:, 1]
-        k = active_indices[:, 2]
-        self.ssM_msun = active_mass_grid[i, j, k]
-        tot_subsrcM_msun = float(np.sum(self.ssM_msun))
-        self.printlog(f"Total active stellar mass in subgrids: {tot_subsrcM_msun:.6e} Msun", self.logfile)
-        self.printlog(f"Equivalent active Pop III stars: {tot_subsrcM_msun / self.M_PIIIstar_msun:.6e}", self.logfile)
+
+        # From here on ssM_msun is the effective (emitting) stellar mass per cell. The flux and LW formulas
+        # below and in get_srclumK assume all photons come out in this step, which M_eff accounts for.
+        self.ssM_msun = np.asarray(eff_mass, dtype=np.float64)
         m_p_cgs = c.m_p.cgs.value
         m_solar_cgs = 1.98892e33
         if self.MHflag == 1:
@@ -1122,9 +1145,12 @@ class C2Ray_CubeP3M_LW(C2Ray):
         else:
             raise ValueError(f"Unsupported MHflag={self.MHflag}")
         self.printlog(f"Subgrid Total flux = {np.sum(subNormFlux):.6e} in units of S_star", self.logfile)
+
         if write_catalog and self.rank == 0:
-            z_str = f"{zred_now:.3f}"
-            sourcelistfile_sub = os.path.join(self.results_basename, f"{z_str}-coarsened_SUBsources.dat")
+            # Column 5 is the effective stellar mass emitting in this step. Summed over steps it equals the
+            # photons emitted so far divided by the photons per unit stellar mass, so photon_budget_check.py
+            # stays exact.
+            sourcelistfile_sub = os.path.join(self.results_basename, f"{zred_now:.3f}-coarsened_SUBsources.dat")
             with open(sourcelistfile_sub, "w") as f:
                 f.write(f"{NumAGrid}\n")
                 f.write(f"{self.MHflag}\n")
@@ -1132,11 +1158,9 @@ class C2Ray_CubeP3M_LW(C2Ray):
                     ii, jj, kk = active_indices[idx]
                     f.write(f"{ii:5d}{jj:5d}{kk:5d}{subsrcMass[idx]:13.4e}{self.ssM_msun[idx]:13.4e}\n")
             self.printlog(f"Saved subgrid sources to: {sourcelistfile_sub}", self.logfile)
+
         if permute:
-            if self.rank == 0:
-                p = np.random.permutation(NumAGrid)
-            else:
-                p = None
+            p = np.random.permutation(NumAGrid) if self.rank == 0 else None
             p = self.comm.bcast(p, root=0)
             active_indices = active_indices[p]
             subNormFlux = subNormFlux[p]
@@ -1313,3 +1337,64 @@ class C2Ray_CubeP3M_LW(C2Ray):
         jLW_grid = np.fft.irfftn(jLW_k, s=source_grid.shape)
         
         return np.maximum(jLW_grid, 0.0)
+
+    def _add_pop3_cohort(self, mass_grid, t_birth):
+        """Store the stars born this step as one cohort (sparse: cells + stellar masses)."""
+        flat = np.ravel(mass_grid, order="F")
+        cells = np.flatnonzero(flat > 0.0)
+        if cells.size == 0:
+            return
+        t_star = self.pop_sub.t_star_s
+        self._pop3_cohorts.append({
+            "cells": cells.astype(np.int64),
+            "mass": flat[cells].astype(np.float64),
+            "t_birth": float(t_birth),
+            "t_death": float(t_birth) + t_star,
+        })
+
+
+    def _effective_pop3_mass(self, t0, t1):
+        """Per-cell effective stellar mass for the step [t0, t1]; drops cohorts that have died by t1."""
+        t_star = self.pop_sub.t_star_s
+        cells, weights, alive = [], [], []
+        for cohort in self._pop3_cohorts:
+            overlap = max(0.0, min(t1, cohort["t_death"]) - max(t0, cohort["t_birth"]))
+            if overlap > 0.0:
+                cells.append(cohort["cells"])
+                weights.append(cohort["mass"] * (overlap / t_star))
+            if cohort["t_death"] > t1:
+                alive.append(cohort)
+        self._pop3_cohorts = alive
+        if not cells:
+            return np.empty(0, dtype=np.int64), np.empty(0, dtype=np.float64)
+        cells = np.concatenate(cells)
+        weights = np.concatenate(weights)
+        unique_cells, inverse = np.unique(cells, return_inverse=True)
+        return unique_cells, np.bincount(inverse, weights=weights)
+
+
+    def _save_pop3_cohorts(self, filename):
+        """Write the still-shining cohorts so a restart can continue them."""
+        cohorts = getattr(self, "_pop3_cohorts", [])
+        if cohorts:
+            sizes = [c_["cells"].size for c_ in cohorts]
+            np.savez(filename,
+                    cells=np.concatenate([c_["cells"] for c_ in cohorts]),
+                    mass=np.concatenate([c_["mass"] for c_ in cohorts]),
+                    t_birth=np.repeat([c_["t_birth"] for c_ in cohorts], sizes),
+                    t_death=np.repeat([c_["t_death"] for c_ in cohorts], sizes))
+        else:
+            np.savez(filename, cells=np.empty(0, np.int64), mass=np.empty(0), t_birth=np.empty(0), t_death=np.empty(0))
+
+
+    def _load_pop3_cohorts(self, filename):
+        self._pop3_cohorts = []
+        if not os.path.exists(filename):
+            self.printlog(f"WARNING: {filename} not found; Pop III stars born before the restart will not keep shining.",
+                        self.logfile)
+            return
+        d = np.load(filename)
+        for tb in np.unique(d["t_birth"]):
+            sel = d["t_birth"] == tb
+            self._pop3_cohorts.append({"cells": d["cells"][sel].astype(np.int64), "mass": d["mass"][sel],
+                                    "t_birth": float(tb), "t_death": float(d["t_death"][sel][0])})
