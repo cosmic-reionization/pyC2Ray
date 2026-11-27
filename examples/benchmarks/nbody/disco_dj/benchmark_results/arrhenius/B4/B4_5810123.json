@@ -1,0 +1,441 @@
+{
+ "metadata": {
+  "system": "arrhenius",
+  "build": "jax-cuda12",
+  "hostname": "n443",
+  "date": "2026-11-26T19:25:01",
+  "slurm": {
+   "job_id": "5810123",
+   "job_partition": "gpu",
+   "job_nodelist": "n443",
+   "gpus_on_node": "4",
+   "cpus_per_task": "",
+   "ntasks": ""
+  },
+  "slurm_job_id": "5810123",
+  "gpu": [
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07"
+  ],
+  "cpu": "Neoverse-V2",
+  "cpu_arch": "aarch64",
+  "python": "3.12.16",
+  "jax": "0.7.2",
+  "jaxlib": "0.7.2",
+  "jax_backend": "PJRT C API\ncuda 12090",
+  "jax_devices": [
+   "cuda:0"
+  ],
+  "packages": {
+   "diffrax": "0.7.0",
+   "equinox": "0.13.8",
+   "numpy": "2.5.5",
+   "einops": "0.8.2"
+  },
+  "xla_env": {
+   "XLA_PYTHON_CLIENT_MEM_FRACTION": "0.95",
+   "TF_CPP_MIN_LOG_LEVEL": "2",
+   "XLA_PYTHON_CLIENT_PREALLOCATE": "false"
+  },
+  "discodj": {
+   "path": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/DISCO-DJ",
+   "commit": "a687972d",
+   "branch": "main",
+   "dirty": false
+  },
+  "benchmark_setup": {
+   "path": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj",
+   "commit": "e07b6fb0",
+   "branch": "benchmark",
+   "dirty": true
+  }
+ },
+ "records": [
+  {
+   "test": "B4",
+   "label": "N800_lpt1",
+   "params": {
+    "test": "B4",
+    "label": "N800_lpt1",
+    "res": 800,
+    "res_pm": 800,
+    "boxsize": 100.0,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "n_steps": 50,
+    "time_var": "D",
+    "stepper": "bullfrog",
+    "ic_method": "lpt",
+    "lpt_order": 1,
+    "worder": 2,
+    "antialias": 0,
+    "deconvolve": false,
+    "n_resample": 1,
+    "grad_kernel_order": 4,
+    "method": "pm",
+    "chunk_size": null,
+    "precision": "single",
+    "seed": 314159265,
+    "grid": 800,
+    "outputs": "final",
+    "n_outputs": null,
+    "steps_per_output": 1,
+    "repeat": 1,
+    "save_delta": null,
+    "pk_bins": 32,
+    "write_dir": null,
+    "grid_format": "both",
+    "snap_z": [],
+    "pk_z": [],
+    "free_ics": false
+   },
+   "cosmology": {
+    "Omega_c": 0.271,
+    "Omega_b": 0.049,
+    "Omega_k": 0.0,
+    "h": 0.67,
+    "n_s": 0.96,
+    "sigma8": 0.83,
+    "w0": -1.0,
+    "wa": 0.0
+   },
+   "status": "oom",
+   "timings": {
+    "ics": 12.218143082995084,
+    "setup": 18.802486913002213
+   },
+   "mem_after_setup": {
+    "peak_bytes_in_use": 28822821632,
+    "bytes_in_use": 8197257984,
+    "bytes_limit": 96905198400
+   },
+   "error": "XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 28672003720 bytes.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 305, in main\n    X, P, _ = fn()\n              ^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 218, in run_final\n    return block(dj.run_nbody(a_ini=a_ini, a_end=a_end, n_steps=a.n_steps, **kw))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 1143, in run_nbody\n    Psi_out, Mom_out = nbody_scan(args, (Psi_ini, Mom_ini), terms, n_steps, adjoint_method,\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 34, in nbody_scan\n    return scan_wrapper(non_diff_args, args, init)  # diff'able arguments last\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 60, in scan_wrapper\n    carry, ys = jax.lax.scan(scan_fn, carry, xs)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\njaxlib._jax.XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 28672003720 bytes.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 33847021568,
+    "bytes_in_use": 33847021568,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B4",
+   "label": "N800_lpt2",
+   "params": {
+    "test": "B4",
+    "label": "N800_lpt2",
+    "res": 800,
+    "res_pm": 800,
+    "boxsize": 100.0,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "n_steps": 50,
+    "time_var": "D",
+    "stepper": "bullfrog",
+    "ic_method": "lpt",
+    "lpt_order": 2,
+    "worder": 2,
+    "antialias": 0,
+    "deconvolve": false,
+    "n_resample": 1,
+    "grad_kernel_order": 4,
+    "method": "pm",
+    "chunk_size": null,
+    "precision": "single",
+    "seed": 314159265,
+    "grid": 800,
+    "outputs": "final",
+    "n_outputs": null,
+    "steps_per_output": 1,
+    "repeat": 1,
+    "save_delta": null,
+    "pk_bins": 32,
+    "write_dir": null,
+    "grid_format": "both",
+    "snap_z": [],
+    "pk_z": [],
+    "free_ics": false
+   },
+   "cosmology": {
+    "Omega_c": 0.271,
+    "Omega_b": 0.049,
+    "Omega_k": 0.0,
+    "h": 0.67,
+    "n_s": 0.96,
+    "sigma8": 0.83,
+    "w0": -1.0,
+    "wa": 0.0
+   },
+   "status": "oom",
+   "timings": {
+    "ics": 12.248658565993537,
+    "setup": 20.834325792995514
+   },
+   "mem_after_setup": {
+    "peak_bytes_in_use": 69580621824,
+    "bytes_in_use": 14341294080,
+    "bytes_limit": 96905198400
+   },
+   "error": "XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 28672003720 bytes.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 305, in main\n    X, P, _ = fn()\n              ^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 218, in run_final\n    return block(dj.run_nbody(a_ini=a_ini, a_end=a_end, n_steps=a.n_steps, **kw))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 1143, in run_nbody\n    Psi_out, Mom_out = nbody_scan(args, (Psi_ini, Mom_ini), terms, n_steps, adjoint_method,\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 34, in nbody_scan\n    return scan_wrapper(non_diff_args, args, init)  # diff'able arguments last\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 60, in scan_wrapper\n    carry, ys = jax.lax.scan(scan_fn, carry, xs)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\njaxlib._jax.XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 28672003720 bytes.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 69580621824,
+    "bytes_in_use": 39991057664,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B4",
+   "label": "N832_lpt2",
+   "params": {
+    "test": "B4",
+    "label": "N832_lpt2",
+    "res": 832,
+    "res_pm": 832,
+    "boxsize": 100.0,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "n_steps": 50,
+    "time_var": "D",
+    "stepper": "bullfrog",
+    "ic_method": "lpt",
+    "lpt_order": 2,
+    "worder": 2,
+    "antialias": 0,
+    "deconvolve": false,
+    "n_resample": 1,
+    "grad_kernel_order": 4,
+    "method": "pm",
+    "chunk_size": null,
+    "precision": "single",
+    "seed": 314159265,
+    "grid": 832,
+    "outputs": "final",
+    "n_outputs": null,
+    "steps_per_output": 1,
+    "repeat": 1,
+    "save_delta": null,
+    "pk_bins": 32,
+    "write_dir": null,
+    "grid_format": "both",
+    "snap_z": [],
+    "pk_z": [],
+    "free_ics": false
+   },
+   "cosmology": {
+    "Omega_c": 0.271,
+    "Omega_b": 0.049,
+    "Omega_k": 0.0,
+    "h": 0.67,
+    "n_s": 0.96,
+    "sigma8": 0.83,
+    "w0": -1.0,
+    "wa": 0.0
+   },
+   "status": "oom",
+   "timings": {
+    "ics": 7.115597547992365
+   },
+   "error": "XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 30265420352 bytes.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 208, in main\n    dj = dj.with_lpt(n_order=a.lpt_order)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 754, in with_lpt\n    psi_lpt = {**old_lpt_psi, **lpt.compute(fphi_ini=fphi_ini)}\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 295, in compute\n    out = compute_fun_final(fphi_ini)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 293, in <lambda>\n    compute_fun_final = lambda phi: compute_fun(phi, **kwargs)\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 358, in compute_core\n    fL += fac_sym * fmu2_sym(psi[i // 2 - 1], res, ext_res, derivs_ext, dtype_c=dtype_c, with_jax=with_jax)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 91, in fmu2_sym\n    return jax.lax.scan(scan_body, init=np.zeros((orig_res, orig_res, orig_res // 2 + 1), dtype=dtype_c),\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\njaxlib._jax.XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 30265420352 bytes.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 34639026944,
+    "bytes_in_use": 32329803776,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B4",
+   "label": "N832_lpt1",
+   "params": {
+    "test": "B4",
+    "label": "N832_lpt1",
+    "res": 832,
+    "res_pm": 832,
+    "boxsize": 100.0,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "n_steps": 50,
+    "time_var": "D",
+    "stepper": "bullfrog",
+    "ic_method": "lpt",
+    "lpt_order": 1,
+    "worder": 2,
+    "antialias": 0,
+    "deconvolve": false,
+    "n_resample": 1,
+    "grad_kernel_order": 4,
+    "method": "pm",
+    "chunk_size": null,
+    "precision": "single",
+    "seed": 314159265,
+    "grid": 832,
+    "outputs": "final",
+    "n_outputs": null,
+    "steps_per_output": 1,
+    "repeat": 1,
+    "save_delta": null,
+    "pk_bins": 32,
+    "write_dir": null,
+    "grid_format": "both",
+    "snap_z": [],
+    "pk_z": [],
+    "free_ics": false
+   },
+   "cosmology": {
+    "Omega_c": 0.271,
+    "Omega_b": 0.049,
+    "Omega_k": 0.0,
+    "h": 0.67,
+    "n_s": 0.96,
+    "sigma8": 0.83,
+    "w0": -1.0,
+    "wa": 0.0
+   },
+   "status": "oom",
+   "timings": {
+    "ics": 7.748553758006892,
+    "setup": 14.456180214998312
+   },
+   "mem_after_setup": {
+    "peak_bytes_in_use": 39240932096,
+    "bytes_in_use": 9220561664,
+    "bytes_limit": 96905198400
+   },
+   "error": "XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 32252104328 bytes.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 305, in main\n    X, P, _ = fn()\n              ^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 218, in run_final\n    return block(dj.run_nbody(a_ini=a_ini, a_end=a_end, n_steps=a.n_steps, **kw))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 1143, in run_nbody\n    Psi_out, Mom_out = nbody_scan(args, (Psi_ini, Mom_ini), terms, n_steps, adjoint_method,\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 34, in nbody_scan\n    return scan_wrapper(non_diff_args, args, init)  # diff'able arguments last\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 60, in scan_wrapper\n    carry, ys = jax.lax.scan(scan_fn, carry, xs)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\njaxlib._jax.XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 32252104328 bytes.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 39240932096,
+    "bytes_in_use": 38019870720,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B4",
+   "label": "N864_lpt2",
+   "params": {
+    "test": "B4",
+    "label": "N864_lpt2",
+    "res": 864,
+    "res_pm": 864,
+    "boxsize": 100.0,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "n_steps": 50,
+    "time_var": "D",
+    "stepper": "bullfrog",
+    "ic_method": "lpt",
+    "lpt_order": 2,
+    "worder": 2,
+    "antialias": 0,
+    "deconvolve": false,
+    "n_resample": 1,
+    "grad_kernel_order": 4,
+    "method": "pm",
+    "chunk_size": null,
+    "precision": "single",
+    "seed": 314159265,
+    "grid": 864,
+    "outputs": "final",
+    "n_outputs": null,
+    "steps_per_output": 1,
+    "repeat": 1,
+    "save_delta": null,
+    "pk_bins": 32,
+    "write_dir": null,
+    "grid_format": "both",
+    "snap_z": [],
+    "pk_z": [],
+    "free_ics": false
+   },
+   "cosmology": {
+    "Omega_c": 0.271,
+    "Omega_b": 0.049,
+    "Omega_k": 0.0,
+    "h": 0.67,
+    "n_s": 0.96,
+    "sigma8": 0.83,
+    "w0": -1.0,
+    "wa": 0.0
+   },
+   "status": "oom",
+   "timings": {
+    "ics": 7.837371750996681
+   },
+   "error": "XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 33892414016 bytes.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 208, in main\n    dj = dj.with_lpt(n_order=a.lpt_order)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 754, in with_lpt\n    psi_lpt = {**old_lpt_psi, **lpt.compute(fphi_ini=fphi_ini)}\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 295, in compute\n    out = compute_fun_final(fphi_ini)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 293, in <lambda>\n    compute_fun_final = lambda phi: compute_fun(phi, **kwargs)\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 358, in compute_core\n    fL += fac_sym * fmu2_sym(psi[i // 2 - 1], res, ext_res, derivs_ext, dtype_c=dtype_c, with_jax=with_jax)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/lpt/nlpt_3d_jax.py\", line 91, in fmu2_sym\n    return jax.lax.scan(scan_body, init=np.zeros((orig_res, orig_res, orig_res // 2 + 1), dtype=dtype_c),\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\njaxlib._jax.XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 33892414016 bytes.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 38788070144,
+    "bytes_in_use": 36202241792,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B4",
+   "label": "N864_lpt1",
+   "params": {
+    "test": "B4",
+    "label": "N864_lpt1",
+    "res": 864,
+    "res_pm": 864,
+    "boxsize": 100.0,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "n_steps": 50,
+    "time_var": "D",
+    "stepper": "bullfrog",
+    "ic_method": "lpt",
+    "lpt_order": 1,
+    "worder": 2,
+    "antialias": 0,
+    "deconvolve": false,
+    "n_resample": 1,
+    "grad_kernel_order": 4,
+    "method": "pm",
+    "chunk_size": null,
+    "precision": "single",
+    "seed": 314159265,
+    "grid": 864,
+    "outputs": "final",
+    "n_outputs": null,
+    "steps_per_output": 1,
+    "repeat": 1,
+    "save_delta": null,
+    "pk_bins": 32,
+    "write_dir": null,
+    "grid_format": "both",
+    "snap_z": [],
+    "pk_z": [],
+    "free_ics": false
+   },
+   "cosmology": {
+    "Omega_c": 0.271,
+    "Omega_b": 0.049,
+    "Omega_k": 0.0,
+    "h": 0.67,
+    "n_s": 0.96,
+    "sigma8": 0.83,
+    "w0": -1.0,
+    "wa": 0.0
+   },
+   "status": "oom",
+   "timings": {
+    "ics": 7.09163521399023,
+    "setup": 14.561721972000669
+   },
+   "mem_after_setup": {
+    "peak_bytes_in_use": 36202208000,
+    "bytes_in_use": 10325670656,
+    "bytes_limit": 96905198400
+   },
+   "error": "XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 36118466184 bytes.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 305, in main\n    X, P, _ = fn()\n              ^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djbench.py\", line 218, in run_final\n    return block(dj.run_nbody(a_ini=a_ini, a_end=a_end, n_steps=a.n_steps, **kw))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 1143, in run_nbody\n    Psi_out, Mom_out = nbody_scan(args, (Psi_ini, Mom_ini), terms, n_steps, adjoint_method,\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 34, in nbody_scan\n    return scan_wrapper(non_diff_args, args, init)  # diff'able arguments last\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 60, in scan_wrapper\n    carry, ys = jax.lax.scan(scan_fn, carry, xs)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\njaxlib._jax.XlaRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 36118466184 bytes.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 42577305856,
+    "bytes_in_use": 42577305856,
+    "bytes_limit": 96905198400
+   }
+  }
+ ]
+}

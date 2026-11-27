@@ -4,3 +4,8 @@ smoke_results/
 logs/*
 !logs/.gitkeep
 __pycache__/
+# N-body benchmarks (nbody/<code>/logs)
+nbody/*/logs/*
+!nbody/*/logs/.gitkeep
+nbody/*/benchmark_results/**/*.lock
+nbody/*/benchmark_results/**/*.json.tmp

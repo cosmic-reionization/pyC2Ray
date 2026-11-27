@@ -1,0 +1,80 @@
+{
+ "metadata": {
+  "system": "arrhenius",
+  "build": "jax-cuda12",
+  "hostname": "n463",
+  "date": "2026-11-26T19:26:33",
+  "slurm": {
+   "job_id": "5809824",
+   "job_partition": "gpu",
+   "job_nodelist": "n463",
+   "gpus_on_node": "4",
+   "cpus_per_task": "",
+   "ntasks": ""
+  },
+  "slurm_job_id": "5809824",
+  "gpu": [
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07"
+  ],
+  "cpu": "Neoverse-V2",
+  "cpu_arch": "aarch64",
+  "python": "3.12.16",
+  "jax": "0.7.2",
+  "jaxlib": "0.7.2",
+  "jax_backend": "PJRT C API\ncuda 12090",
+  "jax_devices": [
+   "cuda:0"
+  ],
+  "packages": {
+   "diffrax": "0.7.0",
+   "equinox": "0.13.8",
+   "numpy": "2.5.5",
+   "einops": "0.8.2"
+  },
+  "xla_env": {
+   "TF_CPP_MIN_LOG_LEVEL": "2",
+   "XLA_PYTHON_CLIENT_PREALLOCATE": "false"
+  },
+  "discodj": {
+   "path": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/DISCO-DJ",
+   "commit": "a687972d",
+   "branch": "main",
+   "dirty": false
+  },
+  "benchmark_setup": {
+   "path": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj",
+   "commit": "e07b6fb0",
+   "branch": "benchmark",
+   "dirty": true
+  }
+ },
+ "records": [
+  {
+   "notebook": "disco_dj_1d_example",
+   "rc": 0,
+   "time_s": 70,
+   "status": "ok"
+  },
+  {
+   "notebook": "disco_dj_1d_derivative_example",
+   "rc": 0,
+   "time_s": 40,
+   "status": "ok"
+  },
+  {
+   "notebook": "disco_dj_2d_example",
+   "rc": 0,
+   "time_s": 28,
+   "status": "ok"
+  },
+  {
+   "notebook": "disco_dj_3d_example",
+   "rc": 0,
+   "time_s": 29,
+   "status": "ok"
+  }
+ ]
+}

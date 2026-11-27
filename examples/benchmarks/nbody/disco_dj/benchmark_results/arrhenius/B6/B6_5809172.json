@@ -1,0 +1,507 @@
+{
+ "metadata": {
+  "system": "arrhenius",
+  "build": "jax-cuda12",
+  "hostname": "n490",
+  "date": "2026-11-26T19:10:28",
+  "slurm": {
+   "job_id": "5809172",
+   "job_partition": "gpu",
+   "job_nodelist": "n490",
+   "gpus_on_node": "4",
+   "cpus_per_task": "",
+   "ntasks": ""
+  },
+  "slurm_job_id": "5809172",
+  "gpu": [
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07",
+   "NVIDIA GH200 120GB, 97871 MiB, 580.196.07"
+  ],
+  "cpu": "Neoverse-V2",
+  "cpu_arch": "aarch64",
+  "python": "3.12.16",
+  "jax": "0.7.2",
+  "jaxlib": "0.7.2",
+  "jax_backend": "PJRT C API\ncuda 12090",
+  "jax_devices": [
+   "cuda:0"
+  ],
+  "packages": {
+   "diffrax": "0.7.0",
+   "equinox": "0.13.8",
+   "numpy": "2.5.5",
+   "einops": "0.8.2"
+  },
+  "xla_env": {
+   "XLA_PYTHON_CLIENT_MEM_FRACTION": "0.95",
+   "TF_CPP_MIN_LOG_LEVEL": "2",
+   "XLA_PYTHON_CLIENT_PREALLOCATE": "false"
+  },
+  "discodj": {
+   "path": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/DISCO-DJ",
+   "commit": "a687972d",
+   "branch": "main",
+   "dirty": false
+  },
+  "benchmark_setup": {
+   "path": "/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj",
+   "commit": "e07b6fb0",
+   "branch": "benchmark",
+   "dirty": true
+  }
+ },
+ "records": [
+  {
+   "test": "B6",
+   "label": "N64_s10_forward",
+   "params": {
+    "res": 64,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "forward",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 2.0847826310200617,
+    "run": 0.003910222003469244,
+    "compile": 2.0808724090165924
+   },
+   "finite": true,
+   "loss": 0.16290007531642914,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 76358912,
+    "bytes_in_use": 2761728,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N64_s10_grad_adjoint",
+   "params": {
+    "res": 64,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_adjoint",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 4.358986511011608,
+    "run": 0.011080027994466946,
+    "compile": 4.347906483017141
+   },
+   "finite": true,
+   "loss": 0.16290009021759033,
+   "grad_rms": 1.7798651242628694e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 279782912,
+    "bytes_in_use": 3810304,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N64_s10_grad_backprop",
+   "params": {
+    "res": 64,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_backprop",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 4.4028811549942475,
+    "run": 0.008820479997666553,
+    "compile": 4.394060674996581
+   },
+   "finite": true,
+   "loss": 0.16290007531642914,
+   "grad_rms": 1.7798549379222095e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 279782912,
+    "bytes_in_use": 3810304,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N64_s10_jvp",
+   "params": {
+    "res": 64,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "jvp",
+    "repeat": 2
+   },
+   "timings": {},
+   "status": "error",
+   "error": "TypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 95, in <module>\n    main()\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 66, in main\n    out = jax.block_until_ready(f(w))\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 64, in <lambda>\n    \"jvp\": jax.jit(lambda wn: jax.jvp(loss, (wn,), (v,)))}[a.mode]\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 57, in loss\n    X, _, _ = d.run_nbody(a_ini=a_ini, a_end=a_end, n_steps=a.n_steps, res_pm=a.res, stepper=\"bullfrog\",\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 1143, in run_nbody\n    Psi_out, Mom_out = nbody_scan(args, (Psi_ini, Mom_ini), terms, n_steps, adjoint_method,\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 34, in nbody_scan\n    return scan_wrapper(non_diff_args, args, init)  # diff'able arguments last\njax._src.source_info_util.JaxStackTraceBeforeTransformation: TypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.\n\nThe preceding stack trace is the source of the JAX operation that, once transformed by JAX, triggered the following exception.\n\n--------------------\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 66, in main\n    out = jax.block_until_ready(f(w))\n                                ^^^^\nTypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 2761728,
+    "bytes_in_use": 2761472,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s10_forward",
+   "params": {
+    "res": 128,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "forward",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 2.237572679994628,
+    "run": 0.011899815988726914,
+    "compile": 2.225672864005901
+   },
+   "finite": true,
+   "loss": 0.36319464445114136,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 357848320,
+    "bytes_in_use": 16915200,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s10_grad_adjoint",
+   "params": {
+    "res": 128,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_adjoint",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.542571426020004,
+    "run": 0.04726336497697048,
+    "compile": 6.495308061043033
+   },
+   "finite": true,
+   "loss": 0.36319464445114136,
+   "grad_rms": 1.1697457011905499e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 1205616384,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s10_grad_backprop",
+   "params": {
+    "res": 128,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_backprop",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.364656714024022,
+    "run": 0.04040900498512201,
+    "compile": 6.3242477090389
+   },
+   "finite": true,
+   "loss": 0.36319464445114136,
+   "grad_rms": 1.1697361514961813e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 1604337152,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s10_jvp",
+   "params": {
+    "res": 128,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "jvp",
+    "repeat": 2
+   },
+   "timings": {},
+   "status": "error",
+   "error": "TypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 95, in <module>\n    main()\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 66, in main\n    out = jax.block_until_ready(f(w))\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 64, in <lambda>\n    \"jvp\": jax.jit(lambda wn: jax.jvp(loss, (wn,), (v,)))}[a.mode]\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 57, in loss\n    X, _, _ = d.run_nbody(a_ini=a_ini, a_end=a_end, n_steps=a.n_steps, res_pm=a.res, stepper=\"bullfrog\",\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 1143, in run_nbody\n    Psi_out, Mom_out = nbody_scan(args, (Psi_ini, Mom_ini), terms, n_steps, adjoint_method,\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 34, in nbody_scan\n    return scan_wrapper(non_diff_args, args, init)  # diff'able arguments last\njax._src.source_info_util.JaxStackTraceBeforeTransformation: TypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.\n\nThe preceding stack trace is the source of the JAX operation that, once transformed by JAX, triggered the following exception.\n\n--------------------\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 66, in main\n    out = jax.block_until_ready(f(w))\n                                ^^^^\nTypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 16917504,
+    "bytes_in_use": 16914944,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N256_s10_forward",
+   "params": {
+    "res": 256,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "forward",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 5.0283390959957615,
+    "run": 0.08132397697772831,
+    "compile": 4.947015119018033
+   },
+   "finite": true,
+   "loss": 0.8524107933044434,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 2856998400,
+    "bytes_in_use": 134355712,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N256_s10_grad_adjoint",
+   "params": {
+    "res": 256,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_adjoint",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 10.052218035008991,
+    "run": 0.3547205239883624,
+    "compile": 9.697497511020629
+   },
+   "finite": true,
+   "loss": 0.8524107336997986,
+   "grad_rms": 9.29166253627045e-06,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 10275257088,
+    "bytes_in_use": 201464576,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N256_s10_grad_backprop",
+   "params": {
+    "res": 256,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_backprop",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 9.442604426003527,
+    "run": 0.332014784013154,
+    "compile": 9.110589641990373
+   },
+   "finite": true,
+   "loss": 0.8524107336997986,
+   "grad_rms": 9.291621609008871e-06,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 13696236032,
+    "bytes_in_use": 201464576,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N256_s10_jvp",
+   "params": {
+    "res": 256,
+    "n_steps": 10,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "jvp",
+    "repeat": 2
+   },
+   "timings": {},
+   "status": "error",
+   "error": "TypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.",
+   "traceback": "Traceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 95, in <module>\n    main()\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 66, in main\n    out = jax.block_until_ready(f(w))\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 64, in <lambda>\n    \"jvp\": jax.jit(lambda wn: jax.jvp(loss, (wn,), (v,)))}[a.mode]\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 57, in loss\n    X, _, _ = d.run_nbody(a_ini=a_ini, a_end=a_end, n_steps=a.n_steps, res_pm=a.res, stepper=\"bullfrog\",\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/disco_dj.py\", line 1143, in run_nbody\n    Psi_out, Mom_out = nbody_scan(args, (Psi_ini, Mom_ini), terms, n_steps, adjoint_method,\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/home_offload/miniforge3-aarch64/envs/discodj/lib/python3.12/site-packages/discodj/nbody/nbody_scan_functions.py\", line 34, in nbody_scan\n    return scan_wrapper(non_diff_args, args, init)  # diff'able arguments last\njax._src.source_info_util.JaxStackTraceBeforeTransformation: TypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.\n\nThe preceding stack trace is the source of the JAX operation that, once transformed by JAX, triggered the following exception.\n\n--------------------\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/nobackup/proj/disk/cosmic_reion_2026/personal/sgiri/myPackages/pyC2Ray/examples/benchmarks/nbody/disco_dj/benchmark_scripts/djgrad.py\", line 66, in main\n    out = jax.block_until_ready(f(w))\n                                ^^^^\nTypeError: can't apply forward-mode autodiff (jvp) to a custom_vjp function.\n--------------------\nFor simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.\n",
+   "mem": {
+    "peak_bytes_in_use": 134362112,
+    "bytes_in_use": 134355456,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s5_grad_adjoint",
+   "params": {
+    "res": 128,
+    "n_steps": 5,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_adjoint",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.596156487008557,
+    "run": 0.028004596009850502,
+    "compile": 6.568151890998706
+   },
+   "finite": true,
+   "loss": 0.3653419017791748,
+   "grad_rms": 1.1223140973015688e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 1205616896,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s5_grad_backprop",
+   "params": {
+    "res": 128,
+    "n_steps": 5,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_backprop",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.353110133000882,
+    "run": 0.02491742098936811,
+    "compile": 6.328192712011514
+   },
+   "finite": true,
+   "loss": 0.3653419017791748,
+   "grad_rms": 1.1223088222322986e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 1352679424,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s20_grad_adjoint",
+   "params": {
+    "res": 128,
+    "n_steps": 20,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_adjoint",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.5766770240152255,
+    "run": 0.08542657797806896,
+    "compile": 6.4912504460371565
+   },
+   "finite": true,
+   "loss": 0.36116060614585876,
+   "grad_rms": 1.190026341646444e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 1205616384,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s20_grad_backprop",
+   "params": {
+    "res": 128,
+    "n_steps": 20,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_backprop",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.551025640015723,
+    "run": 0.07200415199622512,
+    "compile": 6.479021488019498
+   },
+   "finite": true,
+   "loss": 0.3611605763435364,
+   "grad_rms": 1.1900310710188933e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 2232294656,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s50_grad_adjoint",
+   "params": {
+    "res": 128,
+    "n_steps": 50,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_adjoint",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.875951157999225,
+    "run": 0.2004624090041034,
+    "compile": 6.675488748995122
+   },
+   "finite": true,
+   "loss": 0.35990530252456665,
+   "grad_rms": 1.1987632206000853e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 1205616384,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  },
+  {
+   "test": "B6",
+   "label": "N128_s50_grad_backprop",
+   "params": {
+    "res": 128,
+    "n_steps": 50,
+    "z_ini": 150.0,
+    "z_end": 5.0,
+    "mode": "grad_backprop",
+    "repeat": 2
+   },
+   "timings": {
+    "first": 6.650023375987075,
+    "run": 0.16769739700248465,
+    "compile": 6.482325978984591
+   },
+   "finite": true,
+   "loss": 0.35990533232688904,
+   "grad_rms": 1.1987615835096221e-05,
+   "status": "ok",
+   "mem": {
+    "peak_bytes_in_use": 4379778304,
+    "bytes_in_use": 25303808,
+    "bytes_limit": 96905198400
+   }
+  }
+ ]
+}
